@@ -1,4 +1,18 @@
-FROM ubuntu:latest
-LABEL authors="nkamb"
+version: '3.8'
 
-ENTRYPOINT ["top", "-b"]
+services:
+  db:
+    image: postgis/postgis:17-3.4
+    container_name: taloms_db
+    environment:
+      POSTGRES_DB: taloms_db
+      POSTGRES_USER: taloms_user
+      POSTGRES_PASSWORD: taloms_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - taloms_db_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  taloms_db_data:
