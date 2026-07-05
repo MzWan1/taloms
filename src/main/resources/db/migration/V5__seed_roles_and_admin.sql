@@ -8,12 +8,11 @@ INSERT INTO roles (name, description) VALUES
 
 -- ── Insert Default Admin User ─────────────────────────────────────────────────
 -- Password is: Admin@1234
--- BCrypt hash generated with strength 12
 INSERT INTO users (username, email, password_hash, full_name, enabled)
 VALUES (
            'admin',
            'admin@taloms.co.za',
-           '$2a$12$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2uheWG/igi.',
+           '$2a$12$tuFSoFBdtKjXgQZNNwpnEuCFL7n4FwW1Z5KQ9iGDsNZJxpk8EKi9.',
            'System Administrator',
            TRUE
        );
