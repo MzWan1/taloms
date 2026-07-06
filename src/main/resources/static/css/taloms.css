@@ -1,0 +1,61 @@
+/* ── TALOMS Custom Styles ─────────────────────────────────────── */
+:root {
+    --navy:      #1B3A6B;
+    --mid-blue:  #2E6DA4;
+    --gold:      #B8860B;
+    --light-blue:#D6E4F0;
+}
+
+.bg-navy          { background-color: var(--navy) !important; }
+.text-navy        { color: var(--navy) !important; }
+.btn-navy {
+    background-color: var(--navy);
+    border-color:     var(--navy);
+    color: #fff;
+}
+.btn-navy:hover {
+    background-color: var(--mid-blue);
+    border-color:     var(--mid-blue);
+    color: #fff;
+}
+
+/* Navbar */
+.navbar.bg-navy { background-color: var(--navy) !important; }
+
+/* Cards */
+.card { border-radius: 0.75rem; }
+
+/* Table */
+.table thead th {
+    background-color: var(--navy);
+    color: #fff;
+    font-weight: 600;
+    font-size: 0.85rem;
+    border: none;
+}
+
+/* Sidebar badge colors */
+.badge-admin    { background-color: var(--navy); }
+.badge-ta       { background-color: var(--mid-blue); }
+.badge-officer  { background-color: #1F6B3A; }
+.badge-capturer { background-color: #5B2D8E; }
+.badge-viewer   { background-color: #888; }
+
+/* Status badges */
+.badge-active   { background-color: #198754; }
+.badge-locked   { background-color: #dc3545; }
+.badge-inactive { background-color: #6c757d; }
+
+/* Input focus */
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--mid-blue);
+    box-shadow: 0 0 0 0.2rem rgba(46, 109, 164, 0.25);
+}
+
+/* Page heading underline */
+.page-heading {
+    border-bottom: 3px solid var(--mid-blue);
+    padding-bottom: 0.5rem;
+    margin-bottom: 1.5rem;
+}

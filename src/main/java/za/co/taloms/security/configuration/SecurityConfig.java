@@ -36,16 +36,47 @@ public class SecurityConfig {
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
+                                "/login",
+                                "/forgot-password",
+                                "/reset-password",
                                 "/api/auth/**",
+                                "/api/users/forgot-password",
+                                "/api/users/reset-password",
                                 "/actuator/health",
                                 "/swagger-ui/**",
                                 "/swagger-ui.html",
-                                "/v3/api-docs/**"
+                                "/v3/api-docs/**",
+                                "/css/**",
+                                "/js/**",
+                                "/images/**",
+                                "/favicon.ico"
                         ).permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session
-                        .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
+                )
+                .formLogin(form -> form
+                        .loginPage("/login")
+                        .loginProcessingUrl("/login")
+                        .defaultSuccessUrl("/dashboard", true)
+                        .failureUrl("/login?error=true")
+                        .usernameParameter("username")
+                        .passwordParameter("password")
+                        .permitAll()
+                )
+                .logout(logout -> logout
+                        .logoutUrl("/logout")
+                        .logoutSuccessUrl("/login?logout=true")
+                        .deleteCookies("JSESSIONID", "remember-me")
+                        .invalidateHttpSession(true)
+                        .permitAll()
+                )
+                .rememberMe(remember -> remember
+                        .key("TalomsRememberMeSecretKey2026")
+                        .tokenValiditySeconds(604800)
+                        .userDetailsService(userDetailsService)
+                        .rememberMeParameter("remember-me")
                 )
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(
