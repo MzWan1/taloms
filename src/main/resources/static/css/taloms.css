@@ -1,61 +1,142 @@
-/* ── TALOMS Custom Styles ─────────────────────────────────────── */
+/* ── TALOMS Design System ──────────────────────────────────────────────── */
 :root {
-    --navy:      #1B3A6B;
-    --mid-blue:  #2E6DA4;
-    --gold:      #B8860B;
-    --light-blue:#D6E4F0;
+    --navy:        #1B3A6B;
+    --mid-blue:    #2E6DA4;
+    --light-blue:  #D6E4F0;
+    --gold:        #B8860B;
+    --green:       #1F6B3A;
+    --orange:      #C55A11;
+    --purple:      #5B2D8E;
 }
 
-.bg-navy          { background-color: var(--navy) !important; }
-.text-navy        { color: var(--navy) !important; }
-.btn-navy {
+/* ── Base ─────────────────────────────────────────────────────────────── */
+body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+
+/* ── Colours ──────────────────────────────────────────────────────────── */
+.bg-navy        { background-color: var(--navy) !important; }
+.text-navy      { color: var(--navy) !important; }
+.btn-navy       { background-color: var(--navy); border-color: var(--navy); color: #fff; }
+.btn-navy:hover { background-color: var(--mid-blue); border-color: var(--mid-blue); color: #fff; }
+.btn-outline-navy {
+    color: var(--navy);
+    border-color: var(--navy);
+}
+.btn-outline-navy:hover {
     background-color: var(--navy);
-    border-color:     var(--navy);
-    color: #fff;
-}
-.btn-navy:hover {
-    background-color: var(--mid-blue);
-    border-color:     var(--mid-blue);
     color: #fff;
 }
 
-/* Navbar */
+/* ── Navbar ───────────────────────────────────────────────────────────── */
 .navbar.bg-navy { background-color: var(--navy) !important; }
+.navbar-dark .navbar-nav .nav-link:hover {
+    background: rgba(255,255,255,0.1);
+    border-radius: 6px;
+}
+.navbar-dark .navbar-nav .nav-link.active {
+    background: rgba(255,255,255,0.15);
+    border-radius: 6px;
+    font-weight: 600;
+}
 
-/* Cards */
-.card { border-radius: 0.75rem; }
+/* ── Avatar ───────────────────────────────────────────────────────────── */
+.avatar-sm {
+    width: 32px; height: 32px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+}
 
-/* Table */
+/* ── Welcome Banner ───────────────────────────────────────────────────── */
+.welcome-banner {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--mid-blue) 100%);
+}
+
+/* ── KPI Cards ────────────────────────────────────────────────────────── */
+.kpi-card { transition: transform 0.15s ease, box-shadow 0.15s ease; }
+.kpi-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.1) !important; }
+
+.kpi-icon {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem; flex-shrink: 0;
+}
+.kpi-blue   { background: #D6E4F0; color: var(--navy); }
+.kpi-green  { background: #D1FAE5; color: #065F46; }
+.kpi-orange { background: #FBEEE4; color: var(--orange); }
+.kpi-purple { background: #F0EAF8; color: var(--purple); }
+.kpi-red    { background: #FEE2E2; color: #991B1B; }
+
+.kpi-label { font-size: 0.78rem; color: #6b7280; font-weight: 500; }
+.kpi-value { font-size: 1.6rem; font-weight: 700; color: #111827; line-height: 1.2; }
+
+/* ── Stat Mini ────────────────────────────────────────────────────────── */
+.stat-mini-value { font-size: 1.4rem; font-weight: 700; }
+.stat-mini-label { font-size: 0.72rem; color: #6b7280; }
+
+/* ── Table ────────────────────────────────────────────────────────────── */
 .table thead th {
     background-color: var(--navy);
     color: #fff;
     font-weight: 600;
-    font-size: 0.85rem;
+    font-size: 0.82rem;
     border: none;
+    padding: 0.85rem 1rem;
+    white-space: nowrap;
+}
+.table tbody tr:hover { background-color: #f0f7ff; }
+.table td { vertical-align: middle; font-size: 0.9rem; padding: 0.75rem 1rem; }
+
+/* ── Cards ────────────────────────────────────────────────────────────── */
+.card { border-radius: 12px; }
+.card-header {
+    border-radius: 12px 12px 0 0 !important;
+    font-size: 0.9rem;
 }
 
-/* Sidebar badge colors */
-.badge-admin    { background-color: var(--navy); }
-.badge-ta       { background-color: var(--mid-blue); }
-.badge-officer  { background-color: #1F6B3A; }
-.badge-capturer { background-color: #5B2D8E; }
-.badge-viewer   { background-color: #888; }
-
-/* Status badges */
-.badge-active   { background-color: #198754; }
-.badge-locked   { background-color: #dc3545; }
-.badge-inactive { background-color: #6c757d; }
-
-/* Input focus */
-.form-control:focus,
-.form-select:focus {
+/* ── Form Controls ────────────────────────────────────────────────────── */
+.form-control:focus, .form-select:focus {
     border-color: var(--mid-blue);
-    box-shadow: 0 0 0 0.2rem rgba(46, 109, 164, 0.25);
+    box-shadow: 0 0 0 0.2rem rgba(46,109,164,0.2);
+}
+.form-label { font-weight: 600; font-size: 0.875rem; color: #374151; }
+.input-group-text {
+    background: #f9fafb;
+    border-color: #dee2e6;
+    color: #6b7280;
 }
 
-/* Page heading underline */
+/* ── Status Badges ────────────────────────────────────────────────────── */
+.badge { font-size: 0.75rem; font-weight: 600; padding: 0.35em 0.65em; }
+.badge.bg-navy { background-color: var(--navy) !important; }
+.badge-ta      { background-color: var(--mid-blue); color: #fff; }
+.badge-capturer{ background-color: var(--purple); color: #fff; }
+
+/* ── Page Heading ─────────────────────────────────────────────────────── */
 .page-heading {
-    border-bottom: 3px solid var(--mid-blue);
-    padding-bottom: 0.5rem;
+    border-bottom: 3px solid var(--light-blue);
+    padding-bottom: 0.75rem;
     margin-bottom: 1.5rem;
+}
+
+/* ── Sidebar for future use ───────────────────────────────────────────── */
+.sidebar-link {
+    display: flex; align-items: center; gap: 0.75rem;
+    padding: 0.6rem 1rem;
+    border-radius: 8px;
+    color: #374151;
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: background 0.15s ease;
+}
+.sidebar-link:hover, .sidebar-link.active {
+    background: var(--light-blue);
+    color: var(--navy);
+    font-weight: 600;
+}
+
+/* ── Responsive ───────────────────────────────────────────────────────── */
+@media (max-width: 576px) {
+    .kpi-value { font-size: 1.3rem; }
+    .kpi-icon  { width: 40px; height: 40px; font-size: 1.1rem; }
 }
