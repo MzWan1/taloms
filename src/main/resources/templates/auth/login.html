@@ -48,6 +48,13 @@
                         You have been logged out successfully.
                     </div>
 
+                    <!-- Password reset success message -->
+                    <div th:if="${param.reset}"
+                         class="alert alert-success py-2 small border-0" role="alert">
+                        <i class="bi bi-check-circle me-1"></i>
+                        If that email is registered, a reset link has been sent. Check your inbox.
+                    </div>
+
                     <!-- Login form -->
                     <form th:action="@{/login}" method="post">
                         <div class="mb-3">

@@ -16,4 +16,5 @@ public interface UserService {
     void initiatePasswordReset(PasswordResetRequest request);
     void confirmPasswordReset(PasswordResetConfirmRequest request);
     void resetPasswordByAdmin(Long userId);
+    void activateUser(Long id);
 }

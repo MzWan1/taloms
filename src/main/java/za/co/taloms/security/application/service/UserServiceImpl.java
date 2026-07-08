@@ -26,6 +26,8 @@ public class UserServiceImpl implements UserService {
     private final RoleJpaRepository               roleRepository;
     private final PasswordEncoder                 passwordEncoder;
 
+    private final EmailService emailService;
+
     @Override
     public UserResponse createUser(UserCreateRequest request) {
         if (userRepository.existsByUsername(request.getUsername())) {
@@ -147,10 +149,8 @@ public class UserServiceImpl implements UserService {
     public void initiatePasswordReset(PasswordResetRequest request) {
         var userOpt = userRepository.findByEmail(request.getEmail());
 
-        // Always return success even if email not found (security best practice)
         if (userOpt.isEmpty()) {
-            log.warn("Password reset requested for unknown email: {}",
-                    request.getEmail());
+            log.warn("Password reset for unknown email: {}", request.getEmail());
             return;
         }
 
@@ -165,9 +165,15 @@ public class UserServiceImpl implements UserService {
                 .build();
 
         var saved = tokenRepository.save(token);
-        log.info("Password reset token generated for: {} — token: {}",
-                user.getEmail(), saved.getToken());
-        // Phase 2: send email with reset link
+
+        // Send the actual email
+        emailService.sendPasswordResetEmail(
+                user.getEmail(),
+                saved.getToken(),
+                user.getFullName()
+        );
+
+        log.info("Password reset initiated for: {}", user.getEmail());
     }
 
     @Override
@@ -238,5 +244,17 @@ public class UserServiceImpl implements UserService {
                 .createdAt(user.getCreatedAt())
                 .roles(roles)
                 .build();
+    }
+
+    @Override
+    public void activateUser(Long id) {
+        var user = userRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User", id));
+        user.setEnabled(true);
+        user.setAccountLocked(false);
+        user.setFailedLoginAttempts(0);
+        userRepository.save(user);
+        log.info("User activated: {}", user.getUsername());
     }
 }
