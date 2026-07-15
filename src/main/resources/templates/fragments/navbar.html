@@ -1,10 +1,150 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
-</head>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <body>
-$END$
+
+<nav th:fragment="navbar(currentPage)"
+     class="navbar navbar-expand-lg navbar-dark bg-navy shadow-sm sticky-top">
+    <div class="container-fluid px-4">
+        <a class="navbar-brand fw-bold" th:href="@{/dashboard}">
+            <i class="bi bi-geo-alt-fill me-2"></i>TALOMS
+        </a>
+        <button class="navbar-toggler border-0" type="button"
+                data-bs-toggle="collapse" data-bs-target="#mainNav">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="mainNav">
+            <ul class="navbar-nav me-auto gap-1">
+
+                <!-- Dashboard -->
+                <li class="nav-item">
+                    <a class="nav-link rounded-2 px-3"
+                       th:classappend="${currentPage == 'dashboard'} ? 'active bg-white bg-opacity-10' : ''"
+                       th:href="@{/dashboard}">
+                        <i class="bi bi-speedometer2 me-1"></i>Dashboard
+                    </a>
+                </li>
+
+                <!-- Users — Admin only -->
+                <li class="nav-item"
+                    sec:authorize="hasRole('SYSTEM_ADMIN')">
+                    <a class="nav-link rounded-2 px-3"
+                       th:classappend="${currentPage == 'users'} ? 'active bg-white bg-opacity-10' : ''"
+                       th:href="@{/users}">
+                        <i class="bi bi-people me-1"></i>Users
+                    </a>
+                </li>
+
+                <!-- Authorities -->
+                <li class="nav-item"
+                    sec:authorize="hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER','ROLE_DATA_CAPTURER')">
+                    <a class="nav-link rounded-2 px-3"
+                       th:classappend="${currentPage == 'authorities'} ? 'active bg-white bg-opacity-10' : ''"
+                       th:href="@{/authorities}">
+                        <i class="bi bi-building me-1"></i>Authorities
+                    </a>
+                </li>
+
+                <!-- PTOs -->
+                <li class="nav-item"
+                    sec:authorize="hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER','ROLE_DATA_CAPTURER')">
+                    <a class="nav-link rounded-2 px-3"
+                       th:classappend="${currentPage == 'ptos'} ? 'active bg-white bg-opacity-10' : ''"
+                       href="#">
+                        <i class="bi bi-file-earmark-text me-1"></i>PTOs
+                    </a>
+                </li>
+
+                <!-- Parcels -->
+                <li class="nav-item"
+                    sec:authorize="hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER')">
+                    <a class="nav-link rounded-2 px-3"
+                       th:classappend="${currentPage == 'parcels'} ? 'active bg-white bg-opacity-10' : ''"
+                       href="#">
+                        <i class="bi bi-map me-1"></i>Parcels
+                    </a>
+                </li>
+
+                <!-- Reports -->
+                <li class="nav-item">
+                    <a class="nav-link rounded-2 px-3"
+                       th:classappend="${currentPage == 'reports'} ? 'active bg-white bg-opacity-10' : ''"
+                       href="#">
+                        <i class="bi bi-bar-chart me-1"></i>Reports
+                    </a>
+                </li>
+
+            </ul>
+
+            <!-- Right side -->
+            <ul class="navbar-nav ms-auto align-items-center gap-1">
+
+                <!-- Notifications -->
+                <li class="nav-item">
+                    <a class="nav-link px-2 position-relative" href="#" title="Notifications">
+                        <i class="bi bi-bell fs-5"></i>
+                    </a>
+                </li>
+
+                <!-- User dropdown -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle d-flex align-items-center gap-2 px-2"
+                       href="#" data-bs-toggle="dropdown">
+                        <div class="nav-avatar">
+                            <span sec:authentication="name"
+                                  th:text="${#strings.substring(#authentication.name, 0, 1).toUpperCase()}">
+                                A
+                            </span>
+                        </div>
+                        <span class="d-none d-lg-inline"
+                              sec:authentication="name">admin</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2"
+                        style="min-width:220px">
+                        <li class="px-3 py-2 border-bottom">
+                            <div class="small text-muted">Signed in as</div>
+                            <div class="fw-bold text-navy small"
+                                 sec:authentication="name">admin</div>
+                            <div class="mt-1">
+                                <span sec:authorize="hasRole('SYSTEM_ADMIN')"
+                                      class="badge bg-navy">System Admin</span>
+                                <span sec:authorize="hasRole('ROLE_TA_ADMINISTRATOR')"
+                                      class="badge badge-ta">TA Admin</span>
+                                <span sec:authorize="hasRole('ROLE_LAND_OFFICER')"
+                                      class="badge bg-success">Land Officer</span>
+                                <span sec:authorize="hasRole('ROLE_DATA_CAPTURER')"
+                                      class="badge badge-capturer">Data Capturer</span>
+                                <span sec:authorize="hasRole('ROLE_REPORT_VIEWER')"
+                                      class="badge bg-secondary">Viewer</span>
+                            </div>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2"
+                               th:href="@{/users/change-password}">
+                                <i class="bi bi-key me-2 text-muted"></i>Change Password
+                            </a>
+                        </li>
+                        <li sec:authorize="hasRole('SYSTEM_ADMIN')">
+                            <a class="dropdown-item py-2" th:href="@{/users}">
+                                <i class="bi bi-people me-2 text-muted"></i>Manage Users
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider my-1"></li>
+                        <li>
+                            <form th:action="@{/logout}" method="post" class="m-0">
+                                <button type="submit"
+                                        class="dropdown-item py-2 text-danger fw-semibold">
+                                    <i class="bi bi-box-arrow-right me-2"></i>Sign Out
+                                </button>
+                            </form>
+                        </li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
 </body>
 </html>

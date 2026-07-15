@@ -1,10 +1,373 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 <head>
   <meta charset="UTF-8">
-  <title>$Title$</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Edit Authority | TALOMS</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+  <link th:href="@{/css/taloms.css}" rel="stylesheet">
 </head>
-<body>
-$END$
+<body class="bg-light">
+
+<!-- Navbar -->
+<nav th:replace="~{fragments/navbar :: navbar('authorities')}"></nav>
+
+<div class="container-fluid px-4 py-4">
+
+  <!-- Flash Messages -->
+  <div th:if="${successMessage}"
+       class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-4">
+    <i class="bi bi-check-circle-fill me-2"></i>
+    <span th:text="${successMessage}"></span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+  <div th:if="${errorMessage}"
+       class="alert alert-danger alert-dismissible fade show border-0 shadow-sm mb-4">
+    <i class="bi bi-exclamation-circle-fill me-2"></i>
+    <span th:text="${errorMessage}"></span>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+
+  <!-- Breadcrumb + Header -->
+  <div class="d-flex align-items-start justify-content-between mb-4 flex-wrap gap-3">
+    <div>
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb mb-1 small">
+          <li class="breadcrumb-item">
+            <a th:href="@{/dashboard}" class="text-muted text-decoration-none">Dashboard</a>
+          </li>
+          <li class="breadcrumb-item">
+            <a th:href="@{/authorities}" class="text-muted text-decoration-none">Authorities</a>
+          </li>
+          <li class="breadcrumb-item active">Edit Authority</li>
+        </ol>
+      </nav>
+      <h4 class="fw-bold text-navy mb-0">
+        <i class="bi bi-pencil-square me-2"></i>Edit Authority
+      </h4>
+      <p class="text-muted small mb-0">
+        Update details for
+        <strong th:text="${authority.authorityName}">Authority</strong>
+      </p>
+    </div>
+    <div class="d-flex gap-2">
+      <a th:href="@{/authorities/{id}(id=${authorityId})}"
+         class="btn btn-outline-info px-3">
+        <i class="bi bi-eye me-1"></i>View Detail
+      </a>
+      <a th:href="@{/authorities}" class="btn btn-outline-secondary px-3">
+        <i class="bi bi-arrow-left me-1"></i>Back
+      </a>
+    </div>
+  </div>
+
+  <div class="row g-4">
+
+    <!-- LEFT — Edit Form -->
+    <div class="col-12 col-xl-7">
+      <form th:action="@{/authorities/{id}/edit(id=${authorityId})}"
+            th:object="${form}"
+            method="post">
+
+        <!-- Authority Identity -->
+        <div class="card border-0 shadow-sm mb-4">
+          <div class="card-header bg-white border-bottom py-3">
+            <h6 class="fw-bold text-navy mb-0">
+              <i class="bi bi-building me-2"></i>Authority Identity
+            </h6>
+          </div>
+          <div class="card-body p-4">
+            <div class="row g-3">
+              <div class="col-12">
+                <label for="authorityName" class="form-label">
+                  Authority Name <span class="text-danger">*</span>
+                </label>
+                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="bi bi-building"></i>
+                                    </span>
+                  <input type="text"
+                         id="authorityName"
+                         th:field="*{authorityName}"
+                         class="form-control"
+                         required>
+                </div>
+              </div>
+              <div class="col-12 col-md-6">
+                <label for="region" class="form-label">Province / Region</label>
+                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="bi bi-geo"></i>
+                                    </span>
+                  <select id="region" th:field="*{region}" class="form-select">
+                    <option value="">Select Province</option>
+                    <option value="Limpopo">Limpopo</option>
+                    <option value="Mpumalanga">Mpumalanga</option>
+                    <option value="KwaZulu-Natal">KwaZulu-Natal</option>
+                    <option value="Eastern Cape">Eastern Cape</option>
+                    <option value="Northern Cape">Northern Cape</option>
+                    <option value="North West">North West</option>
+                    <option value="Gauteng">Gauteng</option>
+                    <option value="Free State">Free State</option>
+                    <option value="Western Cape">Western Cape</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-12 col-md-6">
+                <label for="physicalAddress" class="form-label">Physical Address</label>
+                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="bi bi-pin-map"></i>
+                                    </span>
+                  <input type="text"
+                         id="physicalAddress"
+                         th:field="*{physicalAddress}"
+                         class="form-control">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Leadership -->
+        <div class="card border-0 shadow-sm mb-4">
+          <div class="card-header bg-white border-bottom py-3">
+            <h6 class="fw-bold text-navy mb-0">
+              <i class="bi bi-person-badge me-2"></i>Leadership Details
+            </h6>
+          </div>
+          <div class="card-body p-4">
+            <div class="row g-3">
+              <div class="col-12 col-md-6">
+                <label for="chiefName" class="form-label">
+                  Chief / Inkosi Name <span class="text-danger">*</span>
+                </label>
+                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="bi bi-person-fill"></i>
+                                    </span>
+                  <input type="text"
+                         id="chiefName"
+                         th:field="*{chiefName}"
+                         class="form-control"
+                         required>
+                </div>
+              </div>
+              <div class="col-12 col-md-6">
+                <label for="headmanName" class="form-label">Headman / Induna Name</label>
+                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="bi bi-person"></i>
+                                    </span>
+                  <input type="text"
+                         id="headmanName"
+                         th:field="*{headmanName}"
+                         class="form-control">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contact -->
+        <div class="card border-0 shadow-sm mb-4">
+          <div class="card-header bg-white border-bottom py-3">
+            <h6 class="fw-bold text-navy mb-0">
+              <i class="bi bi-telephone me-2"></i>Contact Information
+            </h6>
+          </div>
+          <div class="card-body p-4">
+            <div class="row g-3">
+              <div class="col-12 col-md-6">
+                <label for="contactPhone" class="form-label">Contact Phone</label>
+                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="bi bi-telephone"></i>
+                                    </span>
+                  <input type="tel"
+                         id="contactPhone"
+                         th:field="*{contactPhone}"
+                         class="form-control"
+                         placeholder="+27XXXXXXXXX">
+                </div>
+              </div>
+              <div class="col-12 col-md-6">
+                <label for="contactEmail" class="form-label">Contact Email</label>
+                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="bi bi-envelope"></i>
+                                    </span>
+                  <input type="email"
+                         id="contactEmail"
+                         th:field="*{contactEmail}"
+                         class="form-control">
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Status Controls -->
+        <div class="card border-0 shadow-sm mb-4"
+             sec:authorize="hasRole('SYSTEM_ADMIN')">
+          <div class="card-header bg-white border-bottom py-3">
+            <h6 class="fw-bold text-navy mb-0">
+              <i class="bi bi-gear me-2"></i>Authority Status
+            </h6>
+          </div>
+          <div class="card-body p-4">
+            <div class="row g-2 align-items-center">
+              <div class="col-6">
+                <form th:if="${authority.active}"
+                      th:action="@{/authorities/{id}/deactivate(id=${authorityId})}"
+                      method="post">
+                  <button type="submit" class="btn btn-outline-danger w-100">
+                    <i class="bi bi-x-circle me-1"></i>Deactivate
+                  </button>
+                </form>
+                <form th:unless="${authority.active}"
+                      th:action="@{/authorities/{id}/activate(id=${authorityId})}"
+                      method="post">
+                  <button type="submit" class="btn btn-outline-success w-100">
+                    <i class="bi bi-check-circle me-1"></i>Activate
+                  </button>
+                </form>
+              </div>
+              <div class="col-6 text-center">
+                <div class="small text-muted mb-1">Current Status</div>
+                <span th:if="${authority.active}" class="badge bg-success px-3 py-2">
+                                    <i class="bi bi-check-circle me-1"></i>Active
+                                </span>
+                <span th:unless="${authority.active}" class="badge bg-secondary px-3 py-2">
+                                    <i class="bi bi-dash-circle me-1"></i>Inactive
+                                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Save -->
+        <div class="d-flex gap-3 justify-content-end mb-4">
+          <a th:href="@{/authorities}" class="btn btn-light px-4">
+            <i class="bi bi-x me-1"></i>Cancel
+          </a>
+          <button type="submit" class="btn btn-navy px-4 fw-semibold">
+            <i class="bi bi-check-circle me-2"></i>Save Changes
+          </button>
+        </div>
+
+      </form>
+    </div>
+
+    <!-- RIGHT — Villages Panel -->
+    <div class="col-12 col-xl-5">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-white border-bottom py-3
+                            d-flex justify-content-between align-items-center">
+          <h6 class="fw-bold text-navy mb-0">
+            <i class="bi bi-houses me-2"></i>Villages
+            <span class="badge bg-navy ms-1"
+                  th:text="${villages != null ? #lists.size(villages) : 0}">0</span>
+          </h6>
+          <a th:href="@{/authorities/{id}/villages/create(id=${authorityId})}"
+             class="btn btn-navy btn-sm px-3">
+            <i class="bi bi-plus me-1"></i>Add Village
+          </a>
+        </div>
+
+        <div class="card-body p-0">
+
+          <!-- Empty state -->
+          <div th:if="${villages == null or villages.empty}"
+               class="text-center py-5 text-muted">
+            <i class="bi bi-houses display-5 d-block mb-2 opacity-25"></i>
+            <span class="fw-semibold small">No villages registered yet</span><br>
+            <small>Click "Add Village" to register the first village</small>
+          </div>
+
+          <!-- Village list -->
+          <div th:unless="${villages == null or villages.empty}"
+               class="list-group list-group-flush">
+            <div th:each="village : ${villages}"
+                 class="list-group-item px-4 py-3">
+              <div class="d-flex align-items-center justify-content-between gap-2">
+                <div class="d-flex align-items-center gap-3 flex-grow-1">
+                  <div class="village-avatar"
+                       th:text="${#strings.substring(village.villageName, 0, 2).toUpperCase()}">
+                    VL
+                  </div>
+                  <div>
+                    <div class="fw-semibold small"
+                         th:text="${village.villageName}">Village</div>
+                    <div class="text-muted" style="font-size:0.78rem">
+                                            <span th:if="${village.headmanName != null}"
+                                                  th:text="${village.headmanName}"></span>
+                      <span th:if="${village.region != null}"
+                            th:text="${' · ' + village.region}"></span>
+                    </div>
+                  </div>
+                </div>
+                <div class="d-flex align-items-center gap-2 flex-shrink-0">
+                                    <span th:if="${village.active}"
+                                          class="badge bg-success">Active</span>
+                  <span th:unless="${village.active}"
+                        class="badge bg-secondary">Inactive</span>
+
+                  <form th:if="${village.active}"
+                        th:action="@{/authorities/villages/{id}/deactivate(id=${village.id})}"
+                        method="post" class="d-inline m-0">
+                    <button type="submit"
+                            class="btn btn-outline-danger btn-sm"
+                            title="Deactivate">
+                      <i class="bi bi-x"></i>
+                    </button>
+                  </form>
+                  <form th:unless="${village.active}"
+                        th:action="@{/authorities/villages/{id}/activate(id=${village.id})}"
+                        method="post" class="d-inline m-0">
+                    <button type="submit"
+                            class="btn btn-outline-success btn-sm"
+                            title="Activate">
+                      <i class="bi bi-check"></i>
+                    </button>
+                  </form>
+                </div>
+              </div>
+              <div th:if="${village.description != null and !village.description.empty}"
+                   class="text-muted mt-1 ps-5"
+                   style="font-size:0.78rem"
+                   th:text="${village.description}">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card-footer bg-light border-0 py-2 px-4"
+             th:unless="${villages == null or villages.empty}">
+          <small class="text-muted"
+                 th:text="${authority.villageCount + ' village(s) registered'}">
+          </small>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<style>
+  .village-avatar {
+    width: 36px; height: 36px;
+    background: #E2F0E8;
+    color: #1F6B3A;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.75rem; font-weight: 700; flex-shrink: 0;
+  }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

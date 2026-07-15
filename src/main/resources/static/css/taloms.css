@@ -140,3 +140,13 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
     .kpi-value { font-size: 1.3rem; }
     .kpi-icon  { width: 40px; height: 40px; font-size: 1.1rem; }
 }
+
+/* ── Nav Avatar ───────────────────────────────────────────────────────── */
+.nav-avatar {
+    width: 32px; height: 32px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.85rem; color: #fff;
+    flex-shrink: 0;
+}
