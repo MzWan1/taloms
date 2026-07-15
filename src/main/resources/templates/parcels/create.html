@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Parcel | TALOMS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link th:href="@{/css/taloms.css}" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        #map {
+            height: 350px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        .gps-point-card {
+            border-left: 4px solid #1B3A6B;
+            transition: all 0.3s ease;
+        }
+        .gps-point-card.captured {
+            border-left-color: #28a745;
+            background-color: #f8fff8;
+        }
+        .gps-point-card.active {
+            border-left-color: #ffc107;
+            background-color: #fffbf0;
+        }
+        .gps-badge {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+        .gps-badge-pending {
+            background: #e9ecef;
+            color: #6c757d;
+        }
+        .gps-badge-captured {
+            background: #28a745;
+            color: white;
+        }
+        .gps-badge-active {
+            background: #ffc107;
+            color: #212529;
+        }
+        .point-marker {
+            background: #1B3A6B;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        .coordinate-preview {
+            font-family: monospace;
+            font-size: 12px;
+            background: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+        .accuracy-indicator {
+            display: inline-block;
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 4px;
+        }
+        .accuracy-good { background: #28a745; }
+        .accuracy-medium { background: #ffc107; }
+        .accuracy-poor { background: #dc3545; }
+    </style>
+</head>
+<body class="bg-light">
+
+<nav th:replace="~{fragments/navbar :: navbar('parcels')}"></nav>
+
+<div class="container-fluid px-4 py-4">
+
+    <!-- Flash -->
+    <div th:if="${errorMessage}"
+         class="alert alert-danger alert-dismissible fade show border-0 shadow-sm mb-4">
+        <i class="bi bi-exclamation-circle-fill me-2"></i>
+        <span th:text="${errorMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <!-- Header -->
+    <div class="d-flex align-items-start justify-content-between mb-4 flex-wrap gap-3">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1 small">
+                    <li class="breadcrumb-item">
+                        <a th:href="@{/dashboard}" class="text-muted text-decoration-none">Dashboard</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a th:href="@{/parcels}" class="text-muted text-decoration-none">Parcels</a>
+                    </li>
+                    <li class="breadcrumb-item active">New Parcel</li>
+                </ol>
+            </nav>
+            <h4 class="fw-bold text-navy mb-0">
+                <i class="bi bi-map me-2"></i>Create New Land Parcel
+            </h4>
+            <p class="text-muted small mb-0">Capture 6 GPS points to define the parcel boundary</p>
+        </div>
+        <a th:href="@{/parcels}" class="btn btn-outline-secondary px-3">
+            <i class="bi bi-arrow-left me-1"></i>Back
+        </a>
+    </div>
+
+    <form th:action="@{/parcels/create}"
+          th:object="${form}"
+          method="post"
+          id="parcelForm">
+
+        <div class="row g-4">
+
+            <!-- LEFT - Details -->
+            <div class="col-12 col-lg-5">
+
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h6 class="fw-bold text-navy mb-0">
+                            <i class="bi bi-info-circle me-2"></i>Parcel Details
+                        </h6>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-3">
+                            <!-- Stand Number -->
+                            <div class="col-12">
+                                <label for="standNumber" class="form-label">
+                                    Stand Number <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="bi bi-hash"></i>
+                                    </span>
+                                    <input type="text"
+                                           id="standNumber"
+                                           name="standNumber"
+                                           class="form-control"
+                                           placeholder="e.g. 1234"
+                                           required>
+                                </div>
+                                <div class="form-text">Must be unique within the village</div>
+                            </div>
+
+                            <!-- Parcel Type -->
+                            <div class="col-12">
+                                <label for="parcelType" class="form-label">
+                                    Parcel Type <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="bi bi-tag"></i>
+                                    </span>
+                                    <select id="parcelType"
+                                            name="parcelType"
+                                            class="form-select"
+                                            required>
+                                        <option value="">— Select Type —</option>
+                                        <option th:each="t : ${types}"
+                                                th:value="${t.name()}"
+                                                th:text="${t.displayName}">
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Traditional Authority -->
+                            <div class="col-12">
+                                <label for="traditionalAuthorityId" class="form-label">
+                                    Traditional Authority <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="bi bi-building"></i>
+                                    </span>
+                                    <select id="traditionalAuthorityId"
+                                            class="form-select"
+                                            required>
+                                        <option value="">— Select Authority —</option>
+                                        <option th:each="a : ${authorities}"
+                                                th:value="${a.id}"
+                                                th:text="${a.authorityName}">
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Village -->
+                            <div class="col-12">
+                                <label for="villageId" class="form-label">
+                                    Village <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="bi bi-houses"></i>
+                                    </span>
+                                    <select id="villageId"
+                                            name="villageId"
+                                            class="form-select"
+                                            required>
+                                        <option value="">— Select Authority First —</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Notes -->
+                            <div class="col-12">
+                                <label for="notes" class="form-label">Notes</label>
+                                <textarea id="notes"
+                                          name="notes"
+                                          class="form-control"
+                                          rows="2"
+                                          placeholder="Additional notes about this parcel..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT - GPS Points -->
+            <div class="col-12 col-lg-7">
+
+                <!-- GPS Instructions -->
+                <div class="alert alert-info mb-3">
+                    <div class="d-flex align-items-start gap-3">
+                        <i class="bi bi-info-circle-fill fs-4 mt-1"></i>
+                        <div>
+                            <div class="fw-semibold">How to capture the parcel boundary:</div>
+                            <ol class="mb-0 ps-3 small">
+                                <li>Stand at <strong>Point 1</strong> (a corner of the parcel)</li>
+                                <li>Click <strong>"Capture GPS"</strong> to record your location</li>
+                                <li>Walk to the next corner and repeat for all 6 points</li>
+                                <li>The system will automatically calculate the area</li>
+                            </ol>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GPS Points Cards -->
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h6 class="fw-bold text-navy mb-0">
+                            <i class="bi bi-geo-alt me-2"></i>GPS Boundary Points
+                            <span class="badge bg-navy ms-2" id="capturedCount">0/6 captured</span>
+                        </h6>
+                    </div>
+                    <div class="card-body p-3">
+                        <div class="row g-2" id="gpsPointsContainer">
+                            <!-- Point 1 -->
+                            <div class="col-12 col-md-6" id="pointCard1">
+                                <div class="card gps-point-card active">
+                                    <div class="card-body p-2">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="gps-badge gps-badge-active">1</div>
+                                            <div class="flex-grow-1">
+                                                <div class="fw-semibold small">Point 1</div>
+                                                <div class="coordinate-preview small" id="coord1">—</div>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-success" onclick="captureGPS(1)">
+                                                <i class="bi bi-satellite"></i> Capture
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Point 2 -->
+                            <div class="col-12 col-md-6" id="pointCard2">
+                                <div class="card gps-point-card">
+                                    <div class="card-body p-2">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="gps-badge gps-badge-pending">2</div>
+                                            <div class="flex-grow-1">
+                                                <div class="fw-semibold small">Point 2</div>
+                                                <div class="coordinate-preview small" id="coord2">—</div>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-secondary" onclick="captureGPS(2)" disabled>
+                                                <i class="bi bi-satellite"></i> Capture
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Point 3 -->
+                            <div class="col-12 col-md-6" id="pointCard3">
+                                <div class="card gps-point-card">
+                                    <div class="card-body p-2">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="gps-badge gps-badge-pending">3</div>
+                                            <div class="flex-grow-1">
+                                                <div class="fw-semibold small">Point 3</div>
+                                                <div class="coordinate-preview small" id="coord3">—</div>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-secondary" onclick="captureGPS(3)" disabled>
+                                                <i class="bi bi-satellite"></i> Capture
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Point 4 -->
+                            <div class="col-12 col-md-6" id="pointCard4">
+                                <div class="card gps-point-card">
+                                    <div class="card-body p-2">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="gps-badge gps-badge-pending">4</div>
+                                            <div class="flex-grow-1">
+                                                <div class="fw-semibold small">Point 4</div>
+                                                <div class="coordinate-preview small" id="coord4">—</div>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-secondary" onclick="captureGPS(4)" disabled>
+                                                <i class="bi bi-satellite"></i> Capture
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Point 5 -->
+                            <div class="col-12 col-md-6" id="pointCard5">
+                                <div class="card gps-point-card">
+                                    <div class="card-body p-2">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="gps-badge gps-badge-pending">5</div>
+                                            <div class="flex-grow-1">
+                                                <div class="fw-semibold small">Point 5</div>
+                                                <div class="coordinate-preview small" id="coord5">—</div>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-secondary" onclick="captureGPS(5)" disabled>
+                                                <i class="bi bi-satellite"></i> Capture
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Point 6 -->
+                            <div class="col-12 col-md-6" id="pointCard6">
+                                <div class="card gps-point-card">
+                                    <div class="card-body p-2">
+                                        <div class="d-flex align-items-center gap-2">
+                                            <div class="gps-badge gps-badge-pending">6</div>
+                                            <div class="flex-grow-1">
+                                                <div class="fw-semibold small">Point 6</div>
+                                                <div class="coordinate-preview small" id="coord6">—</div>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-secondary" onclick="captureGPS(6)" disabled>
+                                                <i class="bi bi-satellite"></i> Capture
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Map Preview -->
+                <div class="card border-0 shadow-sm mb-3">
+                    <div class="card-header bg-white border-bottom py-2">
+                        <h6 class="fw-bold text-navy mb-0">
+                            <i class="bi bi-map me-2"></i>Parcel Preview
+                        </h6>
+                    </div>
+                    <div class="card-body p-2">
+                        <div id="map"></div>
+                        <div class="d-flex justify-content-between mt-2 text-muted small">
+                            <span>Points: <span id="mapPointCount">0</span>/6</span>
+                            <span id="areaPreview">Area: —</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Hidden fields -->
+                <input type="hidden" id="boundariesJson" name="boundariesJson" value="[]">
+
+                <!-- Submit -->
+                <div class="d-flex gap-3 justify-content-end">
+                    <a th:href="@{/parcels}" class="btn btn-light px-4">
+                        <i class="bi bi-x me-1"></i>Cancel
+                    </a>
+                    <button type="submit" class="btn btn-navy px-4 fw-semibold" id="submitBtn" disabled>
+                        <i class="bi bi-save me-2"></i>Create Parcel
+                    </button>
+                </div>
+                <div class="text-muted small mt-2 text-end">
+                    <span id="validationMessage" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    // ── State ──────────────────────────────────────────────────────────────
+    const MAX_POINTS = 6;
+    const gpsPoints = [];
+
+    // ── Map Setup ──────────────────────────────────────────────────────────
+    const map = L.map('map').setView([-25.0, 28.0], 8);
+
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors'
+    }).addTo(map);
+
+    let polygonLayer = null;
+    let markers = [];
+
+    // ── Load Villages ────────────────────────────────────────────────────
+    document.getElementById('traditionalAuthorityId').addEventListener('change', function() {
+        const authorityId = this.value;
+        const villageSelect = document.getElementById('villageId');
+        villageSelect.innerHTML = '<option value="">Loading...</option>';
+
+        if (!authorityId) {
+            villageSelect.innerHTML = '<option value="">— Select Authority First —</option>';
+            return;
+        }
+
+        fetch('/parcels/villages/' + authorityId)
+            .then(r => r.json())
+            .then(villages => {
+                villageSelect.innerHTML = '<option value="">— Select Village —</option>';
+                if (villages.length === 0) {
+                    villageSelect.innerHTML = '<option value="">No villages for this authority</option>';
+                    return;
+                }
+                villages.forEach(v => {
+                    const opt = document.createElement('option');
+                    opt.value = v.id;
+                    opt.textContent = v.villageName;
+                    villageSelect.appendChild(opt);
+                });
+            })
+            .catch(err => {
+                console.error('Error loading villages:', err);
+                villageSelect.innerHTML = '<option value="">Error loading villages</option>';
+            });
+    });
+
+    // ── Capture GPS ──────────────────────────────────────────────────────
+    function captureGPS(pointNumber) {
+        if (!navigator.geolocation) {
+            alert('GPS is not supported by your browser. Please enter coordinates manually.');
+            return;
+        }
+
+        const btn = document.querySelector(`#pointCard${pointNumber} button`);
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Getting location...';
+
+        navigator.geolocation.getCurrentPosition(
+            function(position) {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+
+                if (lat < -35 || lat > -22) {
+                    alert('Latitude must be between -35 and -22 (South Africa)');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-satellite"></i> Capture';
+                    return;
+                }
+                if (lng < 16 || lng > 33) {
+                    alert('Longitude must be between 16 and 33 (South Africa)');
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-satellite"></i> Capture';
+                    return;
+                }
+
+                gpsPoints.push({ latitude: lat, longitude: lng });
+
+                const coordDisplay = document.getElementById(`coord${pointNumber}`);
+                coordDisplay.textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+                coordDisplay.className = 'coordinate-preview small text-success';
+
+                const card = document.getElementById(`pointCard${pointNumber}`);
+                card.querySelector('.card').className = 'card gps-point-card captured';
+                card.querySelector('.gps-badge').className = 'gps-badge gps-badge-captured';
+
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-check-circle"></i> Captured';
+                btn.className = 'btn btn-sm btn-success';
+
+                if (pointNumber < MAX_POINTS) {
+                    const nextBtn = document.querySelector(`#pointCard${pointNumber + 1} button`);
+                    nextBtn.disabled = false;
+                    nextBtn.className = 'btn btn-sm btn-primary';
+                    document.getElementById(`pointCard${pointNumber + 1}`).querySelector('.card').className = 'card gps-point-card active';
+                    document.getElementById(`pointCard${pointNumber + 1}`).querySelector('.gps-badge').className = 'gps-badge gps-badge-active';
+                }
+
+                updateDisplay();
+
+                if (gpsPoints.length === MAX_POINTS) {
+                    document.getElementById('submitBtn').disabled = false;
+                    document.getElementById('validationMessage').textContent = '✅ All 6 points captured! Ready to create parcel.';
+                    document.getElementById('validationMessage').className = 'text-success';
+                }
+            },
+            function(error) {
+                alert('Error getting GPS location: ' + error.message + '\nPlease try again.');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-satellite"></i> Retry';
+                btn.className = 'btn btn-sm btn-warning';
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0
+            }
+        );
+    }
+
+    // ── Update Display ──────────────────────────────────────────────────
+    function updateDisplay() {
+        document.getElementById('capturedCount').textContent = `${gpsPoints.length}/${MAX_POINTS} captured`;
+        document.getElementById('mapPointCount').textContent = gpsPoints.length;
+        document.getElementById('boundariesJson').value = JSON.stringify(gpsPoints);
+        updateMap();
+
+        if (gpsPoints.length >= 3) {
+            const area = calculateArea(gpsPoints);
+            document.getElementById('areaPreview').textContent = `Area: ${area.toFixed(2)} m² (${(area/10000).toFixed(4)} ha)`;
+        } else {
+            document.getElementById('areaPreview').textContent = 'Area: — (need 3+ points)';
+        }
+    }
+
+    // ── Update Map ──────────────────────────────────────────────────────
+    function updateMap() {
+        if (polygonLayer) {
+            map.removeLayer(polygonLayer);
+            polygonLayer = null;
+        }
+        markers.forEach(m => map.removeLayer(m));
+        markers = [];
+
+        if (gpsPoints.length === 0) return;
+
+        const latlngs = gpsPoints.map(p => [p.latitude, p.longitude]);
+
+        if (gpsPoints.length >= 3) {
+            polygonLayer = L.polygon(latlngs, {
+                color: '#1B3A6B',
+                weight: 3,
+                opacity: 0.8,
+                fillColor: '#1B3A6B',
+                fillOpacity: 0.15
+            }).addTo(map);
+            const bounds = L.latLngBounds(latlngs);
+            map.fitBounds(bounds, { padding: [20, 20] });
+        } else if (gpsPoints.length > 0) {
+            polygonLayer = L.polyline(latlngs, {
+                color: '#1B3A6B',
+                weight: 3,
+                opacity: 0.8,
+                dashArray: '5, 5'
+            }).addTo(map);
+            const bounds = L.latLngBounds(latlngs);
+            map.fitBounds(bounds, { padding: [20, 20] });
+        }
+
+        gpsPoints.forEach((p, i) => {
+            const icon = L.divIcon({
+                className: 'point-marker',
+                html: i + 1,
+                iconSize: [24, 24],
+                iconAnchor: [12, 12]
+            });
+            const marker = L.marker([p.latitude, p.longitude], {
+                icon: icon,
+                draggable: false
+            }).addTo(map);
+            marker.bindPopup(`Point ${i + 1}<br>Lat: ${p.latitude.toFixed(6)}<br>Lng: ${p.longitude.toFixed(6)}`);
+            markers.push(marker);
+        });
+    }
+
+    // ── Calculate Area ──────────────────────────────────────────────────
+    function calculateArea(points) {
+        if (points.length < 3) return 0;
+        let area = 0;
+        const n = points.length;
+        for (let i = 0; i < n; i++) {
+            const j = (i + 1) % n;
+            area += points[i].latitude * points[j].longitude;
+            area -= points[j].latitude * points[i].longitude;
+        }
+        area = Math.abs(area) / 2;
+        const latAvg = points.reduce((sum, p) => sum + p.latitude, 0) / points.length;
+        const latRad = latAvg * Math.PI / 180;
+        const scale = 111320 * Math.cos(latRad);
+        return area * scale * scale;
+    }
+
+    // ── Form Validation ──────────────────────────────────────────────────
+    document.getElementById('parcelForm').addEventListener('submit', function(e) {
+        if (gpsPoints.length < MAX_POINTS) {
+            e.preventDefault();
+            alert(`Please capture all ${MAX_POINTS} GPS points. Currently: ${gpsPoints.length}/${MAX_POINTS}`);
+            return false;
+        }
+    });
+
+    // ── Keyboard shortcut ──────────────────────────────────────────────
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+            for (let i = 1; i <= MAX_POINTS; i++) {
+                const btn = document.querySelector(`#pointCard${i} button`);
+                if (btn && !btn.disabled && btn.textContent.trim() !== 'Captured') {
+                    captureGPS(i);
+                    break;
+                }
+            }
+        }
+    });
+
+    console.log('Parcel creation ready. Capture 6 GPS points to define the boundary.');
+    console.log('Press Enter to capture the current point.');
+</script>
+</body>
+</html>

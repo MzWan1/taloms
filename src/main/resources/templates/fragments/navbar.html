@@ -61,7 +61,7 @@
                     sec:authorize="hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER')">
                     <a class="nav-link rounded-2 px-3"
                        th:classappend="${currentPage == 'parcels'} ? 'active bg-white bg-opacity-10' : ''"
-                       href="#">
+                       th:href="@{/parcels}">
                         <i class="bi bi-map me-1"></i>Parcels
                     </a>
                 </li>
