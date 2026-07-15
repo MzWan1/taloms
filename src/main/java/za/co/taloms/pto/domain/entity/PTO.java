@@ -2,6 +2,7 @@ package za.co.taloms.pto.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.springframework.security.core.context.SecurityContextHolder;
 import za.co.taloms.traditionalauthority.domain.entity.TraditionalAuthority;
 import za.co.taloms.traditionalauthority.domain.entity.Village;
 import java.time.LocalDate;
@@ -67,6 +68,36 @@ public class PTO {
     @Column(name = "approved_at")
     private LocalDateTime approvedAt;
 
+    @Column(name = "approval_notes", columnDefinition = "TEXT")
+    private String approvalNotes;
+
+    @Column(name = "suspended_by", length = 50)
+    private String suspendedBy;
+
+    @Column(name = "suspended_at")
+    private LocalDateTime suspendedAt;
+
+    @Column(name = "suspend_reason", columnDefinition = "TEXT")
+    private String suspendReason;
+
+    @Column(name = "reactivated_by", length = 50)
+    private String reactivatedBy;
+
+    @Column(name = "reactivated_at")
+    private LocalDateTime reactivatedAt;
+
+    @Column(name = "reactivate_notes", columnDefinition = "TEXT")
+    private String reactivateNotes;
+
+    @Column(name = "reinstated_by", length = 50)
+    private String reinstatedBy;
+
+    @Column(name = "reinstated_at")
+    private LocalDateTime reinstatedAt;
+
+    @Column(name = "reinstate_reason", columnDefinition = "TEXT")
+    private String reinstateReason;
+
     @Column(name = "revoked_by", length = 50)
     private String revokedBy;
 
@@ -97,13 +128,34 @@ public class PTO {
         updatedAt = LocalDateTime.now();
     }
 
-    public boolean isPending()   { return PTOStatus.PENDING   == status; }
-    public boolean isActive()    { return PTOStatus.ACTIVE    == status; }
+    public void reinstate(String reason) {
+        this.status = PTOStatus.ACTIVE;
+        this.reinstatedBy = SecurityContextHolder.getContext().getAuthentication().getName();
+        this.reinstatedAt = LocalDateTime.now();
+        this.reinstateReason = reason;
+    }
+
+    public void suspend(String reason) {
+        this.status = PTOStatus.SUSPENDED;
+        this.suspendedBy = SecurityContextHolder.getContext().getAuthentication().getName();
+        this.suspendedAt = LocalDateTime.now();
+        this.suspendReason = reason;
+    }
+
+    public void reactivate(String notes) {
+        this.status = PTOStatus.ACTIVE;
+        this.reactivatedBy = SecurityContextHolder.getContext().getAuthentication().getName();
+        this.reactivatedAt = LocalDateTime.now();
+        this.reactivateNotes = notes;
+    }
+
+    public boolean isPending()   { return PTOStatus.PENDING == status; }
+    public boolean isActive()    { return PTOStatus.ACTIVE == status; }
     public boolean isSuspended() { return PTOStatus.SUSPENDED == status; }
-    public boolean isRevoked()   { return PTOStatus.REVOKED   == status; }
-    public boolean isExpired()   { return PTOStatus.EXPIRED   == status; }
+    public boolean isRevoked()   { return PTOStatus.REVOKED == status; }
+    public boolean isExpired()   { return PTOStatus.EXPIRED == status; }
 
     public boolean canBeApproved() { return isPending() || isSuspended(); }
-    public boolean canBeRevoked()  { return isActive()  || isSuspended(); }
+    public boolean canBeRevoked()  { return isActive() || isSuspended(); }
     public boolean canBeSuspended(){ return isActive(); }
 }

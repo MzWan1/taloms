@@ -17,10 +17,10 @@ public enum PTOPurpose {
 
     public String getBadgeClass() {
         return switch (this) {
-            case RESIDENTIAL  -> "bg-primary";
-            case BUSINESS     -> "bg-purple text-white";
-            case AGRICULTURAL -> "bg-success";
-            case MIXED_USE    -> "bg-info text-dark";
+            case RESIDENTIAL  -> "bg-primary text-white";     // Dark blue with white text
+            case BUSINESS     -> "bg-dark text-white";        // Dark gray with white text
+            case AGRICULTURAL -> "bg-success text-white";     // Dark green with white text
+            case MIXED_USE    -> "bg-warning text-dark";      // Yellow with dark text
         };
     }
 }

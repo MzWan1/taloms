@@ -2,23 +2,22 @@ package za.co.taloms.pto.application.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import za.co.taloms.common.BusinessValidationException;
-import za.co.taloms.common.DuplicateRecordException;
 import za.co.taloms.common.ResourceNotFoundException;
 import za.co.taloms.pto.application.dto.*;
 import za.co.taloms.pto.domain.entity.PTO;
 import za.co.taloms.pto.domain.entity.PTOPurpose;
 import za.co.taloms.pto.domain.entity.PTOStatus;
+import za.co.taloms.pto.domain.event.*;
 import za.co.taloms.pto.domain.repository.PTORepositoryPort;
 import za.co.taloms.traditionalauthority.domain.repository.TraditionalAuthorityRepositoryPort;
 import za.co.taloms.traditionalauthority.domain.repository.VillageRepositoryPort;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
-import org.springframework.context.ApplicationEventPublisher;
-import za.co.taloms.pto.domain.event.*;
 
 @Slf4j
 @Service
@@ -26,33 +25,25 @@ import za.co.taloms.pto.domain.event.*;
 @Transactional
 public class PTOServiceImpl implements PTOService {
 
-    private final PTORepositoryPort                  ptoRepository;
-    private final PTONumberGenerator                 numberGenerator;
+    private final PTORepositoryPort ptoRepository;
+    private final PTONumberGenerator numberGenerator;
     private final TraditionalAuthorityRepositoryPort authorityRepository;
-    private final VillageRepositoryPort             villageRepository;
+    private final VillageRepositoryPort villageRepository;
     private final ApplicationEventPublisher eventPublisher;
 
     @Override
-    public PTOResponse createPTO(PTORequest request,
-                                 String createdBy) {
+    public PTOResponse createPTO(PTORequest request, String createdBy) {
         // Validate no active PTO for same ID number
-        if (ptoRepository.existsByIdNumberAndStatus(
-                request.getIdNumber(), PTOStatus.ACTIVE)) {
+        if (ptoRepository.existsByIdNumberAndStatus(request.getIdNumber(), PTOStatus.ACTIVE)) {
             throw new BusinessValidationException(
-                    "An active PTO already exists for ID number: "
-                            + request.getIdNumber());
+                    "An active PTO already exists for ID number: " + request.getIdNumber());
         }
 
-        var authority = authorityRepository
-                .findById(request.getTraditionalAuthorityId())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Traditional Authority",
-                        request.getTraditionalAuthorityId()));
+        var authority = authorityRepository.findById(request.getTraditionalAuthorityId())
+                .orElseThrow(() -> new ResourceNotFoundException("Traditional Authority", request.getTraditionalAuthorityId()));
 
-        var village = villageRepository
-                .findById(request.getVillageId())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Village", request.getVillageId()));
+        var village = villageRepository.findById(request.getVillageId())
+                .orElseThrow(() -> new ResourceNotFoundException("Village", request.getVillageId()));
 
         String ptoNumber = numberGenerator.generate();
         while (ptoRepository.existsByPtoNumber(ptoNumber)) {
@@ -76,20 +67,12 @@ public class PTOServiceImpl implements PTOService {
                 .build();
 
         var saved = ptoRepository.save(pto);
-        // Publish event
         eventPublisher.publishEvent(new PTOCreatedEvent(
-                this,
-                saved.getId(),
-                saved.getPtoNumber(),
-                saved.getPtoHolderName(),
-                saved.getVillage().getId(),
-                saved.getTraditionalAuthority().getId(),
-                createdBy));
+                this, saved.getId(), saved.getPtoNumber(),
+                saved.getPtoHolderName(), saved.getVillage().getId(),
+                saved.getTraditionalAuthority().getId(), createdBy));
 
-        log.info("Created PTO: {} for holder: {} by {}",
-                saved.getPtoNumber(),
-                saved.getPtoHolderName(),
-                createdBy);
+        log.info("Created PTO: {} for holder: {} by {}", saved.getPtoNumber(), saved.getPtoHolderName(), createdBy);
         return toResponse(saved);
     }
 
@@ -98,8 +81,7 @@ public class PTOServiceImpl implements PTOService {
     public PTOResponse findById(Long id) {
         return ptoRepository.findById(id)
                 .map(this::toResponse)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "PTO", id));
+                .orElseThrow(() -> new ResourceNotFoundException("PTO", id));
     }
 
     @Override
@@ -107,39 +89,38 @@ public class PTOServiceImpl implements PTOService {
     public PTOResponse findByPtoNumber(String ptoNumber) {
         return ptoRepository.findByPtoNumber(ptoNumber)
                 .map(this::toResponse)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "PTO not found: " + ptoNumber));
+                .orElseThrow(() -> new ResourceNotFoundException("PTO not found: " + ptoNumber));
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<PTOResponse> findAll() {
-        return ptoRepository.findAll()
-                .stream().map(this::toResponse)
+        return ptoRepository.findAll().stream()
+                .map(this::toResponse)
                 .collect(Collectors.toList());
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<PTOResponse> findByStatus(PTOStatus status) {
-        return ptoRepository.findByStatus(status)
-                .stream().map(this::toResponse)
+        return ptoRepository.findByStatus(status).stream()
+                .map(this::toResponse)
                 .collect(Collectors.toList());
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<PTOResponse> findByAuthority(Long authorityId) {
-        return ptoRepository.findByTraditionalAuthorityId(authorityId)
-                .stream().map(this::toResponse)
+        return ptoRepository.findByTraditionalAuthorityId(authorityId).stream()
+                .map(this::toResponse)
                 .collect(Collectors.toList());
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<PTOResponse> findByVillage(Long villageId) {
-        return ptoRepository.findByVillageId(villageId)
-                .stream().map(this::toResponse)
+        return ptoRepository.findByVillageId(villageId).stream()
+                .map(this::toResponse)
                 .collect(Collectors.toList());
     }
 
@@ -148,78 +129,55 @@ public class PTOServiceImpl implements PTOService {
     public List<PTOResponse> search(PTOSearchCriteria criteria) {
         return ptoRepository.findAll().stream()
                 .filter(p -> criteria.getHolderName() == null
-                        || p.getPtoHolderName().toLowerCase()
-                        .contains(criteria.getHolderName().toLowerCase()))
+                        || p.getPtoHolderName().toLowerCase().contains(criteria.getHolderName().toLowerCase()))
                 .filter(p -> criteria.getIdNumber() == null
-                        || p.getIdNumber()
-                        .contains(criteria.getIdNumber()))
+                        || p.getIdNumber().contains(criteria.getIdNumber()))
                 .filter(p -> criteria.getPtoNumber() == null
-                        || p.getPtoNumber().toLowerCase()
-                        .contains(criteria.getPtoNumber().toLowerCase()))
+                        || p.getPtoNumber().toLowerCase().contains(criteria.getPtoNumber().toLowerCase()))
                 .filter(p -> criteria.getStatus() == null
                         || p.getStatus() == criteria.getStatus())
                 .filter(p -> criteria.getPurpose() == null
                         || p.getPurpose() == criteria.getPurpose())
                 .filter(p -> criteria.getVillageId() == null
-                        || (p.getVillage() != null
-                        && p.getVillage().getId()
-                        .equals(criteria.getVillageId())))
+                        || (p.getVillage() != null && p.getVillage().getId().equals(criteria.getVillageId())))
                 .filter(p -> criteria.getAuthorityId() == null
-                        || (p.getTraditionalAuthority() != null
-                        && p.getTraditionalAuthority().getId()
-                        .equals(criteria.getAuthorityId())))
+                        || (p.getTraditionalAuthority() != null && p.getTraditionalAuthority().getId().equals(criteria.getAuthorityId())))
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public PTOResponse approvePTO(Long id,
-                                  PTOApprovalRequest request,
-                                  String approvedBy) {
+    public PTOResponse approvePTO(Long id, PTOApprovalRequest request, String approvedBy) {
         var pto = ptoRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "PTO", id));
+                .orElseThrow(() -> new ResourceNotFoundException("PTO", id));
 
         if (!pto.canBeApproved()) {
-            throw new BusinessValidationException(
-                    "PTO cannot be approved in status: "
-                            + pto.getStatus().getDisplayName());
+            throw new BusinessValidationException("PTO cannot be approved in status: " + pto.getStatus().getDisplayName());
         }
 
         pto.setStatus(PTOStatus.ACTIVE);
         pto.setApprovedBy(approvedBy);
         pto.setApprovedAt(LocalDateTime.now());
         if (request.getNotes() != null) {
-            pto.setNotes(request.getNotes());
+            pto.setApprovalNotes(request.getNotes());
         }
 
         var saved = ptoRepository.save(pto);
-
         eventPublisher.publishEvent(new PTOApprovedEvent(
-                this,
-                saved.getId(),
-                saved.getPtoNumber(),
-                saved.getPtoHolderName(),
-                approvedBy,
-                saved.getApprovedAt()));
+                this, saved.getId(), saved.getPtoNumber(),
+                saved.getPtoHolderName(), approvedBy, saved.getApprovedAt()));
 
-        log.info("PTO {} approved by {}",
-                saved.getPtoNumber(), approvedBy);
+        log.info("PTO {} approved by {}", saved.getPtoNumber(), approvedBy);
         return toResponse(saved);
     }
 
     @Override
-    public PTOResponse revokePTO(Long id,
-                                 PTORevokeRequest request,
-                                 String revokedBy) {
+    public PTOResponse revokePTO(Long id, PTORevokeRequest request, String revokedBy) {
         var pto = ptoRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "PTO", id));
+                .orElseThrow(() -> new ResourceNotFoundException("PTO", id));
 
         if (!pto.canBeRevoked()) {
-            throw new BusinessValidationException(
-                    "PTO cannot be revoked in status: "
-                            + pto.getStatus().getDisplayName());
+            throw new BusinessValidationException("PTO cannot be revoked in status: " + pto.getStatus().getDisplayName());
         }
 
         pto.setStatus(PTOStatus.REVOKED);
@@ -228,64 +186,99 @@ public class PTOServiceImpl implements PTOService {
         pto.setRevokeReason(request.getReason());
 
         var saved = ptoRepository.save(pto);
-
         eventPublisher.publishEvent(new PTORevokedEvent(
-                this,
-                saved.getId(),
-                saved.getPtoNumber(),
-                saved.getPtoHolderName(),
-                revokedBy,
-                request.getReason(),
-                saved.getRevokedAt()));
+                this, saved.getId(), saved.getPtoNumber(),
+                saved.getPtoHolderName(), revokedBy, request.getReason(), saved.getRevokedAt()));
 
-        log.info("PTO {} revoked by {} — reason: {}",
-                saved.getPtoNumber(),
-                revokedBy,
-                request.getReason());
+        log.info("PTO {} revoked by {} — reason: {}", saved.getPtoNumber(), revokedBy, request.getReason());
         return toResponse(saved);
     }
 
     @Override
-    public PTOResponse suspendPTO(Long id, String suspendedBy) {
+    public PTOResponse suspendPTO(Long id, String reason, String suspendedBy) {
         var pto = ptoRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "PTO", id));
+                .orElseThrow(() -> new ResourceNotFoundException("PTO", id));
 
         if (!pto.canBeSuspended()) {
-            throw new BusinessValidationException(
-                    "PTO cannot be suspended in status: "
-                            + pto.getStatus().getDisplayName());
+            throw new BusinessValidationException("PTO cannot be suspended in status: " + pto.getStatus().getDisplayName());
         }
 
-        pto.setStatus(PTOStatus.SUSPENDED);
+        pto.suspend(reason);
         var saved = ptoRepository.save(pto);
-        log.info("PTO {} suspended by {}",
-                saved.getPtoNumber(), suspendedBy);
+        log.info("PTO {} suspended by {} — reason: {}", saved.getPtoNumber(), suspendedBy, reason);
         return toResponse(saved);
     }
 
     @Override
-    public PTOResponse reactivatePTO(Long id, String reactivatedBy) {
+    public PTOResponse reactivatePTO(Long id, String notes, String reactivatedBy) {
         var pto = ptoRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "PTO", id));
+                .orElseThrow(() -> new ResourceNotFoundException("PTO", id));
 
         if (pto.getStatus() != PTOStatus.SUSPENDED) {
-            throw new BusinessValidationException(
-                    "Only SUSPENDED PTOs can be reactivated");
+            throw new BusinessValidationException("Only SUSPENDED PTOs can be reactivated");
         }
 
-        pto.setStatus(PTOStatus.ACTIVE);
+        pto.reactivate(notes);
         var saved = ptoRepository.save(pto);
-        log.info("PTO {} reactivated by {}",
-                saved.getPtoNumber(), reactivatedBy);
+        log.info("PTO {} reactivated by {}", saved.getPtoNumber(), reactivatedBy);
         return toResponse(saved);
+    }
+
+    @Override
+    @Transactional
+    public void reinstate(Long id, String reason) {
+        PTO pto = ptoRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("PTO not found"));
+
+        if (pto.getStatus() != PTOStatus.REVOKED) {
+            throw new BusinessValidationException("Only revoked PTOs can be reinstated");
+        }
+
+        pto.reinstate(reason);
+        ptoRepository.save(pto);
+        eventPublisher.publishEvent(new PTOReinstatedEvent(pto));
+        log.info("PTO {} reinstated with reason: {}", pto.getPtoNumber(), reason);
     }
 
     @Override
     @Transactional(readOnly = true)
     public long countByStatus(PTOStatus status) {
         return ptoRepository.countByStatus(status);
+    }
+
+    // Add to PTOServiceImpl.java
+    @Override
+    @Transactional
+    public PTOResponse updatePTO(Long id, PTORequest request, String updatedBy) {
+        var pto = ptoRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("PTO", id));
+
+        // Only allow editing if status is PENDING or SUSPENDED
+        if (pto.getStatus() != PTOStatus.PENDING && pto.getStatus() != PTOStatus.SUSPENDED) {
+            throw new BusinessValidationException(
+                    "PTO can only be edited when status is PENDING or SUSPENDED");
+        }
+
+        var authority = authorityRepository.findById(request.getTraditionalAuthorityId())
+                .orElseThrow(() -> new ResourceNotFoundException("Traditional Authority", request.getTraditionalAuthorityId()));
+
+        var village = villageRepository.findById(request.getVillageId())
+                .orElseThrow(() -> new ResourceNotFoundException("Village", request.getVillageId()));
+
+        pto.setPtoHolderName(request.getPtoHolderName());
+        pto.setIdNumber(request.getIdNumber());
+        pto.setContactPhone(request.getContactPhone());
+        pto.setContactEmail(request.getContactEmail());
+        pto.setPurpose(PTOPurpose.valueOf(request.getPurpose()));
+        pto.setIssueDate(request.getIssueDate());
+        pto.setExpiryDate(request.getExpiryDate());
+        pto.setNotes(request.getNotes());
+        pto.setVillage(village);
+        pto.setTraditionalAuthority(authority);
+
+        var saved = ptoRepository.save(pto);
+        log.info("PTO {} updated by {}", saved.getPtoNumber(), updatedBy);
+        return toResponse(saved);
     }
 
     @Override
@@ -310,16 +303,20 @@ public class PTOServiceImpl implements PTOService {
                 .issueDate(p.getIssueDate())
                 .expiryDate(p.getExpiryDate())
                 .notes(p.getNotes())
-                .villageId(p.getVillage() != null
-                        ? p.getVillage().getId() : null)
-                .villageName(p.getVillage() != null
-                        ? p.getVillage().getVillageName() : null)
-                .traditionalAuthorityId(p.getTraditionalAuthority() != null
-                        ? p.getTraditionalAuthority().getId() : null)
-                .authorityName(p.getTraditionalAuthority() != null
-                        ? p.getTraditionalAuthority().getAuthorityName() : null)
+                .villageId(p.getVillage() != null ? p.getVillage().getId() : null)
+                .villageName(p.getVillage() != null ? p.getVillage().getVillageName() : null)
+                .traditionalAuthorityId(p.getTraditionalAuthority() != null ? p.getTraditionalAuthority().getId() : null)
+                .authorityName(p.getTraditionalAuthority() != null ? p.getTraditionalAuthority().getAuthorityName() : null)
                 .approvedBy(p.getApprovedBy())
                 .approvedAt(p.getApprovedAt())
+                .suspendedBy(p.getSuspendedBy())
+                .suspendedAt(p.getSuspendedAt())
+                .suspendReason(p.getSuspendReason())
+                .reactivatedBy(p.getReactivatedBy())
+                .reactivatedAt(p.getReactivatedAt())
+                .reinstatedBy(p.getReinstatedBy())
+                .reinstatedAt(p.getReinstatedAt())
+                .reinstateReason(p.getReinstateReason())
                 .revokedBy(p.getRevokedBy())
                 .revokedAt(p.getRevokedAt())
                 .revokeReason(p.getRevokeReason())
