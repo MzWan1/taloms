@@ -1,4 +1,22 @@
 package za.co.taloms.pto.domain.repository;
 
-public class PTORepositoryPort {
+import za.co.taloms.pto.domain.entity.PTO;
+import za.co.taloms.pto.domain.entity.PTOStatus;
+import java.util.List;
+import java.util.Optional;
+
+public interface PTORepositoryPort {
+    PTO save(PTO pto);
+    Optional<PTO> findById(Long id);
+    Optional<PTO> findByPtoNumber(String ptoNumber);
+    List<PTO> findAll();
+    List<PTO> findByStatus(PTOStatus status);
+    List<PTO> findByVillageId(Long villageId);
+    List<PTO> findByTraditionalAuthorityId(Long authorityId);
+    List<PTO> findByIdNumber(String idNumber);
+    boolean existsByPtoNumber(String ptoNumber);
+    boolean existsByIdNumberAndStatus(String idNumber, PTOStatus status);
+    long countByStatus(PTOStatus status);
+    long countByTraditionalAuthorityId(Long authorityId);
+    long countAll();
 }
