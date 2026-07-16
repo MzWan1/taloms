@@ -124,6 +124,16 @@
                         <i class="bi bi-clock-history me-1"></i>Audit
                     </a>
                 </li>
+
+                <!-- GIS -->
+                <li class="nav-item"
+                    sec:authorize="hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER','ROLE_REPORT_VIEWER')">
+                    <a class="nav-link rounded-2 px-3"
+                       th:classappend="${currentPage == 'gis'} ? 'active bg-white bg-opacity-10' : ''"
+                       th:href="@{/gis}">
+                        <i class="bi bi-map me-1"></i>GIS
+                    </a>
+                </li>
             </ul>
 
             <!-- Right side -->

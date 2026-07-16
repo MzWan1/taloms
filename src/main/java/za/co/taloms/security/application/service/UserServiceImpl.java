@@ -166,7 +166,6 @@ public class UserServiceImpl implements UserService {
 
         var saved = tokenRepository.save(token);
 
-        // Send the actual email
         emailService.sendPasswordResetEmail(
                 user.getEmail(),
                 saved.getToken(),
@@ -210,7 +209,6 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException("User", userId));
 
-        // Admin reset generates a token — user must set new password on login
         tokenRepository.deleteByUserId(userId);
         var token = PasswordResetToken.builder()
                 .user(user)
@@ -225,6 +223,36 @@ public class UserServiceImpl implements UserService {
         userRepository.save(user);
         log.info("Admin password reset initiated for: {}",
                 user.getUsername());
+    }
+
+    @Override
+    public void activateUser(Long id) {
+        var user = userRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User", id));
+        user.setEnabled(true);
+        user.setAccountLocked(false);
+        user.setFailedLoginAttempts(0);
+        userRepository.save(user);
+        log.info("User activated: {}", user.getUsername());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public long countAll() {
+        return userRepository.countAll();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public long countActive() {
+        return userRepository.countByActiveTrue();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<Role> findAllRoles() {
+        return roleRepository.findAll();
     }
 
     private UserResponse toResponse(User user) {
@@ -244,17 +272,5 @@ public class UserServiceImpl implements UserService {
                 .createdAt(user.getCreatedAt())
                 .roles(roles)
                 .build();
-    }
-
-    @Override
-    public void activateUser(Long id) {
-        var user = userRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("User", id));
-        user.setEnabled(true);
-        user.setAccountLocked(false);
-        user.setFailedLoginAttempts(0);
-        userRepository.save(user);
-        log.info("User activated: {}", user.getUsername());
     }
 }
