@@ -66,6 +66,26 @@
                     </a>
                 </li>
 
+                <!-- Households -->
+                <li class="nav-item"
+                    sec:authorize="hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_DATA_CAPTURER','ROLE_REPORT_VIEWER')">
+                    <a class="nav-link rounded-2 px-3"
+                       th:classappend="${currentPage == 'households'} ? 'active bg-white bg-opacity-10' : ''"
+                       th:href="@{/households}">
+                        <i class="bi bi-people me-1"></i>Households
+                    </a>
+                </li>
+
+                <!-- Residents -->
+                <li class="nav-item"
+                    sec:authorize="hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_DATA_CAPTURER','ROLE_REPORT_VIEWER')">
+                    <a class="nav-link rounded-2 px-3"
+                       th:classappend="${currentPage == 'residents'} ? 'active bg-white bg-opacity-10' : ''"
+                       th:href="@{/residents}">
+                        <i class="bi bi-person-badge me-1"></i>Residents
+                    </a>
+                </li>
+
                 <!-- Reports -->
                 <li class="nav-item">
                     <a class="nav-link rounded-2 px-3"
@@ -75,13 +95,13 @@
                     </a>
                 </li>
 
-                <!-- Households -->
+                <!-- Business Occupancies -->
                 <li class="nav-item"
                     sec:authorize="hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_DATA_CAPTURER','ROLE_REPORT_VIEWER')">
                     <a class="nav-link rounded-2 px-3"
-                       th:classappend="${currentPage == 'households'} ? 'active bg-white bg-opacity-10' : ''"
-                       th:href="@{/households}">
-                        <i class="bi bi-people me-1"></i>Households
+                       th:classappend="${currentPage == 'business-occupancies'} ? 'active bg-white bg-opacity-10' : ''"
+                       th:href="@{/business-occupancies}">
+                        <i class="bi bi-shop me-1"></i>Business
                     </a>
                 </li>
 

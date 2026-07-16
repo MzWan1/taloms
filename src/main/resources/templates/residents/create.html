@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Resident | TALOMS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link th:href="@{/css/taloms.css}" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<nav th:replace="~{fragments/navbar :: navbar('residents')}"></nav>
+
+<div class="container-fluid px-4 py-4">
+
+    <!-- Flash -->
+    <div th:if="${errorMessage}"
+         class="alert alert-danger alert-dismissible fade show border-0 shadow-sm mb-4">
+        <i class="bi bi-exclamation-circle-fill me-2"></i>
+        <span th:text="${errorMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <!-- Header -->
+    <div class="d-flex align-items-start justify-content-between mb-4 flex-wrap gap-3">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1 small">
+                    <li class="breadcrumb-item">
+                        <a th:href="@{/dashboard}" class="text-muted text-decoration-none">Dashboard</a>
+                    </li>
+                    <li class="breadcrumb-item">
+                        <a th:href="@{/residents}" class="text-muted text-decoration-none">Residents</a>
+                    </li>
+                    <li class="breadcrumb-item active">New Resident</li>
+                </ol>
+            </nav>
+            <h4 class="fw-bold text-navy mb-0">
+                <i class="bi bi-person-plus me-2"></i>Create New Resident
+            </h4>
+            <p class="text-muted small mb-0">Register a new resident in a household</p>
+        </div>
+        <a th:href="@{/residents}" class="btn btn-outline-secondary px-3">
+            <i class="bi bi-arrow-left me-1"></i>Back
+        </a>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-12 col-lg-8">
+            <form th:action="@{/residents/create}"
+                  th:object="${form}"
+                  method="post">
+
+                <div class="card border-0 shadow-sm">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h6 class="fw-bold text-navy mb-0">
+                            <i class="bi bi-person me-2"></i>Resident Details
+                        </h6>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-3">
+                            <!-- Full Name -->
+                            <div class="col-12">
+                                <label for="fullName" class="form-label">
+                                    Full Name <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="bi bi-person"></i>
+                                    </span>
+                                    <input type="text"
+                                           id="fullName"
+                                           name="fullName"
+                                           class="form-control"
+                                           placeholder="e.g. Thabo Mokoena"
+                                           required>
+                                </div>
+                            </div>
+
+                            <!-- ID Number -->
+                            <div class="col-12 col-md-6">
+                                <label for="idNumber" class="form-label">
+                                    ID Number <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="bi bi-credit-card"></i>
+                                    </span>
+                                    <input type="text"
+                                           id="idNumber"
+                                           name="idNumber"
+                                           class="form-control"
+                                           placeholder="13-digit ID number"
+                                           maxlength="13"
+                                           required>
+                                </div>
+                                <div class="mt-1" id="idFeedback" style="display:none"></div>
+                            </div>
+
+                            <!-- Date of Birth -->
+                            <div class="col-12 col-md-6">
+                                <label for="dateOfBirth" class="form-label">
+                                    Date of Birth <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="bi bi-calendar"></i>
+                                    </span>
+                                    <input type="date"
+                                           id="dateOfBirth"
+                                           name="dateOfBirth"
+                                           class="form-control"
+                                           th:value="${form.dateOfBirth}"
+                                           required>
+                                </div>
+                            </div>
+
+                            <!-- Gender -->
+                            <div class="col-12 col-md-6">
+                                <label for="gender" class="form-label">
+                                    Gender <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="bi bi-gender-ambiguous"></i>
+                                    </span>
+                                    <select id="gender"
+                                            name="gender"
+                                            class="form-select"
+                                            required>
+                                        <option value="">— Select Gender —</option>
+                                        <option th:each="g : ${genders}"
+                                                th:value="${g.name()}"
+                                                th:text="${g.displayName}">
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Relationship Type -->
+                            <div class="col-12 col-md-6">
+                                <label for="relationshipType" class="form-label">
+                                    Relationship Type <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="bi bi-people"></i>
+                                    </span>
+                                    <select id="relationshipType"
+                                            name="relationshipType"
+                                            class="form-select"
+                                            required>
+                                        <option value="">— Select Relationship —</option>
+                                        <option th:each="r : ${relationshipTypes}"
+                                                th:value="${r.name()}"
+                                                th:text="${r.displayName}">
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Occupation -->
+                            <div class="col-12">
+                                <label for="occupation" class="form-label">Occupation</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="bi bi-briefcase"></i>
+                                    </span>
+                                    <input type="text"
+                                           id="occupation"
+                                           name="occupation"
+                                           class="form-control"
+                                           placeholder="e.g. Teacher, Farmer, etc.">
+                                </div>
+                            </div>
+
+                            <!-- Contact Phone -->
+                            <div class="col-12 col-md-6">
+                                <label for="contactPhone" class="form-label">Contact Phone</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="bi bi-telephone"></i>
+                                    </span>
+                                    <input type="tel"
+                                           id="contactPhone"
+                                           name="contactPhone"
+                                           class="form-control"
+                                           placeholder="+27XXXXXXXXX">
+                                </div>
+                            </div>
+
+                            <!-- Contact Email -->
+                            <div class="col-12 col-md-6">
+                                <label for="contactEmail" class="form-label">Contact Email</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="bi bi-envelope"></i>
+                                    </span>
+                                    <input type="email"
+                                           id="contactEmail"
+                                           name="contactEmail"
+                                           class="form-control"
+                                           placeholder="e.g. thabo@example.com">
+                                </div>
+                            </div>
+
+                            <!-- Household -->
+                            <div class="col-12">
+                                <label for="householdId" class="form-label">
+                                    Household <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="bi bi-people"></i>
+                                    </span>
+                                    <select id="householdId"
+                                            name="householdId"
+                                            class="form-select"
+                                            required>
+                                        <option value="">— Select Household —</option>
+                                        <option th:each="h : ${households}"
+                                                th:value="${h.id}"
+                                                th:text="${h.householdHeadName + ' - Stand ' + h.standNumber + ' (' + h.villageName + ')'}">
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Notes -->
+                            <div class="col-12">
+                                <label for="notes" class="form-label">Notes</label>
+                                <textarea id="notes"
+                                          name="notes"
+                                          class="form-control"
+                                          rows="2"
+                                          placeholder="Additional notes about this resident..."></textarea>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Submit -->
+                <div class="d-flex gap-3 justify-content-end mt-4 mb-4">
+                    <a th:href="@{/residents}" class="btn btn-light px-4">
+                        <i class="bi bi-x me-1"></i>Cancel
+                    </a>
+                    <button type="submit" class="btn btn-navy px-4 fw-semibold">
+                        <i class="bi bi-save me-2"></i>Create Resident
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // ── SA ID number validator (Luhn) ──────────────────────────────────────
+    document.getElementById('idNumber').addEventListener('input', function () {
+        const val = this.value.replace(/\D/g, '');
+        this.value = val;
+        const fb = document.getElementById('idFeedback');
+
+        if (val.length === 13) {
+            const valid = luhn(val);
+            fb.style.display = 'block';
+            if (valid) {
+                fb.innerHTML = '<small class="text-success"><i class="bi bi-check-circle me-1"></i>Valid SA ID</small>';
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+            } else {
+                fb.innerHTML = '<small class="text-danger"><i class="bi bi-x-circle me-1"></i>Invalid SA ID number</small>';
+                this.classList.add('is-invalid');
+                this.classList.remove('is-valid');
+            }
+        } else {
+            fb.style.display = 'none';
+            this.classList.remove('is-valid', 'is-invalid');
+        }
+    });
+
+    function luhn(id) {
+        let sum = 0;
+        for (let i = 0; i < 13; i++) {
+            let d = parseInt(id[i]);
+            if (i % 2 === 1) {
+                d *= 2;
+                if (d > 9) d -= 9;
+            }
+            sum += d;
+        }
+        return sum % 10 === 0;
+    }
+
+    // ── Phone formatter ────────────────────────────────────────────────────
+    document.getElementById('contactPhone').addEventListener('blur', function () {
+        let v = this.value.replace(/\s/g, '');
+        if (v.startsWith('0') && v.length === 10) {
+            this.value = '+27' + v.substring(1);
+        }
+    });
+</script>
+</body>
+</html>
