@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audit Trail | TALOMS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link th:href="@{/css/taloms.css}" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<nav th:replace="~{fragments/navbar :: navbar('audit')}"></nav>
+
+<div class="container-fluid px-4 py-4">
+
+    <!-- Flash Messages -->
+    <div th:if="${successMessage}"
+         class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-4">
+        <i class="bi bi-check-circle-fill me-2"></i>
+        <span th:text="${successMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${errorMessage}"
+         class="alert alert-danger alert-dismissible fade show border-0 shadow-sm mb-4">
+        <i class="bi bi-exclamation-circle-fill me-2"></i>
+        <span th:text="${errorMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <!-- Header -->
+    <div class="d-flex align-items-start justify-content-between mb-4 flex-wrap gap-3">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1 small">
+                    <li class="breadcrumb-item">
+                        <a th:href="@{/dashboard}" class="text-muted text-decoration-none">Dashboard</a>
+                    </li>
+                    <li class="breadcrumb-item active">Audit Trail</li>
+                </ol>
+            </nav>
+            <h4 class="fw-bold text-navy mb-0">
+                <i class="bi bi-clock-history me-2"></i>Audit Trail
+            </h4>
+            <p class="text-muted small mb-0">Complete audit log of all system actions (POPIA compliant)</p>
+        </div>
+        <a th:href="@{/dashboard}" class="btn btn-outline-secondary px-3">
+            <i class="bi bi-arrow-left me-1"></i>Back
+        </a>
+    </div>
+
+    <!-- KPI Row -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm text-center py-3">
+                <div class="fw-bold fs-3 text-navy" th:text="${totalCount}">0</div>
+                <div class="small text-muted">Total Audit Logs</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Search -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body py-3">
+            <form id="searchForm">
+                <div class="row g-3 align-items-end">
+                    <div class="col-12 col-md-3">
+                        <label class="form-label small mb-1">Entity Type</label>
+                        <input type="text" id="entityType" class="form-control" placeholder="e.g. PTO, PARCEL">
+                    </div>
+                    <div class="col-12 col-md-2">
+                        <label class="form-label small mb-1">Entity ID</label>
+                        <input type="number" id="entityId" class="form-control" placeholder="ID">
+                    </div>
+                    <div class="col-12 col-md-3">
+                        <label class="form-label small mb-1">Action</label>
+                        <select id="action" class="form-select">
+                            <option value="">All Actions</option>
+                            <option th:each="a : ${actions}"
+                                    th:value="${a.name()}"
+                                    th:text="${a.displayName}">
+                            </option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-2">
+                        <label class="form-label small mb-1">User</label>
+                        <input type="text" id="performedBy" class="form-control" placeholder="Username">
+                    </div>
+                    <div class="col-6 col-md-1">
+                        <button type="button" class="btn btn-navy w-100" onclick="searchAudit()">
+                            <i class="bi bi-search me-1"></i>Search
+                        </button>
+                    </div>
+                    <div class="col-6 col-md-1">
+                        <button type="button" class="btn btn-outline-secondary w-100" onclick="clearSearch()">
+                            <i class="bi bi-x-circle me-1"></i>Clear
+                        </button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Table -->
+    <div class="card border-0 shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                    <tr>
+                        <th class="px-4">#</th>
+                        <th>Entity</th>
+                        <th>Action</th>
+                        <th>Performed By</th>
+                        <th>Description</th>
+                        <th>Performed At</th>
+                        <th class="text-center">Details</th>
+                    </tr>
+                    </thead>
+                    <tbody id="auditTableBody">
+                    <tr th:if="${logs == null or logs.empty}">
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <i class="bi bi-clock-history display-5 d-block mb-2 opacity-25"></i>
+                            <span class="fw-semibold">No audit logs found</span><br>
+                            <small>Actions will be logged automatically as you use the system</small>
+                        </td>
+                    </tr>
+                    <tr th:each="log, stat : ${logs}">
+                        <td class="px-4 text-muted small" th:text="${stat.count}">1</td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <span class="fw-semibold small" th:text="${log.entityTypeDisplay}">Entity</span>
+                                <span class="text-muted" style="font-size:0.7rem" th:text="'#' + ${log.entityId}">ID</span>
+                            </div>
+                        </td>
+                        <td>
+                                <span th:class="${'badge ' + log.actionBadgeClass}"
+                                      th:text="${log.actionDisplay}">Action</span>
+                        </td>
+                        <td class="small" th:text="${log.performedBy}">User</td>
+                        <td class="small" th:text="${log.description}">Description</td>
+                        <td class="small" th:text="${log.performedAtDisplay}">Date</td>
+                        <td class="text-center">
+                            <button type="button" class="btn btn-sm btn-outline-info"
+                                    onclick="showDetails('${log.id}')"
+                                    data-bs-toggle="modal" data-bs-target="#detailsModal">
+                                <i class="bi bi-eye"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Details Modal -->
+<div class="modal fade" id="detailsModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold text-navy">Audit Log Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="detailsBody">
+                <div class="text-center py-4">
+                    <div class="spinner-border text-navy" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-light px-4" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function searchAudit() {
+        const entityType = document.getElementById('entityType').value;
+        const entityId = document.getElementById('entityId').value;
+        const action = document.getElementById('action').value;
+        const performedBy = document.getElementById('performedBy').value;
+
+        // Build search criteria
+        const criteria = {};
+        if (entityType) criteria.entityType = entityType;
+        if (entityId) criteria.entityId = parseInt(entityId);
+        if (action) criteria.action = action;
+        if (performedBy) criteria.performedBy = performedBy;
+
+        fetch('/api/audit/search', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(criteria)
+        })
+            .then(r => r.json())
+            .then(response => {
+                if (response.success) {
+                    renderTable(response.data);
+                } else {
+                    alert('Error searching audit logs: ' + response.message);
+                }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                alert('Error searching audit logs');
+            });
+    }
+
+    function renderTable(logs) {
+        const tbody = document.getElementById('auditTableBody');
+        if (!logs || logs.length === 0) {
+            tbody.innerHTML = `
+            <tr>
+                <td colspan="7" class="text-center py-5 text-muted">
+                    <i class="bi bi-clock-history display-5 d-block mb-2 opacity-25"></i>
+                    <span class="fw-semibold">No audit logs found</span>
+                </td>
+            </tr>
+        `;
+            return;
+        }
+
+        let html = '';
+        logs.forEach((log, index) => {
+            html += `
+            <tr>
+                <td class="px-4 text-muted small">${index + 1}</td>
+                <td>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="fw-semibold small">${log.entityTypeDisplay}</span>
+                        <span class="text-muted" style="font-size:0.7rem">#${log.entityId}</span>
+                    </div>
+                </td>
+                <td>
+                    <span class="badge ${log.actionBadgeClass}">${log.actionDisplay}</span>
+                </td>
+                <td class="small">${log.performedBy}</td>
+                <td class="small">${log.description || '—'}</td>
+                <td class="small">${log.performedAtDisplay}</td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-sm btn-outline-info"
+                            onclick="showDetails(${log.id})"
+                            data-bs-toggle="modal" data-bs-target="#detailsModal">
+                        <i class="bi bi-eye"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+        });
+        tbody.innerHTML = html;
+    }
+
+    function showDetails(id) {
+        const body = document.getElementById('detailsBody');
+        body.innerHTML = `
+        <div class="text-center py-4">
+            <div class="spinner-border text-navy" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+        </div>
+    `;
+
+        fetch('/api/audit/' + id)
+            .then(r => r.json())
+            .then(response => {
+                if (response.success) {
+                    const log = response.data;
+                    body.innerHTML = `
+                    <div class="row g-3">
+                        <div class="col-6">
+                            <div class="small text-muted">Entity</div>
+                            <div class="fw-semibold">${log.entityTypeDisplay} #${log.entityId}</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="small text-muted">Action</div>
+                            <div><span class="badge ${log.actionBadgeClass}">${log.actionDisplay}</span></div>
+                        </div>
+                        <div class="col-6">
+                            <div class="small text-muted">Performed By</div>
+                            <div class="fw-semibold">${log.performedBy}</div>
+                        </div>
+                        <div class="col-6">
+                            <div class="small text-muted">Performed At</div>
+                            <div class="fw-semibold">${log.performedAtDisplay}</div>
+                        </div>
+                        <div class="col-12">
+                            <div class="small text-muted">Description</div>
+                            <div>${log.description || '—'}</div>
+                        </div>
+                        <div class="col-12">
+                            <div class="small text-muted">IP Address</div>
+                            <div>${log.ipAddress || '—'}</div>
+                        </div>
+                        ${log.previousValue ? `
+                        <div class="col-12">
+                            <div class="small text-muted">Previous Value</div>
+                            <pre class="bg-light p-2 rounded small" style="max-height:150px;overflow:auto">${JSON.stringify(JSON.parse(log.previousValue), null, 2)}</pre>
+                        </div>
+                        ` : ''}
+                        ${log.newValue ? `
+                        <div class="col-12">
+                            <div class="small text-muted">New Value</div>
+                            <pre class="bg-light p-2 rounded small" style="max-height:150px;overflow:auto">${JSON.stringify(JSON.parse(log.newValue), null, 2)}</pre>
+                        </div>
+                        ` : ''}
+                    </div>
+                `;
+                } else {
+                    body.innerHTML = `<div class="alert alert-danger">${response.message}</div>`;
+                }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                body.innerHTML = `<div class="alert alert-danger">Error loading audit details</div>`;
+            });
+    }
+
+    function clearSearch() {
+        document.getElementById('entityType').value = '';
+        document.getElementById('entityId').value = '';
+        document.getElementById('action').value = '';
+        document.getElementById('performedBy').value = '';
+        location.reload();
+    }
+</script>
+</body>
+</html>

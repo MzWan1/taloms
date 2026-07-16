@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports | TALOMS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link th:href="@{/css/taloms.css}" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<nav th:replace="~{fragments/navbar :: navbar('reports')}"></nav>
+
+<div class="container-fluid px-4 py-4">
+
+    <!-- Flash Messages -->
+    <div th:if="${successMessage}"
+         class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-4">
+        <i class="bi bi-check-circle-fill me-2"></i>
+        <span th:text="${successMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${errorMessage}"
+         class="alert alert-danger alert-dismissible fade show border-0 shadow-sm mb-4">
+        <i class="bi bi-exclamation-circle-fill me-2"></i>
+        <span th:text="${errorMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <!-- Header -->
+    <div class="d-flex align-items-start justify-content-between mb-4 flex-wrap gap-3">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1 small">
+                    <li class="breadcrumb-item">
+                        <a th:href="@{/dashboard}" class="text-muted text-decoration-none">Dashboard</a>
+                    </li>
+                    <li class="breadcrumb-item active">Reports</li>
+                </ol>
+            </nav>
+            <h4 class="fw-bold text-navy mb-0">
+                <i class="bi bi-bar-chart me-2"></i>Report Generation
+            </h4>
+            <p class="text-muted small mb-0">Generate PDF and Excel reports</p>
+        </div>
+        <a th:href="@{/dashboard}" class="btn btn-outline-secondary px-3">
+            <i class="bi bi-arrow-left me-1"></i>Back
+        </a>
+    </div>
+
+    <!-- KPI Row -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm text-center py-3">
+                <div class="fw-bold fs-3 text-navy" th:text="${totalPTOs}">0</div>
+                <div class="small text-muted">Total PTOs</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm text-center py-3">
+                <div class="fw-bold fs-3 text-success" th:text="${activePTOs}">0</div>
+                <div class="small text-muted">Active PTOs</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm text-center py-3">
+                <div class="fw-bold fs-3 text-info" th:text="${totalParcels}">0</div>
+                <div class="small text-muted">Total Parcels</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card border-0 shadow-sm text-center py-3">
+                <div class="fw-bold fs-3 text-success" th:text="${availableParcels}">0</div>
+                <div class="small text-muted">Available Parcels</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Cards -->
+    <div class="row g-4">
+
+        <!-- PTO Report -->
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center p-4">
+                    <div class="report-icon bg-primary">
+                        <i class="bi bi-file-earmark-text text-white fs-1"></i>
+                    </div>
+                    <h5 class="fw-bold mt-3">PTO Report</h5>
+                    <p class="text-muted small">Generate PTO records report</p>
+                    <hr>
+                    <div class="d-grid gap-2">
+                        <a href="#" class="btn btn-outline-primary btn-sm"
+                           onclick="generateReport('PTO', 'PDF')">
+                            <i class="bi bi-file-earmark-pdf"></i> Export PDF
+                        </a>
+                        <a href="#" class="btn btn-outline-success btn-sm"
+                           onclick="generateReport('PTO', 'EXCEL')">
+                            <i class="bi bi-file-earmark-excel"></i> Export Excel
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Parcel Report -->
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center p-4">
+                    <div class="report-icon bg-success">
+                        <i class="bi bi-map text-white fs-1"></i>
+                    </div>
+                    <h5 class="fw-bold mt-3">Parcel Report</h5>
+                    <p class="text-muted small">Generate parcel records report</p>
+                    <hr>
+                    <div class="d-grid gap-2">
+                        <a href="#" class="btn btn-outline-primary btn-sm"
+                           onclick="generateReport('PARCEL', 'PDF')">
+                            <i class="bi bi-file-earmark-pdf"></i> Export PDF
+                        </a>
+                        <a href="#" class="btn btn-outline-success btn-sm"
+                           onclick="generateReport('PARCEL', 'EXCEL')">
+                            <i class="bi bi-file-earmark-excel"></i> Export Excel
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Population Report -->
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center p-4">
+                    <div class="report-icon bg-info">
+                        <i class="bi bi-people text-white fs-1"></i>
+                    </div>
+                    <h5 class="fw-bold mt-3">Population Report</h5>
+                    <p class="text-muted small">Generate population demographics report</p>
+                    <hr>
+                    <div class="d-grid gap-2">
+                        <a href="#" class="btn btn-outline-primary btn-sm"
+                           onclick="generateReport('POPULATION', 'PDF')">
+                            <i class="bi bi-file-earmark-pdf"></i> Export PDF
+                        </a>
+                        <a href="#" class="btn btn-outline-success btn-sm"
+                           onclick="generateReport('POPULATION', 'EXCEL')">
+                            <i class="bi bi-file-earmark-excel"></i> Export Excel
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Land Utilisation Report -->
+        <div class="col-12 col-md-6 col-lg-3">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body text-center p-4">
+                    <div class="report-icon bg-warning">
+                        <i class="bi bi-pie-chart text-white fs-1"></i>
+                    </div>
+                    <h5 class="fw-bold mt-3">Land Utilisation</h5>
+                    <p class="text-muted small">Generate land utilisation report</p>
+                    <hr>
+                    <div class="d-grid gap-2">
+                        <a href="#" class="btn btn-outline-primary btn-sm"
+                           onclick="generateReport('LAND_UTILISATION', 'PDF')">
+                            <i class="bi bi-file-earmark-pdf"></i> Export PDF
+                        </a>
+                        <a href="#" class="btn btn-outline-success btn-sm"
+                           onclick="generateReport('LAND_UTILISATION', 'EXCEL')">
+                            <i class="bi bi-file-earmark-excel"></i> Export Excel
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Filters -->
+    <div class="card border-0 shadow-sm mt-4">
+        <div class="card-header bg-white border-bottom py-3">
+            <h6 class="fw-bold text-navy mb-0">
+                <i class="bi bi-funnel me-2"></i>Report Filters
+            </h6>
+        </div>
+        <div class="card-body p-4">
+            <form id="reportFilterForm">
+                <div class="row g-3">
+                    <div class="col-12 col-md-3">
+                        <label class="form-label small">Authority</label>
+                        <select id="authorityId" class="form-select">
+                            <option value="">All Authorities</option>
+                            <option th:each="a : ${authorities}"
+                                    th:value="${a.id}"
+                                    th:text="${a.authorityName}">
+                            </option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-3">
+                        <label class="form-label small">Village</label>
+                        <select id="villageId" class="form-select">
+                            <option value="">All Villages</option>
+                            <option th:each="v : ${villages}"
+                                    th:value="${v.id}"
+                                    th:text="${v.villageName}">
+                            </option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-3">
+                        <label class="form-label small">Date From</label>
+                        <input type="date" id="dateFrom" class="form-control">
+                    </div>
+                    <div class="col-12 col-md-3">
+                        <label class="form-label small">Date To</label>
+                        <input type="date" id="dateTo" class="form-control">
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<style>
+    .report-icon {
+        width: 64px;
+        height: 64px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto;
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    function generateReport(reportType, format) {
+        // Get filter values
+        const authorityId = document.getElementById('authorityId').value;
+        const villageId = document.getElementById('villageId').value;
+        const dateFrom = document.getElementById('dateFrom').value;
+        const dateTo = document.getElementById('dateTo').value;
+
+        // Build request - ensure format is sent correctly
+        const request = {
+            reportType: reportType,
+            format: format,  // This should be "PDF" or "EXCEL"
+            authorityId: authorityId ? parseInt(authorityId) : null,
+            villageId: villageId ? parseInt(villageId) : null,
+            dateFrom: dateFrom || null,
+            dateTo: dateTo || null
+        };
+
+        console.log('Sending request:', request);  // Debug log
+
+        // Map report type to endpoint
+        const endpoints = {
+            'PTO': '/api/reports/pto',
+            'PARCEL': '/api/reports/parcel',
+            'POPULATION': '/api/reports/population',
+            'LAND_UTILISATION': '/api/reports/land-utilisation'
+        };
+
+        const endpoint = endpoints[reportType];
+        if (!endpoint) {
+            alert('Invalid report type');
+            return;
+        }
+
+        // Show loading
+        const btn = event.target.closest('a');
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Generating...';
+        btn.disabled = true;
+
+        // Make API call
+        fetch(endpoint, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(request)
+        })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Failed to generate report');
+                }
+                // Get filename from Content-Disposition header if available
+                const contentDisposition = response.headers.get('Content-Disposition');
+                let filename = `${reportType}_Report_${new Date().toISOString().slice(0,10)}.${format === 'EXCEL' ? 'xlsx' : 'pdf'}`;
+                if (contentDisposition) {
+                    const match = contentDisposition.match(/filename="?([^"]+)"?/);
+                    if (match) filename = match[1];
+                }
+                return response.blob().then(blob => ({ blob, filename }));
+            })
+            .then(({ blob, filename }) => {
+                // Create download link
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                window.URL.revokeObjectURL(url);
+                document.body.removeChild(a);
+
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error generating report: ' + error.message);
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            });
+    }
+</script>
+</body>
+</html>

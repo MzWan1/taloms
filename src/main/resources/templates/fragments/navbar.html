@@ -90,7 +90,7 @@
                 <li class="nav-item">
                     <a class="nav-link rounded-2 px-3"
                        th:classappend="${currentPage == 'reports'} ? 'active bg-white bg-opacity-10' : ''"
-                       href="#">
+                       th:href="@{/reports}">
                         <i class="bi bi-bar-chart me-1"></i>Reports
                     </a>
                 </li>
@@ -115,6 +115,15 @@
                     </a>
                 </li>
 
+                <!-- Audit -->
+                <li class="nav-item"
+                    sec:authorize="hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')">
+                    <a class="nav-link rounded-2 px-3"
+                       th:classappend="${currentPage == 'audit'} ? 'active bg-white bg-opacity-10' : ''"
+                       th:href="@{/audit}">
+                        <i class="bi bi-clock-history me-1"></i>Audit
+                    </a>
+                </li>
             </ul>
 
             <!-- Right side -->
