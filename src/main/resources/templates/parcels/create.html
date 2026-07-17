@@ -125,7 +125,8 @@
     <form th:action="@{/parcels/create}"
           th:object="${form}"
           method="post"
-          id="parcelForm">
+          id="parcelForm"
+          novalidate>
 
         <div class="row g-4">
 
@@ -153,6 +154,7 @@
                                            id="standNumber"
                                            name="standNumber"
                                            class="form-control"
+                                           th:value="${form.standNumber}"
                                            placeholder="e.g. 1234"
                                            required>
                                 </div>
@@ -175,7 +177,8 @@
                                         <option value="">— Select Type —</option>
                                         <option th:each="t : ${types}"
                                                 th:value="${t.name()}"
-                                                th:text="${t.displayName}">
+                                                th:text="${t.displayName}"
+                                                th:selected="${form.parcelType == t.name()}">
                                         </option>
                                     </select>
                                 </div>
@@ -398,7 +401,7 @@
                     </button>
                 </div>
                 <div class="text-muted small mt-2 text-end">
-                    <span id="validationMessage" class="text-danger"></span>
+                    <span id="validationMessage" class="text-danger">Please capture all 6 GPS points</span>
                 </div>
             </div>
         </div>
@@ -411,6 +414,7 @@
     // ── State ──────────────────────────────────────────────────────────────
     const MAX_POINTS = 6;
     const gpsPoints = [];
+    let isSubmitting = false;
 
     // ── Map Setup ──────────────────────────────────────────────────────────
     const map = L.map('map').setView([-25.0, 28.0], 8);
@@ -434,13 +438,20 @@
         }
 
         fetch('/parcels/villages/' + authorityId)
-            .then(r => r.json())
+            .then(r => {
+                if (!r.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return r.json();
+            })
             .then(villages => {
                 villageSelect.innerHTML = '<option value="">— Select Village —</option>';
-                if (villages.length === 0) {
+                if (!villages || villages.length === 0) {
                     villageSelect.innerHTML = '<option value="">No villages for this authority</option>';
                     return;
                 }
+                // Sort villages by name
+                villages.sort((a, b) => a.villageName.localeCompare(b.villageName));
                 villages.forEach(v => {
                     const opt = document.createElement('option');
                     opt.value = v.id;
@@ -456,6 +467,8 @@
 
     // ── Capture GPS ──────────────────────────────────────────────────────
     function captureGPS(pointNumber) {
+        if (isSubmitting) return;
+
         if (!navigator.geolocation) {
             alert('GPS is not supported by your browser. Please enter coordinates manually.');
             return;
@@ -469,24 +482,40 @@
             function(position) {
                 const lat = position.coords.latitude;
                 const lng = position.coords.longitude;
+                const accuracy = position.coords.accuracy;
 
+                // Validate coordinates are within South Africa
                 if (lat < -35 || lat > -22) {
                     alert('Latitude must be between -35 and -22 (South Africa)');
                     btn.disabled = false;
                     btn.innerHTML = '<i class="bi bi-satellite"></i> Capture';
+                    btn.className = 'btn btn-sm btn-warning';
                     return;
                 }
                 if (lng < 16 || lng > 33) {
                     alert('Longitude must be between 16 and 33 (South Africa)');
                     btn.disabled = false;
                     btn.innerHTML = '<i class="bi bi-satellite"></i> Capture';
+                    btn.className = 'btn btn-sm btn-warning';
                     return;
                 }
 
-                gpsPoints.push({ latitude: lat, longitude: lng });
+                // Add point to array with sequence number
+                gpsPoints.push({ latitude: lat, longitude: lng, sequence: pointNumber });
 
+                // Update UI
                 const coordDisplay = document.getElementById(`coord${pointNumber}`);
-                coordDisplay.textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+                let accuracyClass = 'accuracy-good';
+                let accuracyText = 'Good';
+                if (accuracy > 50) {
+                    accuracyClass = 'accuracy-medium';
+                    accuracyText = 'Medium';
+                }
+                if (accuracy > 100) {
+                    accuracyClass = 'accuracy-poor';
+                    accuracyText = 'Poor';
+                }
+                coordDisplay.innerHTML = `<span class="accuracy-indicator ${accuracyClass}"></span> ${lat.toFixed(6)}, ${lng.toFixed(6)} (${accuracyText} ±${Math.round(accuracy)}m)`;
                 coordDisplay.className = 'coordinate-preview small text-success';
 
                 const card = document.getElementById(`pointCard${pointNumber}`);
@@ -497,6 +526,7 @@
                 btn.innerHTML = '<i class="bi bi-check-circle"></i> Captured';
                 btn.className = 'btn btn-sm btn-success';
 
+                // Enable next point
                 if (pointNumber < MAX_POINTS) {
                     const nextBtn = document.querySelector(`#pointCard${pointNumber + 1} button`);
                     nextBtn.disabled = false;
@@ -507,21 +537,38 @@
 
                 updateDisplay();
 
+                // Enable submit when all points are captured
                 if (gpsPoints.length === MAX_POINTS) {
                     document.getElementById('submitBtn').disabled = false;
-                    document.getElementById('validationMessage').textContent = '✅ All 6 points captured! Ready to create parcel.';
-                    document.getElementById('validationMessage').className = 'text-success';
+                    const msg = document.getElementById('validationMessage');
+                    msg.textContent = '✅ All 6 points captured! Ready to create parcel.';
+                    msg.className = 'text-success';
                 }
             },
             function(error) {
-                alert('Error getting GPS location: ' + error.message + '\nPlease try again.');
+                console.error('GPS Error:', error);
+                let errorMsg = 'Error getting GPS location: ';
+                switch(error.code) {
+                    case error.PERMISSION_DENIED:
+                        errorMsg += 'Permission denied. Please allow location access.';
+                        break;
+                    case error.POSITION_UNAVAILABLE:
+                        errorMsg += 'Location unavailable. Please enable GPS.';
+                        break;
+                    case error.TIMEOUT:
+                        errorMsg += 'Location request timed out. Please try again.';
+                        break;
+                    default:
+                        errorMsg += error.message;
+                }
+                alert(errorMsg + '\nPlease try again.');
                 btn.disabled = false;
                 btn.innerHTML = '<i class="bi bi-satellite"></i> Retry';
                 btn.className = 'btn btn-sm btn-warning';
             },
             {
                 enableHighAccuracy: true,
-                timeout: 10000,
+                timeout: 15000,
                 maximumAge: 0
             }
         );
@@ -553,7 +600,9 @@
 
         if (gpsPoints.length === 0) return;
 
-        const latlngs = gpsPoints.map(p => [p.latitude, p.longitude]);
+        // Sort points by sequence for proper polygon formation
+        const sortedPoints = [...gpsPoints].sort((a, b) => a.sequence - b.sequence);
+        const latlngs = sortedPoints.map(p => [p.latitude, p.longitude]);
 
         if (gpsPoints.length >= 3) {
             polygonLayer = L.polygon(latlngs, {
@@ -576,10 +625,11 @@
             map.fitBounds(bounds, { padding: [20, 20] });
         }
 
-        gpsPoints.forEach((p, i) => {
+        // Add markers
+        sortedPoints.forEach((p, i) => {
             const icon = L.divIcon({
                 className: 'point-marker',
-                html: i + 1,
+                html: p.sequence || i + 1,
                 iconSize: [24, 24],
                 iconAnchor: [12, 12]
             });
@@ -587,23 +637,27 @@
                 icon: icon,
                 draggable: false
             }).addTo(map);
-            marker.bindPopup(`Point ${i + 1}<br>Lat: ${p.latitude.toFixed(6)}<br>Lng: ${p.longitude.toFixed(6)}`);
+            marker.bindPopup(`Point ${p.sequence || i + 1}<br>Lat: ${p.latitude.toFixed(6)}<br>Lng: ${p.longitude.toFixed(6)}`);
             markers.push(marker);
         });
     }
 
-    // ── Calculate Area ──────────────────────────────────────────────────
+    // ── Calculate Area (Shoelace formula with Mercator projection) ──
     function calculateArea(points) {
         if (points.length < 3) return 0;
+
+        // Sort points by sequence
+        const sorted = [...points].sort((a, b) => a.sequence - b.sequence);
+
         let area = 0;
-        const n = points.length;
+        const n = sorted.length;
         for (let i = 0; i < n; i++) {
             const j = (i + 1) % n;
-            area += points[i].latitude * points[j].longitude;
-            area -= points[j].latitude * points[i].longitude;
+            area += sorted[i].latitude * sorted[j].longitude;
+            area -= sorted[j].latitude * sorted[i].longitude;
         }
         area = Math.abs(area) / 2;
-        const latAvg = points.reduce((sum, p) => sum + p.latitude, 0) / points.length;
+        const latAvg = sorted.reduce((sum, p) => sum + p.latitude, 0) / sorted.length;
         const latRad = latAvg * Math.PI / 180;
         const scale = 111320 * Math.cos(latRad);
         return area * scale * scale;
@@ -611,16 +665,46 @@
 
     // ── Form Validation ──────────────────────────────────────────────────
     document.getElementById('parcelForm').addEventListener('submit', function(e) {
+        if (isSubmitting) {
+            e.preventDefault();
+            return false;
+        }
+
         if (gpsPoints.length < MAX_POINTS) {
             e.preventDefault();
+            const msg = document.getElementById('validationMessage');
+            msg.textContent = `⚠️ Please capture all ${MAX_POINTS} GPS points. Currently: ${gpsPoints.length}/${MAX_POINTS}`;
+            msg.className = 'text-danger';
             alert(`Please capture all ${MAX_POINTS} GPS points. Currently: ${gpsPoints.length}/${MAX_POINTS}`);
             return false;
         }
+
+        // Verify all points have valid coordinates
+        for (let i = 0; i < gpsPoints.length; i++) {
+            const p = gpsPoints[i];
+            if (!p.latitude || !p.longitude || isNaN(p.latitude) || isNaN(p.longitude)) {
+                e.preventDefault();
+                alert('Invalid GPS coordinates detected. Please re-capture point ' + (i + 1));
+                return false;
+            }
+        }
+
+        isSubmitting = true;
+        document.getElementById('submitBtn').disabled = true;
+        document.getElementById('submitBtn').innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Creating...';
+        return true;
     });
 
     // ── Keyboard shortcut ──────────────────────────────────────────────
     document.addEventListener('keydown', function(e) {
         if (e.key === 'Enter' && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+            // Check if we're in a form input
+            const activeElement = document.activeElement;
+            if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.tagName === 'SELECT')) {
+                // Don't interfere with form inputs
+                return;
+            }
+
             for (let i = 1; i <= MAX_POINTS; i++) {
                 const btn = document.querySelector(`#pointCard${i} button`);
                 if (btn && !btn.disabled && btn.textContent.trim() !== 'Captured') {

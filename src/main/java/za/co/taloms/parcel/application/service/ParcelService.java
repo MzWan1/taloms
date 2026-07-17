@@ -8,6 +8,7 @@ import za.co.taloms.parcel.domain.entity.ParcelType;
 import java.util.List;
 
 public interface ParcelService {
+    List<ParcelResponse> findAllAvailable();
     ParcelResponse createParcel(ParcelRequest request, String createdBy);
     ParcelResponse updateParcel(Long id, ParcelRequest request, String updatedBy);
     ParcelResponse findById(Long id);

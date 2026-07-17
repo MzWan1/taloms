@@ -17,6 +17,8 @@ import za.co.taloms.traditionalauthority.application.service.TraditionalAuthorit
 import za.co.taloms.traditionalauthority.application.service.VillageService;
 import java.time.LocalDate;
 import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Controller
@@ -64,8 +66,20 @@ public class HouseholdPageController {
                         .build());
             }
 
-            // Get available parcels for dropdown
-            var availableParcels = parcelService.findAvailable(0L); // Get all available
+            // Get ALL available parcels - not filtered by village
+            List<za.co.taloms.parcel.application.dto.ParcelResponse> availableParcels;
+            try {
+                // Get all parcels and filter for AVAILABLE status
+                var allParcels = parcelService.findAll();
+                availableParcels = allParcels.stream()
+                        .filter(p -> p.getStatus() == ParcelStatus.AVAILABLE)
+                        .collect(Collectors.toList());
+                log.info("Found {} available parcels for household creation", availableParcels.size());
+            } catch (Exception e) {
+                log.error("Error loading available parcels: {}", e.getMessage(), e);
+                availableParcels = Collections.emptyList();
+            }
+
             model.addAttribute("authorities", authorities);
             model.addAttribute("availableParcels", availableParcels);
             model.addAttribute("pageTitle", "Create Household");
@@ -92,6 +106,13 @@ public class HouseholdPageController {
                 request.getHouseholdHeadName(), request.getParcelId());
 
         try {
+            // Validate that a parcel was selected
+            if (request.getParcelId() == null) {
+                ra.addFlashAttribute("errorMessage", "❌ Please select a parcel for this household.");
+                ra.addFlashAttribute("form", request);
+                return "redirect:/households/create";
+            }
+
             var response = householdService.createHousehold(request, userDetails.getUsername());
             ra.addFlashAttribute("successMessage",
                     "✅ Household created successfully for " + response.getHouseholdHeadName() + ".");
@@ -136,7 +157,20 @@ public class HouseholdPageController {
                     .build();
 
             var authorities = authorityService.findAllActive();
-            var availableParcels = parcelService.findAvailable(0L);
+
+            // Get all available parcels for the dropdown, including the current one
+            List<za.co.taloms.parcel.application.dto.ParcelResponse> availableParcels;
+            try {
+                var allParcels = parcelService.findAll();
+                availableParcels = allParcels.stream()
+                        .filter(p -> p.getStatus() == ParcelStatus.AVAILABLE ||
+                                p.getId().equals(household.getParcelId()))
+                        .collect(Collectors.toList());
+                log.info("Found {} available parcels for household edit", availableParcels.size());
+            } catch (Exception e) {
+                log.error("Error loading available parcels: {}", e.getMessage(), e);
+                availableParcels = Collections.emptyList();
+            }
 
             model.addAttribute("household", household);
             model.addAttribute("form", form);
@@ -159,6 +193,13 @@ public class HouseholdPageController {
             RedirectAttributes ra) {
 
         try {
+            // Validate that a parcel was selected
+            if (request.getParcelId() == null) {
+                ra.addFlashAttribute("errorMessage", "❌ Please select a parcel for this household.");
+                ra.addFlashAttribute("form", request);
+                return "redirect:/households/" + id + "/edit";
+            }
+
             var response = householdService.updateHousehold(id, request, userDetails.getUsername());
             ra.addFlashAttribute("successMessage",
                     "✅ Household updated successfully for " + response.getHouseholdHeadName() + ".");

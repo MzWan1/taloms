@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ParcelRepositoryPort {
+    List<Parcel> findAllAvailable();
     Parcel save(Parcel parcel);
     Optional<Parcel> findById(Long id);
     Optional<Parcel> findByParcelNumber(String parcelNumber);

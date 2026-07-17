@@ -1,5 +1,8 @@
 package za.co.taloms.parcel.presentation;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -8,6 +11,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import za.co.taloms.parcel.application.dto.BoundaryPointDto;
 import za.co.taloms.parcel.application.dto.ParcelRequest;
 import za.co.taloms.parcel.application.dto.ParcelResponse;
 import za.co.taloms.parcel.application.service.ParcelService;
@@ -15,7 +19,10 @@ import za.co.taloms.parcel.domain.entity.ParcelStatus;
 import za.co.taloms.parcel.domain.entity.ParcelType;
 import za.co.taloms.traditionalauthority.application.service.TraditionalAuthorityService;
 import za.co.taloms.traditionalauthority.application.service.VillageService;
+
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 @Slf4j
 @Controller
@@ -26,6 +33,7 @@ public class ParcelPageController {
     private final ParcelService parcelService;
     private final TraditionalAuthorityService authorityService;
     private final VillageService villageService;
+    private final ObjectMapper objectMapper;
 
     @GetMapping
     public String list(Model model) {
@@ -87,20 +95,45 @@ public class ParcelPageController {
 
     @PostMapping("/create")
     public String create(
+            @RequestParam(value = "boundariesJson", required = false, defaultValue = "[]") String boundariesJson,
             @ModelAttribute ParcelRequest request,
             @AuthenticationPrincipal UserDetails userDetails,
             RedirectAttributes ra) {
 
-        log.info("Creating parcel - Stand: {}, Type: {}, Village: {}",
-                request.getStandNumber(), request.getParcelType(), request.getVillageId());
+        log.info("Creating parcel - Stand: {}, Type: {}, Village: {}, Boundaries JSON length: {}",
+                request.getStandNumber(), request.getParcelType(), request.getVillageId(),
+                boundariesJson != null ? boundariesJson.length() : 0);
 
         try {
+            // Parse the JSON boundaries
+            List<BoundaryPointDto> boundaries = parseBoundariesJson(boundariesJson);
+
+            log.info("Parsed {} boundary points from JSON", boundaries != null ? boundaries.size() : 0);
+
+            // Validate boundaries
+            if (boundaries == null || boundaries.size() < 3) {
+                String errorMsg = "❌ Please capture at least 3 GPS boundary points. Currently: " +
+                        (boundaries != null ? boundaries.size() : 0) + " points.";
+                log.warn(errorMsg);
+                ra.addFlashAttribute("errorMessage", errorMsg);
+                ra.addFlashAttribute("form", request);
+                return "redirect:/parcels/create";
+            }
+
+            // Set boundaries on the request
+            request.setBoundaries(boundaries);
+
             var response = parcelService.createParcel(request, userDetails.getUsername());
             ra.addFlashAttribute("successMessage",
                     "✅ Parcel " + response.getParcelNumber() +
                             " created successfully for stand " + response.getStandNumber() + ".");
             return "redirect:/parcels";
 
+        } catch (JsonProcessingException e) {
+            log.error("Error parsing boundaries JSON: {}", e.getMessage(), e);
+            ra.addFlashAttribute("errorMessage", "❌ Invalid boundary data format: " + e.getMessage());
+            ra.addFlashAttribute("form", request);
+            return "redirect:/parcels/create";
         } catch (Exception e) {
             log.error("Error creating parcel: {}", e.getMessage(), e);
             ra.addFlashAttribute("errorMessage", "❌ Error creating parcel: " + e.getMessage());
@@ -157,15 +190,32 @@ public class ParcelPageController {
     @PostMapping("/{id}/edit")
     public String update(
             @PathVariable Long id,
+            @RequestParam(value = "boundariesJson", required = false, defaultValue = "[]") String boundariesJson,
             @ModelAttribute ParcelRequest request,
             @AuthenticationPrincipal UserDetails userDetails,
             RedirectAttributes ra) {
 
         try {
+            // Parse the JSON boundaries
+            List<BoundaryPointDto> boundaries = parseBoundariesJson(boundariesJson);
+
+            // Validate boundaries
+            if (boundaries == null || boundaries.size() < 3) {
+                ra.addFlashAttribute("errorMessage", "❌ Please provide at least 3 GPS boundary points.");
+                ra.addFlashAttribute("form", request);
+                return "redirect:/parcels/" + id + "/edit";
+            }
+
+            request.setBoundaries(boundaries);
+
             var response = parcelService.updateParcel(id, request, userDetails.getUsername());
             ra.addFlashAttribute("successMessage",
                     "✅ Parcel " + response.getParcelNumber() + " updated successfully.");
             return "redirect:/parcels/" + id;
+        } catch (JsonProcessingException e) {
+            log.error("Error parsing boundaries JSON: {}", e.getMessage(), e);
+            ra.addFlashAttribute("errorMessage", "❌ Invalid boundary data format: " + e.getMessage());
+            return "redirect:/parcels/" + id + "/edit";
         } catch (Exception e) {
             log.error("Error updating parcel: {}", e.getMessage(), e);
             ra.addFlashAttribute("errorMessage", "❌ Error updating parcel: " + e.getMessage());
@@ -201,6 +251,23 @@ public class ParcelPageController {
         } catch (Exception e) {
             log.error("Error loading villages for authority {}: {}", authorityId, e.getMessage());
             return Collections.emptyList();
+        }
+    }
+
+    /**
+     * Parse the boundaries JSON string into a list of BoundaryPointDto objects
+     */
+    private List<BoundaryPointDto> parseBoundariesJson(String boundariesJson) throws JsonProcessingException {
+        if (boundariesJson == null || boundariesJson.trim().isEmpty() || "[]".equals(boundariesJson.trim())) {
+            return new ArrayList<>();
+        }
+
+        // Try to parse as List<BoundaryPointDto>
+        try {
+            return objectMapper.readValue(boundariesJson, new TypeReference<List<BoundaryPointDto>>() {});
+        } catch (JsonProcessingException e) {
+            log.warn("Failed to parse boundaries as BoundaryPointDto list", e);
+            throw e;
         }
     }
 }

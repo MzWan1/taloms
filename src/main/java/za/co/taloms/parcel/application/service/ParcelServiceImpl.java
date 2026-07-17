@@ -40,6 +40,14 @@ public class ParcelServiceImpl implements ParcelService {
     private static final String PARCEL_NUMBER_PREFIX = "PRC";
 
     @Override
+    @Transactional(readOnly = true)
+    public List<ParcelResponse> findAllAvailable() {
+        return parcelRepository.findByStatus(ParcelStatus.AVAILABLE).stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+    
+    @Override
     public ParcelResponse createParcel(ParcelRequest request, String createdBy) {
         // Validate village exists
         var village = villageRepository.findById(request.getVillageId())
