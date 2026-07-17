@@ -86,7 +86,7 @@
                     </div>
                     <div>
                         <div class="kpi-label">Total PTOs</div>
-                        <div class="kpi-value" th:text="${summary != null ? summary.totalPtos : '—'}">—</div>
+                        <div class="kpi-value" th:text="${totalPtos != null ? totalPtos : '—'}">—</div>
                     </div>
                 </div>
             </div>
@@ -99,7 +99,7 @@
                     </div>
                     <div>
                         <div class="kpi-label">Active PTOs</div>
-                        <div class="kpi-value" th:text="${summary != null ? summary.activePtos : '—'}">—</div>
+                        <div class="kpi-value" th:text="${activePtos != null ? activePtos : '—'}">—</div>
                     </div>
                 </div>
             </div>
@@ -112,7 +112,7 @@
                     </div>
                     <div>
                         <div class="kpi-label">Total Parcels</div>
-                        <div class="kpi-value" th:text="${summary != null ? summary.totalParcels : '—'}">—</div>
+                        <div class="kpi-value" th:text="${totalParcels != null ? totalParcels : '—'}">—</div>
                     </div>
                 </div>
             </div>
@@ -125,7 +125,7 @@
                     </div>
                     <div>
                         <div class="kpi-label">Total Residents</div>
-                        <div class="kpi-value" th:text="${summary != null ? summary.totalResidents : '—'}">—</div>
+                        <div class="kpi-value" th:text="${totalResidents != null ? totalResidents : '—'}">—</div>
                     </div>
                 </div>
             </div>
@@ -136,25 +136,25 @@
     <div class="row g-3 mb-4">
         <div class="col-6 col-md-3">
             <div class="card border-0 shadow-sm text-center py-3">
-                <div class="fw-bold fs-3 text-warning" th:text="${summary != null ? summary.pendingPtos : '—'}">—</div>
+                <div class="fw-bold fs-3 text-warning" th:text="${pendingPtos != null ? pendingPtos : '—'}">—</div>
                 <div class="small text-muted">Pending PTOs</div>
             </div>
         </div>
         <div class="col-6 col-md-3">
             <div class="card border-0 shadow-sm text-center py-3">
-                <div class="fw-bold fs-3 text-success" th:text="${summary != null ? summary.availableParcels : '—'}">—</div>
+                <div class="fw-bold fs-3 text-success" th:text="${availableParcels != null ? availableParcels : '—'}">—</div>
                 <div class="small text-muted">Available Parcels</div>
             </div>
         </div>
         <div class="col-6 col-md-3">
             <div class="card border-0 shadow-sm text-center py-3">
-                <div class="fw-bold fs-3 text-primary" th:text="${summary != null ? summary.activeHouseholds : '—'}">—</div>
+                <div class="fw-bold fs-3 text-primary" th:text="${activeHouseholds != null ? activeHouseholds : '—'}">—</div>
                 <div class="small text-muted">Active Households</div>
             </div>
         </div>
         <div class="col-6 col-md-3">
             <div class="card border-0 shadow-sm text-center py-3">
-                <div class="fw-bold fs-3 text-navy" th:text="${summary != null ? summary.totalDocuments : '—'}">—</div>
+                <div class="fw-bold fs-3 text-navy" th:text="${totalDocuments != null ? totalDocuments : '—'}">—</div>
                 <div class="small text-muted">Total Documents</div>
             </div>
         </div>
@@ -179,14 +179,14 @@
                         <div class="col-6">
                             <div class="stat-mini bg-light rounded-3 p-3">
                                 <div class="stat-mini-value text-navy"
-                                     th:text="${summary != null ? summary.totalUsers : '—'}">—</div>
+                                     th:text="${totalUsers != null ? totalUsers : '—'}">—</div>
                                 <div class="stat-mini-label">Total Users</div>
                             </div>
                         </div>
                         <div class="col-6">
                             <div class="stat-mini bg-light rounded-3 p-3">
                                 <div class="stat-mini-value text-success"
-                                     th:text="${summary != null ? summary.activeUsers : '—'}">—</div>
+                                     th:text="${activeUsers != null ? activeUsers : '—'}">—</div>
                                 <div class="stat-mini-label">Active</div>
                             </div>
                         </div>
@@ -218,14 +218,14 @@
                         <div class="col-6">
                             <div class="stat-mini bg-light rounded-3 p-3">
                                 <div class="stat-mini-value text-navy"
-                                     th:text="${summary != null ? summary.totalBusinesses : '—'}">—</div>
+                                     th:text="${totalBusinesses != null ? totalBusinesses : '—'}">—</div>
                                 <div class="stat-mini-label">Total Businesses</div>
                             </div>
                         </div>
                         <div class="col-6">
                             <div class="stat-mini bg-light rounded-3 p-3">
                                 <div class="stat-mini-value text-success"
-                                     th:text="${summary != null ? summary.activeBusinesses : '—'}">—</div>
+                                     th:text="${activeBusinesses != null ? activeBusinesses : '—'}">—</div>
                                 <div class="stat-mini-label">Active</div>
                             </div>
                         </div>
@@ -288,7 +288,7 @@
                         </li>
                         <li class="list-group-item px-0 d-flex justify-content-between align-items-center">
                             <span class="small text-muted">Audit Logs</span>
-                            <span class="badge bg-navy" th:text="${summary != null ? summary.totalAuditLogs : '—'}">—</span>
+                            <span class="badge bg-navy" th:text="${totalAuditLogs != null ? totalAuditLogs : '—'}">—</span>
                         </li>
                     </ul>
                 </div>
@@ -326,10 +326,10 @@
                                     No recent activity to display
                                 </td>
                             </tr>
-                            <tr th:each="activity : ${recentActivity}">
+                            <tr th:each="activity : ${recentActivity}" th:unless="${recentActivity == null or #lists.isEmpty(recentActivity)}">
                                 <td class="px-4">
-                                        <span class="badge" th:class="${'badge ' + activity.badgeClass}"
-                                              th:text="${activity.actionDisplay}">Action</span>
+                                    <span class="badge" th:class="${'badge ' + activity.badgeClass}"
+                                          th:text="${activity.actionDisplay}">Action</span>
                                 </td>
                                 <td>
                                     <span class="fw-semibold small" th:text="${activity.entityTypeDisplay}">Entity</span>
