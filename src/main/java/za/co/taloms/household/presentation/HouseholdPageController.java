@@ -12,7 +12,6 @@ import za.co.taloms.household.application.dto.HouseholdRequest;
 import za.co.taloms.household.application.service.HouseholdService;
 import za.co.taloms.parcel.application.service.ParcelService;
 import za.co.taloms.parcel.domain.entity.ParcelStatus;
-import za.co.taloms.pto.application.service.PTOService;
 import za.co.taloms.traditionalauthority.application.service.TraditionalAuthorityService;
 import za.co.taloms.traditionalauthority.application.service.VillageService;
 import java.time.LocalDate;
@@ -29,7 +28,7 @@ public class HouseholdPageController {
 
     private final HouseholdService householdService;
     private final ParcelService parcelService;
-    private final PTOService ptoService;
+    // Removed PTOService - it's not needed here
     private final TraditionalAuthorityService authorityService;
     private final VillageService villageService;
 
@@ -70,7 +69,6 @@ public class HouseholdPageController {
             // Get ALL available parcels - filtered by AVAILABLE status
             List<za.co.taloms.parcel.application.dto.ParcelResponse> availableParcels = new ArrayList<>();
             try {
-                // Get all parcels and filter for AVAILABLE status
                 var allParcels = parcelService.findAll();
                 log.info("Total parcels found: {}", allParcels != null ? allParcels.size() : 0);
 
