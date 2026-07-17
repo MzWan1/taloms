@@ -16,6 +16,7 @@ import za.co.taloms.pto.application.service.PTOService;
 import za.co.taloms.traditionalauthority.application.service.TraditionalAuthorityService;
 import za.co.taloms.traditionalauthority.application.service.VillageService;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -66,15 +67,21 @@ public class HouseholdPageController {
                         .build());
             }
 
-            // Get ALL available parcels - not filtered by village
-            List<za.co.taloms.parcel.application.dto.ParcelResponse> availableParcels;
+            // Get ALL available parcels - filtered by AVAILABLE status
+            List<za.co.taloms.parcel.application.dto.ParcelResponse> availableParcels = new ArrayList<>();
             try {
                 // Get all parcels and filter for AVAILABLE status
                 var allParcels = parcelService.findAll();
-                availableParcels = allParcels.stream()
-                        .filter(p -> p.getStatus() == ParcelStatus.AVAILABLE)
-                        .collect(Collectors.toList());
-                log.info("Found {} available parcels for household creation", availableParcels.size());
+                log.info("Total parcels found: {}", allParcels != null ? allParcels.size() : 0);
+
+                if (allParcels != null && !allParcels.isEmpty()) {
+                    availableParcels = allParcels.stream()
+                            .filter(p -> p != null && p.getStatus() == ParcelStatus.AVAILABLE)
+                            .collect(Collectors.toList());
+                    log.info("Found {} available parcels for household creation", availableParcels.size());
+                } else {
+                    log.warn("No parcels found in the system");
+                }
             } catch (Exception e) {
                 log.error("Error loading available parcels: {}", e.getMessage(), e);
                 availableParcels = Collections.emptyList();
@@ -159,14 +166,16 @@ public class HouseholdPageController {
             var authorities = authorityService.findAllActive();
 
             // Get all available parcels for the dropdown, including the current one
-            List<za.co.taloms.parcel.application.dto.ParcelResponse> availableParcels;
+            List<za.co.taloms.parcel.application.dto.ParcelResponse> availableParcels = new ArrayList<>();
             try {
                 var allParcels = parcelService.findAll();
-                availableParcels = allParcels.stream()
-                        .filter(p -> p.getStatus() == ParcelStatus.AVAILABLE ||
-                                p.getId().equals(household.getParcelId()))
-                        .collect(Collectors.toList());
-                log.info("Found {} available parcels for household edit", availableParcels.size());
+                if (allParcels != null && !allParcels.isEmpty()) {
+                    availableParcels = allParcels.stream()
+                            .filter(p -> p != null && (p.getStatus() == ParcelStatus.AVAILABLE ||
+                                    p.getId().equals(household.getParcelId())))
+                            .collect(Collectors.toList());
+                    log.info("Found {} available parcels for household edit", availableParcels.size());
+                }
             } catch (Exception e) {
                 log.error("Error loading available parcels: {}", e.getMessage(), e);
                 availableParcels = Collections.emptyList();

@@ -75,6 +75,7 @@
                                            id="householdHeadName"
                                            name="householdHeadName"
                                            class="form-control"
+                                           th:value="${form.householdHeadName}"
                                            placeholder="e.g. Thabo Mokoena"
                                            required>
                                 </div>
@@ -93,6 +94,7 @@
                                            id="householdHeadIdNumber"
                                            name="householdHeadIdNumber"
                                            class="form-control"
+                                           th:value="${form.householdHeadIdNumber}"
                                            placeholder="13-digit ID number"
                                            maxlength="13"
                                            required>
@@ -111,6 +113,7 @@
                                            id="contactPhone"
                                            name="contactPhone"
                                            class="form-control"
+                                           th:value="${form.contactPhone}"
                                            placeholder="+27XXXXXXXXX">
                                 </div>
                             </div>
@@ -126,6 +129,7 @@
                                            id="contactEmail"
                                            name="contactEmail"
                                            class="form-control"
+                                           th:value="${form.contactEmail}"
                                            placeholder="e.g. thabo@example.com">
                                 </div>
                             </div>
@@ -146,11 +150,20 @@
                                         <option value="">— Select Parcel —</option>
                                         <option th:each="p : ${availableParcels}"
                                                 th:value="${p.id}"
-                                                th:text="${p.parcelNumber + ' - Stand ' + p.standNumber + ' (' + p.villageName + ')'}">
+                                                th:text="${p.parcelNumber + ' - Stand ' + p.standNumber + ' (' + p.villageName + ')'}"
+                                                th:selected="${p.id == form.parcelId}">
                                         </option>
                                     </select>
                                 </div>
-                                <div class="form-text">Select a parcel for this household</div>
+                                <div th:if="${availableParcels == null or availableParcels.empty}"
+                                     class="text-warning small mt-1">
+                                    <i class="bi bi-exclamation-triangle me-1"></i>
+                                    No available parcels found. Please create a parcel first.
+                                </div>
+                                <div th:unless="${availableParcels == null or availableParcels.empty}"
+                                     class="form-text">
+                                    Select a parcel for this household (only available parcels are shown)
+                                </div>
                             </div>
 
                             <!-- Registration Date -->
