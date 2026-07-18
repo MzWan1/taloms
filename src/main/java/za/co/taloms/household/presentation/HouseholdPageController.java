@@ -9,6 +9,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import za.co.taloms.household.application.dto.HouseholdRequest;
+import za.co.taloms.household.application.dto.HouseholdResponse;
 import za.co.taloms.household.application.service.HouseholdService;
 import za.co.taloms.parcel.application.service.ParcelService;
 import za.co.taloms.parcel.domain.entity.ParcelStatus;
@@ -39,12 +40,20 @@ public class HouseholdPageController {
     public String list(Model model) {
         try {
             log.info("Loading household list");
-            var households = householdService.findAll();
+            List<HouseholdResponse> households = householdService.findAll();
+
+            // Ensure we never pass null to the template
+            if (households == null) {
+                households = Collections.emptyList();
+            }
+
             model.addAttribute("households", households);
-            model.addAttribute("totalCount", householdService.countAll());
-            model.addAttribute("activeCount", householdService.countActive());
+            model.addAttribute("totalCount", households.size());
+            model.addAttribute("activeCount", households.stream().filter(HouseholdResponse::getActive).count());
             model.addAttribute("pageTitle", "Household Management");
             model.addAttribute("currentPage", "households");
+
+            log.info("Found {} households", households.size());
             return "households/list";
         } catch (Exception e) {
             log.error("Error loading household list: {}", e.getMessage(), e);
@@ -69,7 +78,7 @@ public class HouseholdPageController {
                         .build());
             }
 
-            // Get available parcels (only AVAILABLE parcels with no ACTIVE PTO)
+            // Get available parcels (only AVAILABLE parcels)
             List<za.co.taloms.parcel.application.dto.ParcelResponse> availableParcels = new ArrayList<>();
             try {
                 var allParcels = parcelService.findAll();
