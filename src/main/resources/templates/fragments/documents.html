@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<!-- ===== Document Upload Fragment ===== -->
+<div th:fragment="documentUpload(entityType, entityId, required)">
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+            <h6 class="fw-bold text-navy mb-0">
+                <i class="bi bi-file-earmark-text me-2"></i>
+                Documents
+                <span th:if="${required}" class="text-danger ms-1">*</span>
+            </h6>
+        </div>
+        <div class="card-body p-4">
+            <!-- Existing Documents -->
+            <div id="existingDocuments">
+                <p class="text-muted small" id="noDocumentsMsg">No documents uploaded yet</p>
+            </div>
+
+            <!-- Upload Form -->
+            <form id="documentUploadForm" enctype="multipart/form-data" th:action="@{/api/documents/upload}" method="post">
+                <input type="hidden" name="entityType" th:value="${entityType}">
+                <input type="hidden" name="entityId" th:value="${entityId}">
+
+                <div class="row g-3 align-items-end">
+                    <div class="col-12 col-md-5">
+                        <label class="form-label small">Document Type</label>
+                        <select name="documentType" class="form-select" id="docTypeSelect">
+                            <option value="ID_COPY">ID Copy</option>
+                            <option value="PHOTO">Photo</option>
+                            <option value="PTO_CERT">PTO Certificate</option>
+                            <option value="SURVEY">Survey Drawing</option>
+                            <option value="OTHER">Other</option>
+                        </select>
+                    </div>
+                    <div class="col-12 col-md-4">
+                        <label class="form-label small">Select File</label>
+                        <input type="file" name="file" class="form-control" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+                    </div>
+                    <div class="col-6 col-md-3">
+                        <button type="button" class="btn btn-navy w-100" onclick="uploadDocument()">
+                            <i class="bi bi-upload me-1"></i>Upload
+                        </button>
+                    </div>
+                </div>
+                <div class="mt-2">
+                    <small class="text-muted">Supported: PDF, JPEG, PNG, DOC, DOCX. Max 20MB</small>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ===== Document List Fragment ===== -->
+<div th:fragment="documentList(documents)">
+    <div th:if="${documents != null and !documents.isEmpty()}">
+        <div class="list-group">
+            <div th:each="doc : ${documents}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                <div>
+                    <i th:class="doc.documentTypeIcon + ' me-2'"></i>
+                    <span th:text="${doc.originalFilename}">file.pdf</span>
+                    <span class="badge bg-secondary ms-2" th:text="${doc.fileSizeDisplay}">1.2 MB</span>
+                    <span class="badge" th:class="doc.documentTypeBadgeClass" th:text="${doc.documentTypeDisplay}">Type</span>
+                </div>
+                <div>
+                    <a th:href="@{'/api/documents/' + ${doc.id} + '/download'}" class="btn btn-sm btn-outline-success">
+                        <i class="bi bi-download"></i>
+                    </a>
+                    <button class="btn btn-sm btn-outline-danger" onclick="deleteDocument(${doc.id})">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script th:fragment="documentScript()">
+    function uploadDocument() {
+        const form = document.getElementById('documentUploadForm');
+        const formData = new FormData(form);
+
+        // Show loading
+        const btn = form.querySelector('button[type="button"]');
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Uploading...';
+
+        fetch('/api/documents/upload', {
+            method: 'POST',
+            body: formData
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Upload failed: ' + data.message);
+                    btn.disabled = false;
+                    btn.innerHTML = originalText;
+                }
+            })
+            .catch(error => {
+                alert('Upload failed: ' + error.message);
+                btn.disabled = false;
+                btn.innerHTML = originalText;
+            });
+    }
+
+    function deleteDocument(id) {
+        if (!confirm('Are you sure you want to delete this document?')) return;
+
+        fetch('/api/documents/' + id, {
+            method: 'DELETE'
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    location.reload();
+                } else {
+                    alert('Delete failed: ' + data.message);
+                }
+            })
+            .catch(error => {
+                alert('Delete failed: ' + error.message);
+            });
+    }
+</script>
+</body>
+</html>

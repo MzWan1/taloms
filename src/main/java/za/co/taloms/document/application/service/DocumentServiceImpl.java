@@ -18,14 +18,6 @@ import za.co.taloms.document.domain.entity.EntityType;
 import za.co.taloms.document.domain.repository.DocumentAccessLogRepositoryPort;
 import za.co.taloms.document.domain.repository.DocumentRepositoryPort;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
-
-import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -60,6 +52,15 @@ public class DocumentServiceImpl implements DocumentService {
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             "application/msword"
     );
+
+    // Required document types by entity
+    private static final java.util.Map<EntityType, List<DocumentType>> REQUIRED_DOCUMENTS =
+            java.util.Map.of(
+                    EntityType.PTO, List.of(DocumentType.PTO_CERT),
+                    EntityType.RESIDENT, List.of(DocumentType.ID_COPY),
+                    EntityType.BUSINESS, List.of(DocumentType.ID_COPY),
+                    EntityType.HOUSEHOLD, List.of(DocumentType.ID_COPY)
+            );
 
     @Override
     public DocumentResponse uploadDocument(MultipartFile file, DocumentUploadRequest request,
@@ -270,7 +271,6 @@ public class DocumentServiceImpl implements DocumentService {
     @Override
     @Transactional(readOnly = true)
     public List<DocumentAccessLogResponse> getDocumentAccessLogs(Long documentId) {
-        // Verify document exists
         if (!documentRepository.findById(documentId).isPresent()) {
             throw new ResourceNotFoundException("Document", documentId);
         }
@@ -292,21 +292,45 @@ public class DocumentServiceImpl implements DocumentService {
         return documentRepository.countAll();
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public boolean hasRequiredDocuments(EntityType entityType, Long entityId) {
+        var required = REQUIRED_DOCUMENTS.getOrDefault(entityType, List.of());
+        if (required.isEmpty()) {
+            return true;
+        }
+        var documents = documentRepository.findByRelatedEntity(entityType, entityId);
+        var documentTypes = documents.stream()
+                .map(Document::getDocumentType)
+                .collect(Collectors.toSet());
+
+        return documentTypes.containsAll(required);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<DocumentResponse> getRequiredDocumentsForEntity(EntityType entityType, Long entityId) {
+        var required = REQUIRED_DOCUMENTS.getOrDefault(entityType, List.of());
+        var documents = documentRepository.findByRelatedEntity(entityType, entityId);
+
+        return documents.stream()
+                .filter(d -> required.contains(d.getDocumentType()))
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
     private void validateFile(MultipartFile file) {
-        // Check file size
         if (file.getSize() > maxFileSize) {
             throw new BusinessValidationException(
                     "File size exceeds the maximum allowed size of " + (maxFileSize / (1024 * 1024)) + "MB");
         }
 
-        // Check content type
         String contentType = file.getContentType();
         if (contentType == null || !ALLOWED_CONTENT_TYPES.contains(contentType)) {
             throw new BusinessValidationException(
                     "File type not supported. Allowed types: PDF, JPEG, PNG, DOC, DOCX");
         }
 
-        // Check if file is empty
         if (file.isEmpty()) {
             throw new BusinessValidationException("File is empty");
         }

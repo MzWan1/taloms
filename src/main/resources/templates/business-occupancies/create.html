@@ -9,6 +9,58 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link th:href="@{/css/taloms.css}" rel="stylesheet">
+    <style>
+        .document-upload-area {
+            border: 2px dashed #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .document-upload-area:hover {
+            border-color: #1B3A6B;
+            background-color: #f8f9fa;
+        }
+        .document-upload-area.dragover {
+            border-color: #1B3A6B;
+            background-color: #e9ecef;
+        }
+        .document-item {
+            border-left: 4px solid #1B3A6B;
+            transition: all 0.3s ease;
+        }
+        .document-item.required {
+            border-left-color: #dc3545;
+        }
+        .document-item.uploaded {
+            border-left-color: #28a745;
+            background-color: #f8fff8;
+        }
+        .upload-progress {
+            height: 4px;
+            border-radius: 2px;
+            background: #e9ecef;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+        .upload-progress-bar {
+            height: 100%;
+            width: 0%;
+            background: #1B3A6B;
+            transition: width 0.3s ease;
+        }
+        .required-star {
+            color: #dc3545;
+        }
+        .optional-badge {
+            font-size: 0.7rem;
+            background: #e9ecef;
+            color: #6c757d;
+            padding: 2px 8px;
+            border-radius: 12px;
+        }
+    </style>
 </head>
 <body class="bg-light">
 
@@ -48,11 +100,41 @@
         </a>
     </div>
 
+    <!-- Workflow Status -->
+    <div class="card border-0 shadow-sm mb-4 border-start border-4 border-success">
+        <div class="card-body p-3">
+            <div class="d-flex align-items-center gap-3 flex-wrap">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-success"><i class="bi bi-check"></i></span>
+                    <small>Authority Exists</small>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-success"><i class="bi bi-check"></i></span>
+                    <small>Village Exists</small>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-success"><i class="bi bi-check"></i></span>
+                    <small>Parcel Exists</small>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-success"><i class="bi bi-check"></i></span>
+                    <small>PTO Approved</small>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-navy">●</span>
+                    <small class="fw-semibold text-navy">Register Business</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="row justify-content-center">
-        <div class="col-12 col-lg-9">
+        <div class="col-12 col-lg-10">
             <form th:action="@{/business-occupancies/create}"
                   th:object="${form}"
-                  method="post">
+                  method="post"
+                  id="businessForm"
+                  novalidate>
 
                 <div class="row g-4">
 
@@ -63,6 +145,7 @@
                         <div class="card border-0 shadow-sm mb-4">
                             <div class="card-header bg-white border-bottom py-3">
                                 <h6 class="fw-bold text-navy mb-0">
+                                    <span class="badge bg-navy rounded-circle me-2">1</span>
                                     <i class="bi bi-building me-2"></i>Business Details
                                 </h6>
                             </div>
@@ -71,7 +154,7 @@
                                     <!-- Business Name -->
                                     <div class="col-12">
                                         <label for="businessName" class="form-label">
-                                            Business Name <span class="text-danger">*</span>
+                                            Business Name <span class="required-star">*</span>
                                         </label>
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="bi bi-shop"></i></span>
@@ -81,21 +164,27 @@
                                         </div>
                                     </div>
 
-                                    <!-- Registration Number -->
+                                    <!-- Registration Number (Optional) -->
                                     <div class="col-12">
-                                        <label for="registrationNumber" class="form-label">Registration Number</label>
+                                        <label for="registrationNumber" class="form-label">
+                                            Registration Number
+                                            <span class="optional-badge">Optional</span>
+                                        </label>
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="bi bi-hash"></i></span>
                                             <input type="text" id="registrationNumber" name="registrationNumber"
                                                    class="form-control" placeholder="e.g. 2023/123456/07">
                                         </div>
-                                        <div class="form-text">Company or CC registration number (optional)</div>
+                                        <div class="form-text">
+                                            <i class="bi bi-info-circle me-1"></i>
+                                            Company or CC registration number. Small businesses can leave this blank.
+                                        </div>
                                     </div>
 
                                     <!-- Business Type -->
                                     <div class="col-12">
                                         <label for="businessType" class="form-label">
-                                            Business Type <span class="text-danger">*</span>
+                                            Business Type <span class="required-star">*</span>
                                         </label>
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="bi bi-tag"></i></span>
@@ -131,15 +220,12 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
-
-                    <!-- RIGHT -->
-                    <div class="col-12 col-lg-6">
 
                         <!-- Owner Details -->
                         <div class="card border-0 shadow-sm mb-4">
                             <div class="card-header bg-white border-bottom py-3">
                                 <h6 class="fw-bold text-navy mb-0">
+                                    <span class="badge bg-navy rounded-circle me-2">2</span>
                                     <i class="bi bi-person me-2"></i>Owner Details
                                 </h6>
                             </div>
@@ -148,7 +234,7 @@
                                     <!-- Owner Name -->
                                     <div class="col-12">
                                         <label for="ownerName" class="form-label">
-                                            Owner Name <span class="text-danger">*</span>
+                                            Owner Name <span class="required-star">*</span>
                                         </label>
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="bi bi-person"></i></span>
@@ -161,7 +247,7 @@
                                     <!-- Owner ID Number -->
                                     <div class="col-12">
                                         <label for="ownerIdNumber" class="form-label">
-                                            Owner ID Number <span class="text-danger">*</span>
+                                            Owner ID Number <span class="required-star">*</span>
                                         </label>
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="bi bi-credit-card"></i></span>
@@ -196,20 +282,23 @@
                         </div>
                     </div>
 
-                    <!-- Full Width - Location -->
-                    <div class="col-12">
+                    <!-- RIGHT -->
+                    <div class="col-12 col-lg-6">
+
+                        <!-- Location & PTO -->
                         <div class="card border-0 shadow-sm mb-4">
                             <div class="card-header bg-white border-bottom py-3">
                                 <h6 class="fw-bold text-navy mb-0">
-                                    <i class="bi bi-geo-alt me-2"></i>Location & PTO
+                                    <span class="badge bg-navy rounded-circle me-2">3</span>
+                                    <i class="bi bi-geo-alt me-2"></i>Location &amp; PTO
                                 </h6>
                             </div>
                             <div class="card-body p-4">
                                 <div class="row g-3">
                                     <!-- Parcel -->
-                                    <div class="col-12 col-md-6">
+                                    <div class="col-12">
                                         <label for="parcelId" class="form-label">
-                                            Parcel <span class="text-danger">*</span>
+                                            Parcel <span class="required-star">*</span>
                                         </label>
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="bi bi-map"></i></span>
@@ -225,9 +314,9 @@
                                     </div>
 
                                     <!-- PTO -->
-                                    <div class="col-12 col-md-6">
+                                    <div class="col-12">
                                         <label for="ptoId" class="form-label">
-                                            PTO <span class="text-danger">*</span>
+                                            PTO <span class="required-star">*</span>
                                         </label>
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="bi bi-file-earmark-text"></i></span>
@@ -239,6 +328,7 @@
                                                 </option>
                                             </select>
                                         </div>
+                                        <div class="form-text">The PTO holder must be the business owner</div>
                                     </div>
 
                                     <!-- Notes -->
@@ -250,17 +340,118 @@
                                 </div>
                             </div>
                         </div>
-                    </div>
-                </div>
 
-                <!-- Submit -->
-                <div class="d-flex gap-3 justify-content-end mt-4 mb-4">
-                    <a th:href="@{/business-occupancies}" class="btn btn-light px-4">
-                        <i class="bi bi-x me-1"></i>Cancel
-                    </a>
-                    <button type="submit" class="btn btn-navy px-4 fw-semibold">
-                        <i class="bi bi-save me-2"></i>Register Business
-                    </button>
+                        <!-- Business Documents -->
+                        <div class="card border-0 shadow-sm mb-4">
+                            <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                                <h6 class="fw-bold text-navy mb-0">
+                                    <span class="badge bg-navy rounded-circle me-2">4</span>
+                                    <i class="bi bi-file-earmark-text me-2"></i>
+                                    Business Documents
+                                    <span class="required-star ms-1">*</span>
+                                    <span class="badge bg-warning text-dark ms-2">Required</span>
+                                </h6>
+                            </div>
+                            <div class="card-body p-4">
+                                <p class="text-muted small mb-3">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Owner ID copy is required for identity verification.
+                                    Business registration is optional for small businesses.
+                                </p>
+
+                                <!-- ID Copy (Required) -->
+                                <div class="mb-3">
+                                    <label class="form-label fw-semibold small">
+                                        Owner ID Copy <span class="required-star">*</span>
+                                    </label>
+                                    <div class="document-upload-area" id="idUploadArea">
+                                        <div class="py-2">
+                                            <i class="bi bi-file-earmark-text fs-3 text-navy"></i>
+                                            <p class="mb-0 mt-1 small fw-semibold">Upload ID Copy</p>
+                                            <p class="text-muted small mb-0">PDF, JPEG, PNG (Max 5MB)</p>
+                                            <input type="file"
+                                                   id="idCopy"
+                                                   name="idCopy"
+                                                   class="d-none"
+                                                   accept=".pdf,.jpg,.jpeg,.png"
+                                                   required>
+                                        </div>
+                                    </div>
+                                    <div id="idUploadStatus" class="mt-1"></div>
+                                </div>
+
+                                <!-- Business Registration (Optional) -->
+                                <div>
+                                    <label class="form-label fw-semibold small">
+                                        Business Registration
+                                        <span class="optional-badge">Optional</span>
+                                    </label>
+                                    <div class="document-upload-area" id="regUploadArea">
+                                        <div class="py-2">
+                                            <i class="bi bi-file-earmark-pdf fs-3 text-muted"></i>
+                                            <p class="mb-0 mt-1 small">Upload Registration Certificate</p>
+                                            <p class="text-muted small mb-0">PDF only (Max 5MB)</p>
+                                            <input type="file"
+                                                   id="businessReg"
+                                                   name="businessReg"
+                                                   class="d-none"
+                                                   accept=".pdf">
+                                        </div>
+                                    </div>
+                                    <div id="regUploadStatus" class="mt-1"></div>
+                                    <div class="form-text mt-1">
+                                        <i class="bi bi-info-circle me-1"></i>
+                                        Only required for registered businesses. Small businesses can skip.
+                                    </div>
+                                </div>
+
+                                <!-- Uploaded Documents List -->
+                                <div id="documentList" class="mt-3" style="display:none;">
+                                    <hr>
+                                    <div class="d-flex align-items-center justify-content-between">
+                                        <span class="fw-semibold small">Uploaded Documents</span>
+                                    </div>
+                                    <div id="uploadedDocuments" class="mt-2"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Summary -->
+                        <div class="card border-0 shadow-sm mb-4 border-start border-4 border-navy">
+                            <div class="card-body p-3">
+                                <h6 class="fw-bold text-navy mb-2">
+                                    <i class="bi bi-clipboard-check me-2"></i>Business Summary
+                                </h6>
+                                <div class="row g-2 small">
+                                    <div class="col-5 text-muted">Business:</div>
+                                    <div class="col-7 fw-semibold" id="summaryBusiness">—</div>
+                                    <div class="col-5 text-muted">Owner:</div>
+                                    <div class="col-7 fw-semibold" id="summaryOwner">—</div>
+                                    <div class="col-5 text-muted">ID Copy:</div>
+                                    <div class="col-7" id="summaryIdCopy">
+                                        <span class="text-danger">Pending</span>
+                                    </div>
+                                    <div class="col-5 text-muted">Registration:</div>
+                                    <div class="col-7" id="summaryRegistration">
+                                        <span class="text-muted">Not uploaded</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-navy py-2 fw-semibold" id="submitBtn" disabled>
+                                <i class="bi bi-save me-2"></i>Register Business
+                            </button>
+                            <a th:href="@{/business-occupancies}" class="btn btn-light py-2">
+                                <i class="bi bi-x me-1"></i>Cancel
+                            </a>
+                            <div class="text-muted small text-center" id="submitMessage">
+                                Please upload the Owner ID Copy to proceed
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </form>
         </div>
@@ -269,6 +460,12 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+    // ── State ──────────────────────────────────────────────────────────────
+    let uploadedDocuments = {
+        idCopy: null,
+        businessReg: null
+    };
+
     // ── SA ID number validator (Luhn) ──────────────────────────────────────
     document.getElementById('ownerIdNumber').addEventListener('input', function () {
         const val = this.value.replace(/\D/g, '');
@@ -313,6 +510,251 @@
             this.value = '+27' + v.substring(1);
         }
     });
+
+    // ── Document Upload Handling ──────────────────────────────────────────
+    function setupUpload(areaId, inputId, statusId, type) {
+        const area = document.getElementById(areaId);
+        const input = document.getElementById(inputId);
+        const status = document.getElementById(statusId);
+
+        area.addEventListener('click', function() {
+            input.click();
+        });
+
+        area.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.classList.add('dragover');
+        });
+
+        area.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            this.classList.remove('dragover');
+        });
+
+        area.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.classList.remove('dragover');
+            if (e.dataTransfer.files.length > 0) {
+                input.files = e.dataTransfer.files;
+                handleFileUpload(input, status, type);
+            }
+        });
+
+        input.addEventListener('change', function() {
+            if (this.files.length > 0) {
+                handleFileUpload(this, status, type);
+            }
+        });
+    }
+
+    function handleFileUpload(input, status, type) {
+        const file = input.files[0];
+        if (!file) return;
+
+        // Validate file size (5MB max)
+        if (file.size > 5 * 1024 * 1024) {
+            alert('File size exceeds the 5MB limit.');
+            input.value = '';
+            return;
+        }
+
+        // Validate file type
+        const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+        if (type === 'idCopy' && !allowedTypes.includes(file.type)) {
+            alert('Please upload a PDF, JPEG, or PNG file.');
+            input.value = '';
+            return;
+        }
+        if (type === 'businessReg' && file.type !== 'application/pdf') {
+            alert('Please upload a PDF file.');
+            input.value = '';
+            return;
+        }
+
+        // Simulate upload
+        status.innerHTML = '<span class="text-muted small"><i class="bi bi-spinner bi-spin me-1"></i>Uploading...</span>';
+
+        setTimeout(() => {
+            // Store uploaded document info
+            uploadedDocuments[type] = {
+                name: file.name,
+                size: (file.size / 1024).toFixed(1) + ' KB',
+                type: type
+            };
+
+            status.innerHTML = '<span class="text-success small"><i class="bi bi-check-circle me-1"></i>Uploaded: ' + file.name + '</span>';
+            updateDocumentList();
+            updateSubmitButton();
+            updateSummary();
+
+            // Show success on the upload area
+            const area = input.closest('.document-upload-area');
+            area.style.borderColor = '#28a745';
+            area.style.backgroundColor = '#f8fff8';
+        }, 1500);
+    }
+
+    // Setup upload areas
+    setupUpload('idUploadArea', 'idCopy', 'idUploadStatus', 'idCopy');
+    setupUpload('regUploadArea', 'businessReg', 'regUploadStatus', 'businessReg');
+
+    // ── Update Document List ──────────────────────────────────────────────
+    function updateDocumentList() {
+        const container = document.getElementById('documentList');
+        const list = document.getElementById('uploadedDocuments');
+
+        const hasDocuments = uploadedDocuments.idCopy !== null || uploadedDocuments.businessReg !== null;
+
+        if (!hasDocuments) {
+            container.style.display = 'none';
+            return;
+        }
+
+        container.style.display = 'block';
+        list.innerHTML = '';
+
+        if (uploadedDocuments.idCopy) {
+            list.innerHTML += `
+                <div class="document-item uploaded p-2 rounded mb-2 d-flex align-items-center justify-content-between">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-success rounded-circle p-1">
+                            <i class="bi bi-check-circle-fill text-white"></i>
+                        </div>
+                        <div>
+                            <div class="fw-semibold small">${uploadedDocuments.idCopy.name}</div>
+                            <div class="text-muted" style="font-size:0.78rem">${uploadedDocuments.idCopy.size} · ID Copy</div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeDocument('idCopy')">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+            `;
+        }
+
+        if (uploadedDocuments.businessReg) {
+            list.innerHTML += `
+                <div class="document-item p-2 rounded mb-2 d-flex align-items-center justify-content-between" style="border-left-color: #6c757d;">
+                    <div class="d-flex align-items-center gap-3">
+                        <div class="bg-secondary rounded-circle p-1">
+                            <i class="bi bi-file-earmark-check text-white"></i>
+                        </div>
+                        <div>
+                            <div class="fw-semibold small">${uploadedDocuments.businessReg.name}</div>
+                            <div class="text-muted" style="font-size:0.78rem">${uploadedDocuments.businessReg.size} · Registration (Optional)</div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeDocument('businessReg')">
+                        <i class="bi bi-x"></i>
+                    </button>
+                </div>
+            `;
+        }
+    }
+
+    // ── Remove Document ──────────────────────────────────────────────────
+    function removeDocument(type) {
+        if (!confirm('Remove this document?')) return;
+
+        uploadedDocuments[type] = null;
+
+        // Reset the input
+        const inputMap = {
+            'idCopy': 'idCopy',
+            'businessReg': 'businessReg'
+        };
+        const statusMap = {
+            'idCopy': 'idUploadStatus',
+            'businessReg': 'regUploadStatus'
+        };
+
+        document.getElementById(inputMap[type]).value = '';
+        document.getElementById(statusMap[type]).innerHTML = '';
+
+        // Reset the upload area
+        const area = document.getElementById(type === 'idCopy' ? 'idUploadArea' : 'regUploadArea');
+        area.style.borderColor = '#dee2e6';
+        area.style.backgroundColor = 'transparent';
+
+        updateDocumentList();
+        updateSubmitButton();
+        updateSummary();
+    }
+
+    // ── Update Submit Button ─────────────────────────────────────────────
+    function updateSubmitButton() {
+        const btn = document.getElementById('submitBtn');
+        const msg = document.getElementById('submitMessage');
+
+        const hasIdCopy = uploadedDocuments.idCopy !== null;
+        const hasName = document.getElementById('businessName').value.trim() !== '';
+        const hasOwner = document.getElementById('ownerName').value.trim() !== '';
+        const hasId = document.getElementById('ownerIdNumber').value.trim().length === 13;
+        const hasParcel = document.getElementById('parcelId').value !== '';
+        const hasPto = document.getElementById('ptoId').value !== '';
+
+        const isValid = hasIdCopy && hasName && hasOwner && hasId && hasParcel && hasPto;
+
+        btn.disabled = !isValid;
+
+        if (isValid) {
+            msg.innerHTML = '<span class="text-success"><i class="bi bi-check-circle me-1"></i>All requirements met! Ready to register business.</span>';
+        } else {
+            const missing = [];
+            if (!hasIdCopy) missing.push('ID Copy');
+            if (!hasName) missing.push('Business Name');
+            if (!hasOwner) missing.push('Owner Name');
+            if (!hasId) missing.push('Valid SA ID');
+            if (!hasParcel) missing.push('Parcel');
+            if (!hasPto) missing.push('PTO');
+            msg.innerHTML = '<span class="text-muted">Please complete: ' + missing.join(', ') + '</span>';
+        }
+    }
+
+    // ── Update Summary ──────────────────────────────────────────────────
+    function updateSummary() {
+        const idStatus = document.getElementById('summaryIdCopy');
+        const regStatus = document.getElementById('summaryRegistration');
+
+        if (uploadedDocuments.idCopy) {
+            idStatus.innerHTML = '<span class="text-success"><i class="bi bi-check-circle me-1"></i>Uploaded</span>';
+        } else {
+            idStatus.innerHTML = '<span class="text-danger">Pending</span>';
+        }
+
+        if (uploadedDocuments.businessReg) {
+            regStatus.innerHTML = '<span class="text-success"><i class="bi bi-check-circle me-1"></i>Uploaded</span>';
+        } else {
+            regStatus.innerHTML = '<span class="text-muted">Not uploaded</span>';
+        }
+    }
+
+    // ── Real-time validation updates ────────────────────────────────────
+    document.getElementById('businessName').addEventListener('input', updateSubmitButton);
+    document.getElementById('ownerName').addEventListener('input', function() {
+        document.getElementById('summaryOwner').textContent = this.value || '—';
+        updateSubmitButton();
+    });
+    document.getElementById('ownerIdNumber').addEventListener('input', updateSubmitButton);
+    document.getElementById('parcelId').addEventListener('change', updateSubmitButton);
+    document.getElementById('ptoId').addEventListener('change', updateSubmitButton);
+
+    // ── Update business name in summary ─────────────────────────────────
+    document.getElementById('businessName').addEventListener('input', function() {
+        document.getElementById('summaryBusiness').textContent = this.value || '—';
+    });
+
+    // ── Form Submit ──────────────────────────────────────────────────────
+    document.getElementById('businessForm').addEventListener('submit', function(e) {
+        if (!uploadedDocuments.idCopy) {
+            e.preventDefault();
+            alert('Please upload the Owner ID Copy before submitting.');
+            return false;
+        }
+        return true;
+    });
+
+    console.log('Business registration ready. Please upload the required documents.');
 </script>
 </body>
 </html>

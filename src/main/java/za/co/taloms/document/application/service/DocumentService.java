@@ -25,4 +25,6 @@ public interface DocumentService {
     List<DocumentAccessLogResponse> getDocumentAccessLogs(Long documentId);
     long countByRelatedEntity(EntityType entityType, Long entityId);
     long countAll();
+    boolean hasRequiredDocuments(EntityType entityType, Long entityId);
+    List<DocumentResponse> getRequiredDocumentsForEntity(EntityType entityType, Long entityId);
 }
