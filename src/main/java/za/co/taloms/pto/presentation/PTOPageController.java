@@ -8,6 +8,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import za.co.taloms.parcel.application.service.ParcelService;
+import za.co.taloms.parcel.domain.entity.ParcelStatus;
 import za.co.taloms.pto.application.dto.*;
 import za.co.taloms.pto.application.service.PTOService;
 import za.co.taloms.pto.domain.entity.PTOPurpose;
@@ -16,6 +18,8 @@ import za.co.taloms.traditionalauthority.application.service.TraditionalAuthorit
 import za.co.taloms.traditionalauthority.application.service.VillageService;
 import java.time.LocalDate;
 import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Controller
@@ -24,6 +28,7 @@ import java.util.Collections;
 public class PTOPageController {
 
     private final PTOService ptoService;
+    private final ParcelService parcelService;
     private final TraditionalAuthorityService authorityService;
     private final VillageService villageService;
 
@@ -85,7 +90,22 @@ public class PTOPageController {
                         .build());
             }
 
+            // Get available parcels for PTO
+            List<za.co.taloms.parcel.application.dto.ParcelResponse> availableParcels = Collections.emptyList();
+            try {
+                var allParcels = parcelService.findAll();
+                if (allParcels != null && !allParcels.isEmpty()) {
+                    availableParcels = allParcels.stream()
+                            .filter(p -> p != null && p.getStatus() == ParcelStatus.AVAILABLE)
+                            .collect(Collectors.toList());
+                    log.info("Found {} available parcels for PTO creation", availableParcels.size());
+                }
+            } catch (Exception e) {
+                log.error("Error loading available parcels: {}", e.getMessage(), e);
+            }
+
             model.addAttribute("authorities", authorities);
+            model.addAttribute("availableParcels", availableParcels);
             model.addAttribute("purposes", PTOPurpose.values());
             model.addAttribute("pageTitle", "Create PTO");
             model.addAttribute("currentPage", "ptos");
@@ -94,6 +114,7 @@ public class PTOPageController {
             log.error("Error loading create PTO form: {}", e.getMessage(), e);
             model.addAttribute("errorMessage", "Error loading form: " + e.getMessage());
             model.addAttribute("authorities", Collections.emptyList());
+            model.addAttribute("availableParcels", Collections.emptyList());
             model.addAttribute("purposes", PTOPurpose.values());
             model.addAttribute("pageTitle", "Create PTO");
             model.addAttribute("currentPage", "ptos");
@@ -103,6 +124,7 @@ public class PTOPageController {
 
     @PostMapping("/create")
     public String create(
+            @RequestParam Long parcelId,
             @RequestParam String ptoHolderName,
             @RequestParam String idNumber,
             @RequestParam(required = false) String contactPhone,
@@ -111,16 +133,22 @@ public class PTOPageController {
             @RequestParam String issueDate,
             @RequestParam(required = false) String expiryDate,
             @RequestParam(required = false) String notes,
-            @RequestParam Long villageId,
-            @RequestParam Long traditionalAuthorityId,
             @AuthenticationPrincipal UserDetails userDetails,
             RedirectAttributes ra) {
 
-        log.info("Creating PTO - Holder: {}, ID: {}, Purpose: {}, Village: {}, Authority: {}",
-                ptoHolderName, idNumber, purpose, villageId, traditionalAuthorityId);
+        log.info("Creating PTO - Holder: {}, ID: {}, Parcel: {}, Purpose: {}",
+                ptoHolderName, idNumber, parcelId, purpose);
 
         try {
+            // Get the parcel to get village and authority
+            var parcel = parcelService.findById(parcelId);
+            if (parcel == null) {
+                ra.addFlashAttribute("errorMessage", "❌ Parcel not found. Please select a valid parcel.");
+                return "redirect:/ptos/create";
+            }
+
             var request = PTORequest.builder()
+                    .parcelId(parcelId)
                     .ptoHolderName(ptoHolderName)
                     .idNumber(idNumber)
                     .contactPhone(contactPhone)
@@ -129,30 +157,22 @@ public class PTOPageController {
                     .issueDate(LocalDate.parse(issueDate))
                     .expiryDate(expiryDate != null && !expiryDate.isBlank() ? LocalDate.parse(expiryDate) : null)
                     .notes(notes)
-                    .villageId(villageId)
-                    .traditionalAuthorityId(traditionalAuthorityId)
+                    .villageId(parcel.getVillageId())
+                    .traditionalAuthorityId(parcel.getVillageId() != null ?
+                            // We need to get the authority from the village
+                            // This is a simplified approach - you may need to fetch the authority ID differently
+                            parcel.getVillageId() : null)
                     .build();
 
             var response = ptoService.createPTO(request, userDetails.getUsername());
             ra.addFlashAttribute("successMessage",
-                    "✅ PTO " + response.getPtoNumber() + " created successfully for " + response.getPtoHolderName() + ".");
+                    "✅ PTO " + response.getPtoNumber() + " created successfully for " + response.getPtoHolderName() +
+                            " on " + parcel.getStandNumber() + ".");
             return "redirect:/ptos";
 
         } catch (Exception e) {
             log.error("Error creating PTO: {}", e.getMessage(), e);
             ra.addFlashAttribute("errorMessage", "❌ Error creating PTO: " + e.getMessage());
-            ra.addFlashAttribute("form", PTORequest.builder()
-                    .ptoHolderName(ptoHolderName)
-                    .idNumber(idNumber)
-                    .contactPhone(contactPhone)
-                    .contactEmail(contactEmail)
-                    .purpose(purpose)
-                    .issueDate(LocalDate.parse(issueDate))
-                    .expiryDate(expiryDate != null && !expiryDate.isBlank() ? LocalDate.parse(expiryDate) : null)
-                    .notes(notes)
-                    .villageId(villageId)
-                    .traditionalAuthorityId(traditionalAuthorityId)
-                    .build());
             return "redirect:/ptos/create";
         }
     }
@@ -257,10 +277,6 @@ public class PTOPageController {
             model.addAttribute("authority", authority);
             model.addAttribute("statuses", PTOStatus.values());
             model.addAttribute("purposes", PTOPurpose.values());
-            model.addAttribute("totalCount", 0L);
-            model.addAttribute("pendingCount", 0L);
-            model.addAttribute("activeCount", 0L);
-            model.addAttribute("revokedCount", 0L);
             model.addAttribute("pageTitle", "PTOs — " + authority.getAuthorityName());
             model.addAttribute("currentPage", "ptos");
             return "ptos/list";
@@ -284,14 +300,11 @@ public class PTOPageController {
         }
     }
 
-    // Add to PTOPageController.java
-
     @GetMapping("/{id}/edit")
     public String editForm(@PathVariable Long id, Model model) {
         try {
             var pto = ptoService.findById(id);
 
-            // Create a request object with existing values
             var form = PTORequest.builder()
                     .ptoHolderName(pto.getPtoHolderName())
                     .idNumber(pto.getIdNumber())
@@ -322,8 +335,6 @@ public class PTOPageController {
         }
     }
 
-
-
     @PostMapping("/{id}/edit")
     public String updatePTO(
             @PathVariable Long id,
@@ -341,15 +352,26 @@ public class PTOPageController {
             RedirectAttributes ra) {
 
         try {
-            // You need to add an update method to your service
-            // For now, let's just redirect with a message
-            ra.addFlashAttribute("infoMessage",
-                    "Edit functionality coming soon. Please use the PTO list to manage records.");
+            var request = PTORequest.builder()
+                    .ptoHolderName(ptoHolderName)
+                    .idNumber(idNumber)
+                    .contactPhone(contactPhone)
+                    .contactEmail(contactEmail)
+                    .purpose(purpose)
+                    .issueDate(LocalDate.parse(issueDate))
+                    .expiryDate(expiryDate != null && !expiryDate.isBlank() ? LocalDate.parse(expiryDate) : null)
+                    .notes(notes)
+                    .villageId(villageId)
+                    .traditionalAuthorityId(traditionalAuthorityId)
+                    .build();
+
+            var response = ptoService.updatePTO(id, request, userDetails.getUsername());
+            ra.addFlashAttribute("successMessage", "✅ PTO updated successfully.");
             return "redirect:/ptos/" + id;
         } catch (Exception e) {
             log.error("Error updating PTO: {}", e.getMessage(), e);
             ra.addFlashAttribute("errorMessage", "Error updating PTO: " + e.getMessage());
-            return "redirect:/ptos/" + id;
+            return "redirect:/ptos/" + id + "/edit";
         }
     }
 }

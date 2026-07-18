@@ -30,64 +30,141 @@
       <nav aria-label="breadcrumb">
         <ol class="breadcrumb mb-1 small">
           <li class="breadcrumb-item">
-            <a th:href="@{/dashboard}"
-               class="text-muted text-decoration-none">Dashboard</a>
+            <a th:href="@{/dashboard}" class="text-muted text-decoration-none">Dashboard</a>
           </li>
           <li class="breadcrumb-item">
-            <a th:href="@{/ptos}"
-               class="text-muted text-decoration-none">PTOs</a>
+            <a th:href="@{/ptos}" class="text-muted text-decoration-none">PTOs</a>
           </li>
           <li class="breadcrumb-item active">New PTO</li>
         </ol>
       </nav>
       <h4 class="fw-bold text-navy mb-0">
         <i class="bi bi-file-earmark-plus me-2"></i>
-        New Permission to Occupy
+        Issue New Permission to Occupy (PTO)
       </h4>
       <p class="text-muted small mb-0">
-        Register a new PTO allocation
+        Select a parcel and enter the applicant's details to issue a PTO
       </p>
     </div>
-    <a th:href="@{/ptos}"
-       class="btn btn-outline-secondary px-3">
+    <a th:href="@{/ptos}" class="btn btn-outline-secondary px-3">
       <i class="bi bi-arrow-left me-1"></i>Back
     </a>
   </div>
 
   <div class="row justify-content-center">
-    <div class="col-12 col-lg-10 col-xl-9">
-      <form th:action="@{/ptos/create}"
-            method="post"
-            novalidate
-            id="ptoForm">
+    <div class="col-12 col-lg-9">
+
+      <!-- Workflow Status -->
+      <div class="card border-0 shadow-sm mb-4 border-start border-4 border-success">
+        <div class="card-body p-3">
+          <div class="d-flex align-items-center gap-3 flex-wrap">
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge bg-success"><i class="bi bi-check"></i></span>
+              <small>Authority Exists</small>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge bg-success"><i class="bi bi-check"></i></span>
+              <small>Village Exists</small>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge bg-success"><i class="bi bi-check"></i></span>
+              <small>Parcel Exists</small>
+            </div>
+            <div class="d-flex align-items-center gap-2">
+              <span class="badge bg-navy">●</span>
+              <small class="fw-semibold text-navy">Issue PTO</small>
+            </div>
+            <div class="d-flex align-items-center gap-2 opacity-50">
+              <span class="badge bg-light text-muted">○</span>
+              <small class="text-muted">Create Household</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <form th:action="@{/ptos/create}" method="post" novalidate id="ptoForm">
 
         <div class="row g-4">
 
-          <!-- LEFT column -->
-          <div class="col-12 col-lg-7">
+          <!-- LEFT column - Parcel Selection -->
+          <div class="col-12 col-lg-6">
 
-            <!-- Holder Details -->
+            <!-- Step 1: Select Parcel -->
             <div class="card border-0 shadow-sm mb-4">
               <div class="card-header bg-white border-bottom py-3">
                 <h6 class="fw-bold text-navy mb-0">
-                  <i class="bi bi-person me-2"></i>
-                  PTO Holder Details
+                  <span class="badge bg-navy rounded-circle me-2">1</span>
+                  <i class="bi bi-map me-2"></i>
+                  Select the Parcel / Stand
                 </h6>
               </div>
               <div class="card-body p-4">
                 <div class="row g-3">
-
-                  <!-- Full Name -->
                   <div class="col-12">
-                    <label for="ptoHolderName" class="form-label">
-                      Full Name
-                      <span class="text-danger">*</span>
+                    <label for="parcelId" class="form-label">
+                      Choose Parcel <span class="text-danger">*</span>
                     </label>
                     <div class="input-group">
-                                            <span class="input-group-text">
-                                                <i class="bi bi-person"></i>
-                                            </span>
-                      <!-- Holder Name -->
+                      <span class="input-group-text"><i class="bi bi-map"></i></span>
+                      <select id="parcelId" name="parcelId" class="form-select" required>
+                        <option value="">— Select Parcel —</option>
+                        <option th:each="p : ${availableParcels}"
+                                th:value="${p.id}"
+                                th:text="${'Stand ' + p.standNumber + ' (' + p.parcelNumber + ')'}"
+                                th:data-village="${p.villageName}"
+                                th:data-authority="${p.authorityName}">
+                        </option>
+                      </select>
+                    </div>
+                    <div class="form-text">
+                      Only available parcels (not yet allocated) can be selected
+                    </div>
+                  </div>
+
+                  <!-- Parcel Details (auto-filled when selected) -->
+                  <div class="col-12" id="parcelDetails" style="display:none;">
+                    <div class="bg-light rounded-3 p-3">
+                      <div class="row g-2">
+                        <div class="col-6">
+                          <small class="text-muted">Stand Number</small>
+                          <div class="fw-semibold" id="displayStandNumber">—</div>
+                        </div>
+                        <div class="col-6">
+                          <small class="text-muted">Parcel Number</small>
+                          <div class="fw-semibold" id="displayParcelNumber">—</div>
+                        </div>
+                        <div class="col-6">
+                          <small class="text-muted">Village</small>
+                          <div class="fw-semibold" id="displayVillage">—</div>
+                        </div>
+                        <div class="col-6">
+                          <small class="text-muted">Traditional Authority</small>
+                          <div class="fw-semibold" id="displayAuthority">—</div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 2: Applicant Details -->
+            <div class="card border-0 shadow-sm mb-4">
+              <div class="card-header bg-white border-bottom py-3">
+                <h6 class="fw-bold text-navy mb-0">
+                  <span class="badge bg-navy rounded-circle me-2">2</span>
+                  <i class="bi bi-person me-2"></i>
+                  Applicant / Holder Details
+                </h6>
+              </div>
+              <div class="card-body p-4">
+                <div class="row g-3">
+                  <div class="col-12">
+                    <label for="ptoHolderName" class="form-label">
+                      Full Name <span class="text-danger">*</span>
+                    </label>
+                    <div class="input-group">
+                      <span class="input-group-text"><i class="bi bi-person"></i></span>
                       <input type="text"
                              id="ptoHolderName"
                              name="ptoHolderName"
@@ -96,18 +173,12 @@
                              required>
                     </div>
                   </div>
-
-                  <!-- ID Number -->
                   <div class="col-12 col-md-6">
                     <label for="idNumber" class="form-label">
-                      SA ID Number
-                      <span class="text-danger">*</span>
+                      SA ID Number <span class="text-danger">*</span>
                     </label>
                     <div class="input-group">
-                                            <span class="input-group-text">
-                                                <i class="bi bi-credit-card"></i>
-                                            </span>
-                      <!-- ID Number -->
+                      <span class="input-group-text"><i class="bi bi-credit-card"></i></span>
                       <input type="text"
                              id="idNumber"
                              name="idNumber"
@@ -116,21 +187,12 @@
                              maxlength="13"
                              required>
                     </div>
-                    <div class="mt-1" id="idFeedback"
-                         style="display:none">
-                    </div>
+                    <div class="mt-1" id="idFeedback" style="display:none"></div>
                   </div>
-
-                  <!-- Contact Phone -->
                   <div class="col-12 col-md-6">
-                    <label for="contactPhone" class="form-label">
-                      Contact Phone
-                    </label>
+                    <label for="contactPhone" class="form-label">Contact Phone</label>
                     <div class="input-group">
-                                            <span class="input-group-text">
-                                                <i class="bi bi-telephone"></i>
-                                            </span>
-                      <!-- Contact Phone -->
+                      <span class="input-group-text"><i class="bi bi-telephone"></i></span>
                       <input type="tel"
                              id="contactPhone"
                              name="contactPhone"
@@ -138,17 +200,10 @@
                              placeholder="+27XXXXXXXXX">
                     </div>
                   </div>
-
-                  <!-- Contact Email -->
                   <div class="col-12">
-                    <label for="contactEmail" class="form-label">
-                      Contact Email
-                    </label>
+                    <label for="contactEmail" class="form-label">Contact Email</label>
                     <div class="input-group">
-                                            <span class="input-group-text">
-                                                <i class="bi bi-envelope"></i>
-                                            </span>
-                      <!-- Contact Email -->
+                      <span class="input-group-text"><i class="bi bi-envelope"></i></span>
                       <input type="email"
                              id="contactEmail"
                              name="contactEmail"
@@ -156,56 +211,45 @@
                              placeholder="e.g. sipho@example.com">
                     </div>
                   </div>
-
                 </div>
               </div>
             </div>
+          </div>
 
-            <!-- PTO Details -->
+          <!-- RIGHT column - PTO Details -->
+          <div class="col-12 col-lg-6">
+
             <div class="card border-0 shadow-sm mb-4">
               <div class="card-header bg-white border-bottom py-3">
                 <h6 class="fw-bold text-navy mb-0">
+                  <span class="badge bg-navy rounded-circle me-2">3</span>
                   <i class="bi bi-file-earmark-text me-2"></i>
                   PTO Details
                 </h6>
               </div>
               <div class="card-body p-4">
                 <div class="row g-3">
-
-                  <!-- Purpose -->
                   <div class="col-12">
                     <label for="purpose" class="form-label">
                       Purpose <span class="text-danger">*</span>
                     </label>
                     <div class="input-group">
-                      <span class="input-group-text">
-                          <i class="bi bi-tag"></i>
-                      </span>
-                      <!-- Purpose -->
-                      <select id="purpose"
-                              name="purpose"
-                              class="form-select"
-                              required>
+                      <span class="input-group-text"><i class="bi bi-tag"></i></span>
+                      <select id="purpose" name="purpose" class="form-select" required>
                         <option value="">— Select Purpose —</option>
                         <option th:each="p : ${purposes}"
                                 th:value="${p.name()}"
                                 th:text="${p.displayName}">
                         </option>
-                      </select>>
+                      </select>
                     </div>
                   </div>
-
-                  <!-- Issue Date -->
                   <div class="col-12 col-md-6">
                     <label for="issueDate" class="form-label">
-                      Issue Date
-                      <span class="text-danger">*</span>
+                      Issue Date <span class="text-danger">*</span>
                     </label>
                     <div class="input-group">
-                                            <span class="input-group-text">
-                                                <i class="bi bi-calendar"></i>
-                                            </span>
-                      <!-- Issue Date -->
+                      <span class="input-group-text"><i class="bi bi-calendar"></i></span>
                       <input type="date"
                              id="issueDate"
                              name="issueDate"
@@ -213,131 +257,61 @@
                              required>
                     </div>
                   </div>
-
-                  <!-- Expiry Date -->
                   <div class="col-12 col-md-6">
-                    <label for="expiryDate" class="form-label">
-                      Expiry Date
-                    </label>
+                    <label for="expiryDate" class="form-label">Expiry Date</label>
                     <div class="input-group">
-                                            <span class="input-group-text">
-                                                <i class="bi bi-calendar-x"></i>
-                                            </span>
-                      <!-- Expiry Date -->
+                      <span class="input-group-text"><i class="bi bi-calendar-x"></i></span>
                       <input type="date"
                              id="expiryDate"
                              name="expiryDate"
                              class="form-control">
                     </div>
-                    <div class="form-text">
-                      Leave blank for indefinite PTO
-                    </div>
+                    <div class="form-text">Leave blank for indefinite PTO</div>
                   </div>
-
-                  <!-- Notes -->
                   <div class="col-12">
-                    <label for="notes" class="form-label">
-                      Notes
-                    </label>
-                    <!-- Notes -->
+                    <label for="notes" class="form-label">Notes</label>
                     <textarea id="notes"
                               name="notes"
                               class="form-control"
                               rows="3"
                               placeholder="Additional notes..."></textarea>
                   </div>
-
                 </div>
               </div>
             </div>
 
-          </div>
-
-          <!-- RIGHT column -->
-          <div class="col-12 col-lg-5">
-
-            <!-- Location -->
-            <div class="card border-0 shadow-sm mb-4">
-              <div class="card-header bg-white border-bottom py-3">
-                <h6 class="fw-bold text-navy mb-0">
-                  <i class="bi bi-geo-alt me-2"></i>
-                  Location
+            <!-- Summary Card -->
+            <div class="card border-0 shadow-sm mb-4 border-start border-4 border-navy">
+              <div class="card-body p-3">
+                <h6 class="fw-bold text-navy mb-2">
+                  <i class="bi bi-clipboard-check me-2"></i>Summary
                 </h6>
-              </div>
-              <div class="card-body p-4">
-                <div class="row g-3">
-
-                  <!-- Traditional Authority -->
-                  <div class="col-12">
-                    <label for="traditionalAuthorityId"
-                           class="form-label">
-                      Traditional Authority
-                      <span class="text-danger">*</span>
-                    </label>
-                    <div class="input-group">
-                                            <span class="input-group-text">
-                                                <i class="bi bi-building"></i>
-                                            </span>
-                      <!-- Traditional Authority -->
-                      <select id="traditionalAuthorityId"
-                              name="traditionalAuthorityId"
-                              class="form-select"
-                              required
-                              onchange="loadVillages(this.value)">
-                        <option value="">— Select Authority —</option>
-                        <option th:each="a : ${authorities}"
-                                th:value="${a.id}"
-                                th:text="${a.authorityName}">
-                        </option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <!-- Village -->
-                  <div class="col-12">
-                    <label for="villageId" class="form-label">
-                      Village
-                      <span class="text-danger">*</span>
-                    </label>
-                    <div class="input-group">
-                                            <span class="input-group-text">
-                                                <i class="bi bi-houses"></i>
-                                            </span>
-                      <!-- Village -->
-                      <select id="villageId"
-                              name="villageId"
-                              class="form-select"
-                              required>
-                        <option value="">— Select Authority First —</option>
-                      </select>
-                    </div>
-                  </div>
-
+                <div class="row g-2 small">
+                  <div class="col-5 text-muted">Parcel:</div>
+                  <div class="col-7 fw-semibold" id="summaryParcel">—</div>
+                  <div class="col-5 text-muted">Village:</div>
+                  <div class="col-7 fw-semibold" id="summaryVillage">—</div>
+                  <div class="col-5 text-muted">Holder:</div>
+                  <div class="col-7 fw-semibold" id="summaryHolder">—</div>
+                  <div class="col-5 text-muted">Status:</div>
+                  <div class="col-7"><span class="badge bg-warning text-dark">Pending Approval</span></div>
                 </div>
               </div>
             </div>
 
             <!-- Info Box -->
-            <div class="card border-0 shadow-sm mb-4 border-start
-                                    border-4 border-info">
+            <div class="card border-0 shadow-sm mb-4 border-start border-4 border-info">
               <div class="card-body p-3">
                 <div class="d-flex gap-3 align-items-start">
-                  <i class="bi bi-info-circle-fill
-                                              text-info fs-5 flex-shrink-0 mt-1"></i>
+                  <i class="bi bi-info-circle-fill text-info fs-5 flex-shrink-0 mt-1"></i>
                   <div class="small">
-                    <div class="fw-semibold mb-1">
-                      Before Creating a PTO
-                    </div>
-                    <ul class="mb-0 ps-3">
-                      <li>Verify the holder's SA ID number</li>
-                      <li>Confirm the village exists under
-                        the selected authority</li>
-                      <li>Check no active PTO exists
-                        for this ID number</li>
-                      <li>PTO starts as
-                        <strong>PENDING</strong>
-                        — TA Admin must approve it</li>
-                    </ul>
+                    <div class="fw-semibold mb-1">What happens next?</div>
+                    <ol class="mb-0 ps-3">
+                      <li>PTO is created with <strong>PENDING</strong> status</li>
+                      <li>TA Administrator reviews and <strong>approves</strong> the PTO</li>
+                      <li>Once approved, you can <strong>create the Household</strong></li>
+                      <li>Add <strong>Residents</strong> to the Household</li>
+                    </ol>
                   </div>
                 </div>
               </div>
@@ -345,13 +319,11 @@
 
             <!-- Actions -->
             <div class="d-grid gap-2">
-              <button type="submit"
-                      class="btn btn-navy py-2 fw-semibold">
+              <button type="submit" class="btn btn-navy py-2 fw-semibold">
                 <i class="bi bi-file-earmark-plus me-2"></i>
-                Create PTO Record
+                Issue PTO
               </button>
-              <a th:href="@{/ptos}"
-                 class="btn btn-light py-2">
+              <a th:href="@{/ptos}" class="btn btn-light py-2">
                 <i class="bi bi-x me-1"></i>Cancel
               </a>
             </div>
@@ -365,51 +337,6 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-  // ── Load villages when authority changes ───────────────────────────────
-
-    function loadVillages(authorityId) {
-    const select = document.getElementById('villageId');
-    select.innerHTML = '<option value="">Loading...</option>';
-
-    if (!authorityId) {
-    select.innerHTML =
-    '<option value="">— Select Authority First —</option>';
-    return;
-  }
-
-    fetch('/ptos/villages/' + authorityId, {
-    method: 'GET',
-    headers: {
-    'Accept': 'application/json'
-  }
-  })
-    .then(r => {
-    if (!r.ok) throw new Error('Network response was not ok');
-    return r.json();
-  })
-    .then(villages => {
-    select.innerHTML =
-    '<option value="">— Select Village —</option>';
-    if (villages.length === 0) {
-    select.innerHTML =
-    '<option value="">No villages for this authority</option>';
-    return;
-  }
-    villages.forEach(v => {
-    const opt = document.createElement('option');
-    opt.value = v.id;
-    opt.textContent = v.villageName +
-    (v.headmanName ? ' (' + v.headmanName + ')' : '');
-    select.appendChild(opt);
-  });
-  })
-    .catch(err => {
-    console.error('Error loading villages:', err);
-    select.innerHTML =
-    '<option value="">Error loading villages — try again</option>';
-  });
-  }
-
   // ── SA ID number validator (Luhn) ──────────────────────────────────────
   document.getElementById('idNumber').addEventListener('input', function () {
     const val = this.value.replace(/\D/g, '');
@@ -420,21 +347,17 @@
       const valid = luhn(val);
       fb.style.display = 'block';
       if (valid) {
-        fb.innerHTML =
-                '<small class="text-success">' +
-                '<i class="bi bi-check-circle me-1"></i>Valid SA ID</small>';
+        fb.innerHTML = '<small class="text-success"><i class="bi bi-check-circle me-1"></i>Valid SA ID</small>';
         this.classList.remove('is-invalid');
         this.classList.add('is-valid');
       } else {
-        fb.innerHTML =
-                '<small class="text-danger">' +
-                '<i class="bi bi-x-circle me-1"></i>Invalid SA ID number</small>';
+        fb.innerHTML = '<small class="text-danger"><i class="bi bi-x-circle me-1"></i>Invalid SA ID number</small>';
         this.classList.add('is-invalid');
         this.classList.remove('is-valid');
       }
     } else {
       fb.style.display = 'none';
-      this.classList.remove('is-valid','is-invalid');
+      this.classList.remove('is-valid', 'is-invalid');
     }
   });
 
@@ -452,13 +375,62 @@
   }
 
   // ── Phone formatter ────────────────────────────────────────────────────
-  document.getElementById('contactPhone')
-          .addEventListener('blur', function () {
-            let v = this.value.replace(/\s/g, '');
-            if (v.startsWith('0') && v.length === 10) {
-              this.value = '+27' + v.substring(1);
-            }
-          });
+  document.getElementById('contactPhone').addEventListener('blur', function () {
+    let v = this.value.replace(/\s/g, '');
+    if (v.startsWith('0') && v.length === 10) {
+      this.value = '+27' + v.substring(1);
+    }
+  });
+
+  // ── Set default issue date ────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', function() {
+    const today = new Date().toISOString().split('T')[0];
+    const issueDate = document.getElementById('issueDate');
+    if (!issueDate.value) {
+      issueDate.value = today;
+    }
+  });
+
+  // ── Update summary when parcel is selected ────────────────────────────
+  document.getElementById('parcelId').addEventListener('change', function() {
+    const selected = this.options[this.selectedIndex];
+    const details = document.getElementById('parcelDetails');
+    const summaryParcel = document.getElementById('summaryParcel');
+    const summaryVillage = document.getElementById('summaryVillage');
+
+    if (this.value) {
+      // Show details
+      details.style.display = 'block';
+      // Parse the selected option text (format: "Stand X (PRC-2026-00001)")
+      const text = selected.text;
+      const standMatch = text.match(/Stand ([\d\s]+)/);
+      const parcelMatch = text.match(/\(([^)]+)\)/);
+      const stand = standMatch ? standMatch[1].trim() : '—';
+      const parcel = parcelMatch ? parcelMatch[1] : '—';
+
+      document.getElementById('displayStandNumber').textContent = stand;
+      document.getElementById('displayParcelNumber').textContent = parcel;
+
+      // Update summary
+      summaryParcel.textContent = stand + ' (' + parcel + ')';
+
+      // Get village and authority from data attributes
+      const village = selected.dataset.village || '—';
+      const authority = selected.dataset.authority || '—';
+      document.getElementById('displayVillage').textContent = village;
+      document.getElementById('displayAuthority').textContent = authority;
+      summaryVillage.textContent = village;
+    } else {
+      details.style.display = 'none';
+      summaryParcel.textContent = '—';
+      summaryVillage.textContent = '—';
+    }
+  });
+
+  // ── Update holder name in summary ─────────────────────────────────────
+  document.getElementById('ptoHolderName').addEventListener('input', function() {
+    document.getElementById('summaryHolder').textContent = this.value || '—';
+  });
 </script>
 </body>
 </html>

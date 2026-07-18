@@ -13,6 +13,7 @@ public interface PTOService {
     List<PTOResponse> findByStatus(PTOStatus status);
     List<PTOResponse> findByAuthority(Long authorityId);
     List<PTOResponse> findByVillage(Long villageId);
+    List<PTOResponse> findByParcel(Long parcelId);
     List<PTOResponse> search(PTOSearchCriteria criteria);
     PTOResponse approvePTO(Long id, PTOApprovalRequest request, String approvedBy);
     PTOResponse revokePTO(Long id, PTORevokeRequest request, String revokedBy);

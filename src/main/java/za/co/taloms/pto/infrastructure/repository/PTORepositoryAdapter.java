@@ -55,15 +55,28 @@ public class PTORepositoryAdapter implements PTORepositoryPort {
     }
 
     @Override
+    public List<PTO> findByParcelId(Long parcelId) {
+        return jpaRepository.findByParcelId(parcelId);
+    }
+
+    @Override
     public boolean existsByPtoNumber(String ptoNumber) {
         return jpaRepository.existsByPtoNumber(ptoNumber);
     }
 
     @Override
-    public boolean existsByIdNumberAndStatus(
-            String idNumber, PTOStatus status) {
-        return jpaRepository.existsByIdNumberAndStatus(
-                idNumber, status);
+    public boolean existsByIdNumberAndStatus(String idNumber, PTOStatus status) {
+        return jpaRepository.existsByIdNumberAndStatus(idNumber, status);
+    }
+
+    @Override
+    public boolean existsByIdNumberAndParcelIdAndStatus(String idNumber, Long parcelId, PTOStatus status) {
+        return jpaRepository.existsByIdNumberAndParcelIdAndStatus(idNumber, parcelId, status);
+    }
+
+    @Override
+    public boolean existsByParcelIdAndStatus(Long parcelId, PTOStatus status) {
+        return jpaRepository.existsByParcelIdAndStatus(parcelId, status);
     }
 
     @Override

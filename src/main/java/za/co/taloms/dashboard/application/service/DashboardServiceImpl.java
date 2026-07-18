@@ -155,6 +155,8 @@ public class DashboardServiceImpl implements DashboardService {
                         try {
                             return RecentActivityDto.builder()
                                     .action(audit.getActionDisplay() != null ? audit.getActionDisplay() : "Unknown")
+                                    .actionDisplay(audit.getActionDisplay() != null ? audit.getActionDisplay() : "Unknown")
+                                    .badgeClass(audit.getActionBadgeClass() != null ? audit.getActionBadgeClass() : "bg-secondary")
                                     .entityType(audit.getEntityType() != null ? audit.getEntityType() : "Unknown")
                                     .entityTypeDisplay(audit.getEntityTypeDisplay() != null ? audit.getEntityTypeDisplay() : "Unknown")
                                     .entityId(audit.getEntityId() != null ? audit.getEntityId() : 0L)
@@ -167,6 +169,8 @@ public class DashboardServiceImpl implements DashboardService {
                             log.warn("Error converting audit log to recent activity: {}", e.getMessage());
                             return RecentActivityDto.builder()
                                     .action("Unknown")
+                                    .actionDisplay("Unknown")
+                                    .badgeClass("bg-secondary")
                                     .entityType("Unknown")
                                     .entityTypeDisplay("Unknown")
                                     .entityId(0L)

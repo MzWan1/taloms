@@ -24,6 +24,7 @@ public class DashboardController {
             model.addAttribute("summary", summary);
             model.addAttribute("totalPtos", summary.getTotalPtos() != null ? summary.getTotalPtos() : 0L);
             model.addAttribute("activePtos", summary.getActivePtos() != null ? summary.getActivePtos() : 0L);
+            model.addAttribute("pendingPtos", summary.getPendingPtos() != null ? summary.getPendingPtos() : 0L);
             model.addAttribute("totalParcels", summary.getTotalParcels() != null ? summary.getTotalParcels() : 0L);
             model.addAttribute("totalResidents", summary.getTotalResidents() != null ? summary.getTotalResidents() : 0L);
             model.addAttribute("totalHouseholds", summary.getTotalHouseholds() != null ? summary.getTotalHouseholds() : 0L);
@@ -51,6 +52,7 @@ public class DashboardController {
             // Set default values to avoid template errors
             model.addAttribute("totalPtos", 0L);
             model.addAttribute("activePtos", 0L);
+            model.addAttribute("pendingPtos", 0L);
             model.addAttribute("totalParcels", 0L);
             model.addAttribute("totalResidents", 0L);
             model.addAttribute("totalHouseholds", 0L);

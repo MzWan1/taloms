@@ -12,6 +12,7 @@ import za.co.taloms.household.application.dto.HouseholdRequest;
 import za.co.taloms.household.application.service.HouseholdService;
 import za.co.taloms.parcel.application.service.ParcelService;
 import za.co.taloms.parcel.domain.entity.ParcelStatus;
+import za.co.taloms.pto.application.service.PTOService;
 import za.co.taloms.traditionalauthority.application.service.TraditionalAuthorityService;
 import za.co.taloms.traditionalauthority.application.service.VillageService;
 import java.time.LocalDate;
@@ -28,7 +29,7 @@ public class HouseholdPageController {
 
     private final HouseholdService householdService;
     private final ParcelService parcelService;
-    // Removed PTOService - it's not needed here
+    private final PTOService ptoService;
     private final TraditionalAuthorityService authorityService;
     private final VillageService villageService;
 
@@ -85,8 +86,18 @@ public class HouseholdPageController {
                 availableParcels = Collections.emptyList();
             }
 
+            // Get active PTOs to link to households
+            List<za.co.taloms.pto.application.dto.PTOResponse> activePtos = new ArrayList<>();
+            try {
+                activePtos = ptoService.findByStatus(za.co.taloms.pto.domain.entity.PTOStatus.ACTIVE);
+                log.info("Found {} active PTOs for household creation", activePtos.size());
+            } catch (Exception e) {
+                log.error("Error loading active PTOs: {}", e.getMessage(), e);
+            }
+
             model.addAttribute("authorities", authorities);
             model.addAttribute("availableParcels", availableParcels);
+            model.addAttribute("activePtos", activePtos);
             model.addAttribute("pageTitle", "Create Household");
             model.addAttribute("currentPage", "households");
             return "households/create";
@@ -95,6 +106,7 @@ public class HouseholdPageController {
             model.addAttribute("errorMessage", "Error loading form: " + e.getMessage());
             model.addAttribute("authorities", Collections.emptyList());
             model.addAttribute("availableParcels", Collections.emptyList());
+            model.addAttribute("activePtos", Collections.emptyList());
             model.addAttribute("pageTitle", "Create Household");
             model.addAttribute("currentPage", "households");
             return "households/create";
@@ -179,10 +191,19 @@ public class HouseholdPageController {
                 availableParcels = Collections.emptyList();
             }
 
+            // Get active PTOs
+            List<za.co.taloms.pto.application.dto.PTOResponse> activePtos = new ArrayList<>();
+            try {
+                activePtos = ptoService.findByStatus(za.co.taloms.pto.domain.entity.PTOStatus.ACTIVE);
+            } catch (Exception e) {
+                log.error("Error loading active PTOs: {}", e.getMessage(), e);
+            }
+
             model.addAttribute("household", household);
             model.addAttribute("form", form);
             model.addAttribute("authorities", authorities);
             model.addAttribute("availableParcels", availableParcels);
+            model.addAttribute("activePtos", activePtos);
             model.addAttribute("pageTitle", "Edit Household");
             model.addAttribute("currentPage", "households");
             return "households/edit";

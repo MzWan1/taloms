@@ -328,17 +328,16 @@
                             </tr>
                             <tr th:each="activity : ${recentActivity}" th:unless="${recentActivity == null or #lists.isEmpty(recentActivity)}">
                                 <td class="px-4">
-                                    <span class="badge" th:class="${'badge ' + activity.badgeClass}"
-                                          th:text="${activity.actionDisplay}">Action</span>
+                                <span class="badge" th:class="${activity.badgeClass != null ? 'badge ' + activity.badgeClass : 'badge bg-secondary'}"
+                                      th:text="${activity.actionDisplay != null ? activity.actionDisplay : 'Unknown'}">Action</span>
                                 </td>
                                 <td>
-                                    <span class="fw-semibold small" th:text="${activity.entityTypeDisplay}">Entity</span>
+                                    <span class="fw-semibold small" th:text="${activity.entityTypeDisplay != null ? activity.entityTypeDisplay : 'Unknown'}">Entity</span>
                                     <span class="text-muted small" th:text="' #' + ${activity.entityId}">ID</span>
-                                    <div class="text-muted small" th:if="${activity.description != null}"
-                                         th:text="${activity.description}">Description</div>
+                                    <div class="text-muted small" th:if="${activity.description != null}" th:text="${activity.description}">Description</div>
                                 </td>
-                                <td class="small" th:text="${activity.performedBy}">User</td>
-                                <td class="small" th:text="${activity.performedAtDisplay}">Date</td>
+                                <td class="small" th:text="${activity.performedBy != null ? activity.performedBy : 'System'}">User</td>
+                                <td class="small" th:text="${activity.performedAtDisplay != null ? activity.performedAtDisplay : ''}">Date</td>
                             </tr>
                             </tbody>
                         </table>

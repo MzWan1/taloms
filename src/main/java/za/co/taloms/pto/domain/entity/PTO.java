@@ -3,6 +3,7 @@ package za.co.taloms.pto.domain.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.security.core.context.SecurityContextHolder;
+import za.co.taloms.parcel.domain.entity.Parcel;
 import za.co.taloms.traditionalauthority.domain.entity.TraditionalAuthority;
 import za.co.taloms.traditionalauthority.domain.entity.Village;
 import java.time.LocalDate;
@@ -61,6 +62,10 @@ public class PTO {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "traditional_authority_id")
     private TraditionalAuthority traditionalAuthority;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parcel_id")
+    private Parcel parcel;
 
     @Column(name = "approved_by", length = 50)
     private String approvedBy;

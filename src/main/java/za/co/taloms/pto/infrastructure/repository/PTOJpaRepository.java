@@ -18,23 +18,36 @@ public interface PTOJpaRepository extends JpaRepository<PTO, Long> {
 
     List<PTO> findByIdNumber(String idNumber);
 
-    boolean existsByIdNumberAndStatus(
-            String idNumber, PTOStatus status);
+    boolean existsByIdNumberAndStatus(String idNumber, PTOStatus status);
+
+    @Query("SELECT CASE WHEN COUNT(p) > 0 THEN true ELSE false END " +
+            "FROM PTO p WHERE p.idNumber = :idNumber " +
+            "AND p.parcel.id = :parcelId " +
+            "AND p.status = :status")
+    boolean existsByIdNumberAndParcelIdAndStatus(
+            @Param("idNumber") String idNumber,
+            @Param("parcelId") Long parcelId,
+            @Param("status") PTOStatus status);
+
+    @Query("SELECT CASE WHEN COUNT(p) > 0 THEN true ELSE false END " +
+            "FROM PTO p WHERE p.parcel.id = :parcelId " +
+            "AND p.status = :status")
+    boolean existsByParcelIdAndStatus(
+            @Param("parcelId") Long parcelId,
+            @Param("status") PTOStatus status);
+
+    @Query("SELECT p FROM PTO p WHERE p.parcel.id = :parcelId ORDER BY p.createdAt DESC")
+    List<PTO> findByParcelId(@Param("parcelId") Long parcelId);
 
     long countByStatus(PTOStatus status);
 
     long countByTraditionalAuthorityId(Long authorityId);
 
-    @Query("SELECT p FROM PTO p WHERE p.village.id = :villageId " +
-            "ORDER BY p.createdAt DESC")
-    List<PTO> findByVillageId(
-            @Param("villageId") Long villageId);
+    @Query("SELECT p FROM PTO p WHERE p.village.id = :villageId ORDER BY p.createdAt DESC")
+    List<PTO> findByVillageId(@Param("villageId") Long villageId);
 
-    @Query("SELECT p FROM PTO p " +
-            "WHERE p.traditionalAuthority.id = :authorityId " +
-            "ORDER BY p.createdAt DESC")
-    List<PTO> findByTraditionalAuthorityId(
-            @Param("authorityId") Long authorityId);
+    @Query("SELECT p FROM PTO p WHERE p.traditionalAuthority.id = :authorityId ORDER BY p.createdAt DESC")
+    List<PTO> findByTraditionalAuthorityId(@Param("authorityId") Long authorityId);
 
     @Query("SELECT p FROM PTO p ORDER BY p.createdAt DESC")
     List<PTO> findAllOrderByCreatedAtDesc();

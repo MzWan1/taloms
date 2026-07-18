@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import za.co.taloms.common.BusinessValidationException;
 import za.co.taloms.common.ResourceNotFoundException;
+import za.co.taloms.parcel.domain.repository.ParcelRepositoryPort;
 import za.co.taloms.pto.application.dto.*;
 import za.co.taloms.pto.domain.entity.PTO;
 import za.co.taloms.pto.domain.entity.PTOPurpose;
@@ -26,6 +27,7 @@ import java.util.stream.Collectors;
 public class PTOServiceImpl implements PTOService {
 
     private final PTORepositoryPort ptoRepository;
+    private final ParcelRepositoryPort parcelRepository;
     private final PTONumberGenerator numberGenerator;
     private final TraditionalAuthorityRepositoryPort authorityRepository;
     private final VillageRepositoryPort villageRepository;
@@ -33,10 +35,24 @@ public class PTOServiceImpl implements PTOService {
 
     @Override
     public PTOResponse createPTO(PTORequest request, String createdBy) {
-        // Validate no active PTO for same ID number
-        if (ptoRepository.existsByIdNumberAndStatus(request.getIdNumber(), PTOStatus.ACTIVE)) {
+        // Get the parcel
+        var parcel = parcelRepository.findById(request.getParcelId())
+                .orElseThrow(() -> new ResourceNotFoundException("Parcel", request.getParcelId()));
+
+        // Validate that the person doesn't already have an ACTIVE PTO for the SAME parcel
+        // A person can have multiple PTOs for different parcels
+        if (ptoRepository.existsByIdNumberAndParcelIdAndStatus(
+                request.getIdNumber(),
+                request.getParcelId(),
+                PTOStatus.ACTIVE)) {
             throw new BusinessValidationException(
-                    "An active PTO already exists for ID number: " + request.getIdNumber());
+                    "An active PTO already exists for this ID number on the selected parcel.");
+        }
+
+        // Validate that the parcel doesn't already have an ACTIVE PTO
+        if (ptoRepository.existsByParcelIdAndStatus(request.getParcelId(), PTOStatus.ACTIVE)) {
+            throw new BusinessValidationException(
+                    "This parcel already has an active PTO. Please select a different parcel.");
         }
 
         var authority = authorityRepository.findById(request.getTraditionalAuthorityId())
@@ -63,6 +79,7 @@ public class PTOServiceImpl implements PTOService {
                 .notes(request.getNotes())
                 .village(village)
                 .traditionalAuthority(authority)
+                .parcel(parcel)
                 .createdBy(createdBy)
                 .build();
 
@@ -72,7 +89,8 @@ public class PTOServiceImpl implements PTOService {
                 saved.getPtoHolderName(), saved.getVillage().getId(),
                 saved.getTraditionalAuthority().getId(), createdBy));
 
-        log.info("Created PTO: {} for holder: {} by {}", saved.getPtoNumber(), saved.getPtoHolderName(), createdBy);
+        log.info("Created PTO: {} for holder: {} on parcel: {} by {}",
+                saved.getPtoNumber(), saved.getPtoHolderName(), request.getParcelId(), createdBy);
         return toResponse(saved);
     }
 
@@ -120,6 +138,14 @@ public class PTOServiceImpl implements PTOService {
     @Transactional(readOnly = true)
     public List<PTOResponse> findByVillage(Long villageId) {
         return ptoRepository.findByVillageId(villageId).stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PTOResponse> findByParcel(Long parcelId) {
+        return ptoRepository.findByParcelId(parcelId).stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
@@ -246,7 +272,6 @@ public class PTOServiceImpl implements PTOService {
         return ptoRepository.countByStatus(status);
     }
 
-    // Add to PTOServiceImpl.java
     @Override
     @Transactional
     public PTOResponse updatePTO(Long id, PTORequest request, String updatedBy) {
@@ -258,6 +283,9 @@ public class PTOServiceImpl implements PTOService {
             throw new BusinessValidationException(
                     "PTO can only be edited when status is PENDING or SUSPENDED");
         }
+
+        var parcel = parcelRepository.findById(request.getParcelId())
+                .orElseThrow(() -> new ResourceNotFoundException("Parcel", request.getParcelId()));
 
         var authority = authorityRepository.findById(request.getTraditionalAuthorityId())
                 .orElseThrow(() -> new ResourceNotFoundException("Traditional Authority", request.getTraditionalAuthorityId()));
@@ -275,6 +303,7 @@ public class PTOServiceImpl implements PTOService {
         pto.setNotes(request.getNotes());
         pto.setVillage(village);
         pto.setTraditionalAuthority(authority);
+        pto.setParcel(parcel);
 
         var saved = ptoRepository.save(pto);
         log.info("PTO {} updated by {}", saved.getPtoNumber(), updatedBy);

@@ -41,11 +41,43 @@
             <h4 class="fw-bold text-navy mb-0">
                 <i class="bi bi-person-plus me-2"></i>Create New Household
             </h4>
-            <p class="text-muted small mb-0">Register a new household on a parcel</p>
+            <p class="text-muted small mb-0">Step 5: Register a household on a parcel with an approved PTO</p>
         </div>
         <a th:href="@{/households}" class="btn btn-outline-secondary px-3">
             <i class="bi bi-arrow-left me-1"></i>Back
         </a>
+    </div>
+
+    <!-- Workflow Status -->
+    <div class="card border-0 shadow-sm mb-4 border-start border-4 border-success">
+        <div class="card-body p-3">
+            <div class="d-flex align-items-center gap-3 flex-wrap">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-success"><i class="bi bi-check"></i></span>
+                    <small>Authority</small>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-success"><i class="bi bi-check"></i></span>
+                    <small>Village</small>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-success"><i class="bi bi-check"></i></span>
+                    <small>Parcel</small>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-success"><i class="bi bi-check"></i></span>
+                    <small>PTO</small>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="badge bg-navy">●</span>
+                    <small class="fw-semibold text-navy">Household</small>
+                </div>
+                <div class="d-flex align-items-center gap-2 opacity-50">
+                    <span class="badge bg-light text-muted">○</span>
+                    <small class="text-muted">Residents</small>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="row justify-content-center">
@@ -78,6 +110,9 @@
                                            th:value="${form.householdHeadName}"
                                            placeholder="e.g. Thabo Mokoena"
                                            required>
+                                </div>
+                                <div class="form-text">
+                                    This should match the PTO holder name
                                 </div>
                             </div>
 
@@ -164,6 +199,29 @@
                                      class="form-text">
                                     Select a parcel for this household (only available parcels are shown)
                                 </div>
+                            </div>
+
+                            <!-- PTO (Optional) -->
+                            <div class="col-12" th:if="${activePtos != null and !activePtos.isEmpty()}">
+                                <label for="ptoId" class="form-label">
+                                    PTO (Optional)
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="bi bi-file-earmark-text"></i>
+                                    </span>
+                                    <select id="ptoId"
+                                            name="ptoId"
+                                            class="form-select">
+                                        <option value="">— Select PTO —</option>
+                                        <option th:each="pto : ${activePtos}"
+                                                th:value="${pto.id}"
+                                                th:text="${pto.ptoNumber + ' - ' + pto.ptoHolderName}"
+                                                th:selected="${pto.id == form.ptoId}">
+                                        </option>
+                                    </select>
+                                </div>
+                                <div class="form-text">Link this household to an existing PTO</div>
                             </div>
 
                             <!-- Registration Date -->

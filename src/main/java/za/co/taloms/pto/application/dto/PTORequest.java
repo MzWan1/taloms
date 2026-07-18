@@ -6,7 +6,10 @@ import za.co.taloms.pto.domain.entity.PTOPurpose;
 import java.time.LocalDate;
 import org.springframework.format.annotation.DateTimeFormat;
 
-@Data @Builder @NoArgsConstructor @AllArgsConstructor
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class PTORequest {
 
     @NotBlank(message = "PTO holder name is required")
@@ -42,4 +45,7 @@ public class PTORequest {
 
     @NotNull(message = "Traditional Authority is required")
     private Long traditionalAuthorityId;
+
+    @NotNull(message = "Parcel is required")
+    private Long parcelId;
 }
