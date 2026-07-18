@@ -31,11 +31,6 @@ public class ParcelRepositoryAdapter implements ParcelRepositoryPort {
     }
 
     @Override
-    public List<Parcel> findAllAvailable() {
-        return jpaRepository.findByStatus(ParcelStatus.AVAILABLE);
-    }
-
-    @Override
     public Optional<Parcel> findByStandNumberAndVillageId(String standNumber, Long villageId) {
         return jpaRepository.findByStandNumberAndVillageId(standNumber, villageId);
     }
@@ -68,6 +63,11 @@ public class ParcelRepositoryAdapter implements ParcelRepositoryPort {
     @Override
     public List<Parcel> findAvailable(Long villageId) {
         return jpaRepository.findAvailableByVillageId(villageId);
+    }
+
+    @Override
+    public List<Parcel> findAllAvailable() {
+        return jpaRepository.findByStatus(ParcelStatus.AVAILABLE);
     }
 
     @Override

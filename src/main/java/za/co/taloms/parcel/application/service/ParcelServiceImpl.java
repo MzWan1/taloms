@@ -17,6 +17,7 @@ import za.co.taloms.parcel.domain.entity.ParcelStatus;
 import za.co.taloms.parcel.domain.entity.ParcelType;
 import za.co.taloms.parcel.domain.repository.ParcelBoundaryRepositoryPort;
 import za.co.taloms.parcel.domain.repository.ParcelRepositoryPort;
+import za.co.taloms.pto.domain.entity.PTOStatus;
 import za.co.taloms.pto.domain.repository.PTORepositoryPort;
 import za.co.taloms.traditionalauthority.domain.repository.VillageRepositoryPort;
 import java.time.LocalDateTime;
@@ -39,14 +40,6 @@ public class ParcelServiceImpl implements ParcelService {
 
     private static final String PARCEL_NUMBER_PREFIX = "PRC";
 
-    @Override
-    @Transactional(readOnly = true)
-    public List<ParcelResponse> findAllAvailable() {
-        return parcelRepository.findByStatus(ParcelStatus.AVAILABLE).stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
-    }
-    
     @Override
     public ParcelResponse createParcel(ParcelRequest request, String createdBy) {
         // Validate village exists
@@ -227,7 +220,36 @@ public class ParcelServiceImpl implements ParcelService {
     @Override
     @Transactional(readOnly = true)
     public List<ParcelResponse> findAvailable(Long villageId) {
-        return parcelRepository.findAvailable(villageId).stream()
+        // Get all parcels with AVAILABLE status
+        List<Parcel> availableParcels = parcelRepository.findAvailable(villageId);
+
+        // Filter out parcels that have ACTIVE or SUSPENDED PTOs
+        return availableParcels.stream()
+                .filter(parcel -> {
+                    // Check if this parcel has an ACTIVE or SUSPENDED PTO
+                    boolean hasActivePto = ptoRepository.existsByParcelIdAndStatus(parcel.getId(), PTOStatus.ACTIVE);
+                    boolean hasSuspendedPto = ptoRepository.existsByParcelIdAndStatus(parcel.getId(), PTOStatus.SUSPENDED);
+
+                    // Parcel is available only if it has NO ACTIVE and NO SUSPENDED PTO
+                    return !hasActivePto && !hasSuspendedPto;
+                })
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ParcelResponse> findAllAvailable() {
+        // Get all parcels with AVAILABLE status
+        List<Parcel> availableParcels = parcelRepository.findByStatus(ParcelStatus.AVAILABLE);
+
+        // Filter out parcels that have ACTIVE or SUSPENDED PTOs
+        return availableParcels.stream()
+                .filter(parcel -> {
+                    boolean hasActivePto = ptoRepository.existsByParcelIdAndStatus(parcel.getId(), PTOStatus.ACTIVE);
+                    boolean hasSuspendedPto = ptoRepository.existsByParcelIdAndStatus(parcel.getId(), PTOStatus.SUSPENDED);
+                    return !hasActivePto && !hasSuspendedPto;
+                })
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
@@ -236,6 +258,16 @@ public class ParcelServiceImpl implements ParcelService {
     public ParcelResponse updateStatus(Long id, ParcelStatus status, String updatedBy) {
         var parcel = parcelRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Parcel", id));
+
+        // Check if trying to set to AVAILABLE - verify no ACTIVE PTO exists
+        if (status == ParcelStatus.AVAILABLE) {
+            boolean hasActivePto = ptoRepository.existsByParcelIdAndStatus(id, PTOStatus.ACTIVE);
+            if (hasActivePto) {
+                throw new BusinessValidationException(
+                        "Cannot set parcel to AVAILABLE because it has an ACTIVE PTO. " +
+                                "Revoke the PTO first.");
+            }
+        }
 
         parcel.setStatus(status);
         var saved = parcelRepository.save(parcel);
@@ -331,7 +363,6 @@ public class ParcelServiceImpl implements ParcelService {
     }
 
     private ParcelResponse toResponse(Parcel parcel) {
-        // Load boundaries if not already loaded
         List<BoundaryPointDto> boundaryPoints = parcel.getBoundaries().stream()
                 .map(b -> BoundaryPointDto.builder()
                         .sequence(b.getSequence())

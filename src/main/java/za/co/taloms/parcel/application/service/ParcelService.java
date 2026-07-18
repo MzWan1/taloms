@@ -8,7 +8,6 @@ import za.co.taloms.parcel.domain.entity.ParcelType;
 import java.util.List;
 
 public interface ParcelService {
-    List<ParcelResponse> findAllAvailable();
     ParcelResponse createParcel(ParcelRequest request, String createdBy);
     ParcelResponse updateParcel(Long id, ParcelRequest request, String updatedBy);
     ParcelResponse findById(Long id);
@@ -18,6 +17,7 @@ public interface ParcelService {
     List<ParcelResponse> findByStatus(ParcelStatus status);
     List<ParcelResponse> findByParcelType(ParcelType parcelType);
     List<ParcelResponse> findAvailable(Long villageId);
+    List<ParcelResponse> findAllAvailable();  // NEW METHOD
     ParcelResponse updateStatus(Long id, ParcelStatus status, String updatedBy);
     ParcelResponse allocateParcel(Long id, Long ptoId, String allocatedBy);
     void deleteParcel(Long id, String deletedBy);

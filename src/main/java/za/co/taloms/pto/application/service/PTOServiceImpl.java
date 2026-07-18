@@ -39,33 +39,64 @@ public class PTOServiceImpl implements PTOService {
         var parcel = parcelRepository.findById(request.getParcelId())
                 .orElseThrow(() -> new ResourceNotFoundException("Parcel", request.getParcelId()));
 
-        // Validate that the person doesn't already have an ACTIVE PTO for the SAME parcel
-        // A person can have multiple PTOs for different parcels
+        // ===== VALIDATION 1: Check if the parcel already has an ACTIVE PTO =====
+        // A parcel can only have ONE active PTO at a time
+        if (ptoRepository.existsByParcelIdAndStatus(request.getParcelId(), PTOStatus.ACTIVE)) {
+            throw new BusinessValidationException(
+                    "This parcel already has an ACTIVE PTO. Parcel: " + parcel.getParcelNumber() +
+                            " - Stand: " + parcel.getStandNumber());
+        }
+
+        // ===== VALIDATION 2: Check if the parcel already has a SUSPENDED PTO =====
+        // A parcel with a suspended PTO cannot get a new PTO
+        if (ptoRepository.existsByParcelIdAndStatus(request.getParcelId(), PTOStatus.SUSPENDED)) {
+            throw new BusinessValidationException(
+                    "This parcel has a SUSPENDED PTO. Please reactivate or revoke the existing PTO first. " +
+                            "Parcel: " + parcel.getParcelNumber() + " - Stand: " + parcel.getStandNumber());
+        }
+
+        // ===== VALIDATION 3: Check if this person already has an ACTIVE PTO on THIS parcel =====
+        // A person cannot have duplicate PTOs on the same parcel
         if (ptoRepository.existsByIdNumberAndParcelIdAndStatus(
                 request.getIdNumber(),
                 request.getParcelId(),
                 PTOStatus.ACTIVE)) {
             throw new BusinessValidationException(
-                    "An active PTO already exists for this ID number on the selected parcel.");
+                    "This person already has an ACTIVE PTO on this parcel. " +
+                            "Parcel: " + parcel.getParcelNumber() + " - Stand: " + parcel.getStandNumber());
         }
 
-        // Validate that the parcel doesn't already have an ACTIVE PTO
-        if (ptoRepository.existsByParcelIdAndStatus(request.getParcelId(), PTOStatus.ACTIVE)) {
+        // ===== VALIDATION 4: Check if this person already has a SUSPENDED PTO on THIS parcel =====
+        if (ptoRepository.existsByIdNumberAndParcelIdAndStatus(
+                request.getIdNumber(),
+                request.getParcelId(),
+                PTOStatus.SUSPENDED)) {
             throw new BusinessValidationException(
-                    "This parcel already has an active PTO. Please select a different parcel.");
+                    "This person has a SUSPENDED PTO on this parcel. Please reactivate or revoke it first.");
         }
 
+        // ===== VALIDATION 5: Check if the parcel status is AVAILABLE =====
+        // Only AVAILABLE parcels can get new PTOs
+        if (!parcel.isAvailable()) {
+            throw new BusinessValidationException(
+                    "Parcel is not available for PTO allocation. Current status: " +
+                            parcel.getStatus().getDisplayName());
+        }
+
+        // Get authority and village
         var authority = authorityRepository.findById(request.getTraditionalAuthorityId())
                 .orElseThrow(() -> new ResourceNotFoundException("Traditional Authority", request.getTraditionalAuthorityId()));
 
         var village = villageRepository.findById(request.getVillageId())
                 .orElseThrow(() -> new ResourceNotFoundException("Village", request.getVillageId()));
 
+        // Generate unique PTO number
         String ptoNumber = numberGenerator.generate();
         while (ptoRepository.existsByPtoNumber(ptoNumber)) {
             ptoNumber = numberGenerator.generate();
         }
 
+        // Create PTO
         var pto = PTO.builder()
                 .ptoNumber(ptoNumber)
                 .ptoHolderName(request.getPtoHolderName())
@@ -84,15 +115,170 @@ public class PTOServiceImpl implements PTOService {
                 .build();
 
         var saved = ptoRepository.save(pto);
+
+        // Publish event
         eventPublisher.publishEvent(new PTOCreatedEvent(
                 this, saved.getId(), saved.getPtoNumber(),
                 saved.getPtoHolderName(), saved.getVillage().getId(),
                 saved.getTraditionalAuthority().getId(), createdBy));
 
-        log.info("Created PTO: {} for holder: {} on parcel: {} by {}",
-                saved.getPtoNumber(), saved.getPtoHolderName(), request.getParcelId(), createdBy);
+        log.info("Created PTO: {} for holder: {} on parcel: {} ({}) by {}",
+                saved.getPtoNumber(), saved.getPtoHolderName(),
+                parcel.getParcelNumber(), parcel.getStandNumber(), createdBy);
+
         return toResponse(saved);
     }
+
+    @Override
+    public PTOResponse approvePTO(Long id, PTOApprovalRequest request, String approvedBy) {
+        var pto = ptoRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("PTO", id));
+
+        if (!pto.canBeApproved()) {
+            throw new BusinessValidationException("PTO cannot be approved in status: " + pto.getStatus().getDisplayName());
+        }
+
+        // Check if the parcel is still available (no other active PTOs)
+        if (pto.getParcel() != null && ptoRepository.existsByParcelIdAndStatus(pto.getParcel().getId(), PTOStatus.ACTIVE)) {
+            throw new BusinessValidationException(
+                    "Cannot approve: This parcel already has an ACTIVE PTO.");
+        }
+
+        pto.setStatus(PTOStatus.ACTIVE);
+        pto.setApprovedBy(approvedBy);
+        pto.setApprovedAt(LocalDateTime.now());
+        if (request.getNotes() != null) {
+            pto.setApprovalNotes(request.getNotes());
+        }
+
+        var saved = ptoRepository.save(pto);
+
+        // Update parcel status to ALLOCATED
+        if (saved.getParcel() != null) {
+            var parcel = saved.getParcel();
+            parcel.setStatus(za.co.taloms.parcel.domain.entity.ParcelStatus.ALLOCATED);
+            parcel.setPto(saved);
+            parcelRepository.save(parcel);
+        }
+
+        eventPublisher.publishEvent(new PTOApprovedEvent(
+                this, saved.getId(), saved.getPtoNumber(),
+                saved.getPtoHolderName(), approvedBy, saved.getApprovedAt()));
+
+        log.info("PTO {} approved by {}", saved.getPtoNumber(), approvedBy);
+        return toResponse(saved);
+    }
+
+    @Override
+    public PTOResponse revokePTO(Long id, PTORevokeRequest request, String revokedBy) {
+        var pto = ptoRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("PTO", id));
+
+        if (!pto.canBeRevoked()) {
+            throw new BusinessValidationException("PTO cannot be revoked in status: " + pto.getStatus().getDisplayName());
+        }
+
+        pto.setStatus(PTOStatus.REVOKED);
+        pto.setRevokedBy(revokedBy);
+        pto.setRevokedAt(LocalDateTime.now());
+        pto.setRevokeReason(request.getReason());
+
+        var saved = ptoRepository.save(pto);
+
+        // Update parcel status back to AVAILABLE
+        if (saved.getParcel() != null) {
+            var parcel = saved.getParcel();
+            parcel.setStatus(za.co.taloms.parcel.domain.entity.ParcelStatus.AVAILABLE);
+            parcel.setPto(null);
+            parcelRepository.save(parcel);
+        }
+
+        eventPublisher.publishEvent(new PTORevokedEvent(
+                this, saved.getId(), saved.getPtoNumber(),
+                saved.getPtoHolderName(), revokedBy, request.getReason(), saved.getRevokedAt()));
+
+        log.info("PTO {} revoked by {} — reason: {}", saved.getPtoNumber(), revokedBy, request.getReason());
+        return toResponse(saved);
+    }
+
+    @Override
+    public PTOResponse suspendPTO(Long id, String reason, String suspendedBy) {
+        var pto = ptoRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("PTO", id));
+
+        if (!pto.canBeSuspended()) {
+            throw new BusinessValidationException("PTO cannot be suspended in status: " + pto.getStatus().getDisplayName());
+        }
+
+        pto.suspend(reason);
+        var saved = ptoRepository.save(pto);
+
+        // Update parcel status to RESERVED or keep as ALLOCATED but mark suspended
+        if (saved.getParcel() != null) {
+            var parcel = saved.getParcel();
+            // Keep as ALLOCATED but note that it's suspended
+            // The parcel should NOT be available for new PTOs
+            parcelRepository.save(parcel);
+        }
+
+        log.info("PTO {} suspended by {} — reason: {}", saved.getPtoNumber(), suspendedBy, reason);
+        return toResponse(saved);
+    }
+
+    @Override
+    public PTOResponse reactivatePTO(Long id, String notes, String reactivatedBy) {
+        var pto = ptoRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("PTO", id));
+
+        if (pto.getStatus() != PTOStatus.SUSPENDED) {
+            throw new BusinessValidationException("Only SUSPENDED PTOs can be reactivated");
+        }
+
+        // Check if the parcel has another active PTO
+        if (pto.getParcel() != null && ptoRepository.existsByParcelIdAndStatus(pto.getParcel().getId(), PTOStatus.ACTIVE)) {
+            throw new BusinessValidationException(
+                    "Cannot reactivate: This parcel already has an ACTIVE PTO.");
+        }
+
+        pto.reactivate(notes);
+        var saved = ptoRepository.save(pto);
+
+        log.info("PTO {} reactivated by {}", saved.getPtoNumber(), reactivatedBy);
+        return toResponse(saved);
+    }
+
+    @Override
+    @Transactional
+    public void reinstate(Long id, String reason) {
+        PTO pto = ptoRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("PTO not found"));
+
+        if (pto.getStatus() != PTOStatus.REVOKED) {
+            throw new BusinessValidationException("Only revoked PTOs can be reinstated");
+        }
+
+        // Check if the parcel has another active PTO
+        if (pto.getParcel() != null && ptoRepository.existsByParcelIdAndStatus(pto.getParcel().getId(), PTOStatus.ACTIVE)) {
+            throw new BusinessValidationException(
+                    "Cannot reinstate: This parcel already has an ACTIVE PTO.");
+        }
+
+        pto.reinstate(reason);
+        ptoRepository.save(pto);
+
+        // Update parcel status
+        if (pto.getParcel() != null) {
+            var parcel = pto.getParcel();
+            parcel.setStatus(za.co.taloms.parcel.domain.entity.ParcelStatus.ALLOCATED);
+            parcel.setPto(pto);
+            parcelRepository.save(parcel);
+        }
+
+        eventPublisher.publishEvent(new PTOReinstatedEvent(pto));
+        log.info("PTO {} reinstated with reason: {}", pto.getPtoNumber(), reason);
+    }
+
+    // ... rest of the methods remain the same (findById, findAll, findByStatus, etc.)
 
     @Override
     @Transactional(readOnly = true)
@@ -173,100 +359,6 @@ public class PTOServiceImpl implements PTOService {
     }
 
     @Override
-    public PTOResponse approvePTO(Long id, PTOApprovalRequest request, String approvedBy) {
-        var pto = ptoRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("PTO", id));
-
-        if (!pto.canBeApproved()) {
-            throw new BusinessValidationException("PTO cannot be approved in status: " + pto.getStatus().getDisplayName());
-        }
-
-        pto.setStatus(PTOStatus.ACTIVE);
-        pto.setApprovedBy(approvedBy);
-        pto.setApprovedAt(LocalDateTime.now());
-        if (request.getNotes() != null) {
-            pto.setApprovalNotes(request.getNotes());
-        }
-
-        var saved = ptoRepository.save(pto);
-        eventPublisher.publishEvent(new PTOApprovedEvent(
-                this, saved.getId(), saved.getPtoNumber(),
-                saved.getPtoHolderName(), approvedBy, saved.getApprovedAt()));
-
-        log.info("PTO {} approved by {}", saved.getPtoNumber(), approvedBy);
-        return toResponse(saved);
-    }
-
-    @Override
-    public PTOResponse revokePTO(Long id, PTORevokeRequest request, String revokedBy) {
-        var pto = ptoRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("PTO", id));
-
-        if (!pto.canBeRevoked()) {
-            throw new BusinessValidationException("PTO cannot be revoked in status: " + pto.getStatus().getDisplayName());
-        }
-
-        pto.setStatus(PTOStatus.REVOKED);
-        pto.setRevokedBy(revokedBy);
-        pto.setRevokedAt(LocalDateTime.now());
-        pto.setRevokeReason(request.getReason());
-
-        var saved = ptoRepository.save(pto);
-        eventPublisher.publishEvent(new PTORevokedEvent(
-                this, saved.getId(), saved.getPtoNumber(),
-                saved.getPtoHolderName(), revokedBy, request.getReason(), saved.getRevokedAt()));
-
-        log.info("PTO {} revoked by {} — reason: {}", saved.getPtoNumber(), revokedBy, request.getReason());
-        return toResponse(saved);
-    }
-
-    @Override
-    public PTOResponse suspendPTO(Long id, String reason, String suspendedBy) {
-        var pto = ptoRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("PTO", id));
-
-        if (!pto.canBeSuspended()) {
-            throw new BusinessValidationException("PTO cannot be suspended in status: " + pto.getStatus().getDisplayName());
-        }
-
-        pto.suspend(reason);
-        var saved = ptoRepository.save(pto);
-        log.info("PTO {} suspended by {} — reason: {}", saved.getPtoNumber(), suspendedBy, reason);
-        return toResponse(saved);
-    }
-
-    @Override
-    public PTOResponse reactivatePTO(Long id, String notes, String reactivatedBy) {
-        var pto = ptoRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("PTO", id));
-
-        if (pto.getStatus() != PTOStatus.SUSPENDED) {
-            throw new BusinessValidationException("Only SUSPENDED PTOs can be reactivated");
-        }
-
-        pto.reactivate(notes);
-        var saved = ptoRepository.save(pto);
-        log.info("PTO {} reactivated by {}", saved.getPtoNumber(), reactivatedBy);
-        return toResponse(saved);
-    }
-
-    @Override
-    @Transactional
-    public void reinstate(Long id, String reason) {
-        PTO pto = ptoRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("PTO not found"));
-
-        if (pto.getStatus() != PTOStatus.REVOKED) {
-            throw new BusinessValidationException("Only revoked PTOs can be reinstated");
-        }
-
-        pto.reinstate(reason);
-        ptoRepository.save(pto);
-        eventPublisher.publishEvent(new PTOReinstatedEvent(pto));
-        log.info("PTO {} reinstated with reason: {}", pto.getPtoNumber(), reason);
-    }
-
-    @Override
     @Transactional(readOnly = true)
     public long countByStatus(PTOStatus status) {
         return ptoRepository.countByStatus(status);
@@ -278,7 +370,6 @@ public class PTOServiceImpl implements PTOService {
         var pto = ptoRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("PTO", id));
 
-        // Only allow editing if status is PENDING or SUSPENDED
         if (pto.getStatus() != PTOStatus.PENDING && pto.getStatus() != PTOStatus.SUSPENDED) {
             throw new BusinessValidationException(
                     "PTO can only be edited when status is PENDING or SUSPENDED");

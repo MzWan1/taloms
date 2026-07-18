@@ -18,7 +18,7 @@ public interface PTORepositoryPort {
     boolean existsByPtoNumber(String ptoNumber);
     boolean existsByIdNumberAndStatus(String idNumber, PTOStatus status);
     boolean existsByIdNumberAndParcelIdAndStatus(String idNumber, Long parcelId, PTOStatus status);
-    boolean existsByParcelIdAndStatus(Long parcelId, PTOStatus status);
+    boolean existsByParcelIdAndStatus(Long parcelId, PTOStatus status);  // Check if parcel has PTO with specific status
     long countByStatus(PTOStatus status);
     long countByTraditionalAuthorityId(Long authorityId);
     long countAll();

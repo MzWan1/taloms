@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Optional;
 
 public interface ParcelRepositoryPort {
-    List<Parcel> findAllAvailable();
     Parcel save(Parcel parcel);
     Optional<Parcel> findById(Long id);
     Optional<Parcel> findByParcelNumber(String parcelNumber);
@@ -18,6 +17,7 @@ public interface ParcelRepositoryPort {
     List<Parcel> findByParcelType(ParcelType parcelType);
     List<Parcel> findByStatusAndVillageId(ParcelStatus status, Long villageId);
     List<Parcel> findAvailable(Long villageId);
+    List<Parcel> findAllAvailable();  // NEW METHOD
     boolean existsByStandNumberAndVillageId(String standNumber, Long villageId);
     boolean existsByParcelNumber(String parcelNumber);
     long countByStatus(ParcelStatus status);
