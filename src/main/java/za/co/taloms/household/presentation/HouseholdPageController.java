@@ -13,8 +13,10 @@ import za.co.taloms.household.application.service.HouseholdService;
 import za.co.taloms.parcel.application.service.ParcelService;
 import za.co.taloms.parcel.domain.entity.ParcelStatus;
 import za.co.taloms.pto.application.service.PTOService;
+import za.co.taloms.pto.domain.entity.PTOStatus;
 import za.co.taloms.traditionalauthority.application.service.TraditionalAuthorityService;
 import za.co.taloms.traditionalauthority.application.service.VillageService;
+
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -58,8 +60,7 @@ public class HouseholdPageController {
     @GetMapping("/create")
     public String createForm(Model model) {
         try {
-            var authorities = authorityService.findAllActive();
-            log.info("Loaded {} active authorities for household create form", authorities.size());
+            log.info("Loading household create form");
 
             if (!model.containsAttribute("form")) {
                 model.addAttribute("form", HouseholdRequest.builder()
@@ -67,19 +68,23 @@ public class HouseholdPageController {
                         .build());
             }
 
-            // Get ALL available parcels - filtered by AVAILABLE status
+            // Get available parcels (only AVAILABLE parcels)
             List<za.co.taloms.parcel.application.dto.ParcelResponse> availableParcels = new ArrayList<>();
             try {
-                var allParcels = parcelService.findAll();
-                log.info("Total parcels found: {}", allParcels != null ? allParcels.size() : 0);
-
+                // Use findAllAvailable which filters out parcels with ACTIVE PTOs
+                var allParcels = parcelService.findAllAvailable();
                 if (allParcels != null && !allParcels.isEmpty()) {
-                    availableParcels = allParcels.stream()
-                            .filter(p -> p != null && p.getStatus() == ParcelStatus.AVAILABLE)
-                            .collect(Collectors.toList());
+                    availableParcels = allParcels;
                     log.info("Found {} available parcels for household creation", availableParcels.size());
                 } else {
-                    log.warn("No parcels found in the system");
+                    // Fallback: filter manually
+                    var parcels = parcelService.findAll();
+                    if (parcels != null) {
+                        availableParcels = parcels.stream()
+                                .filter(p -> p.getStatus() == ParcelStatus.AVAILABLE)
+                                .collect(Collectors.toList());
+                        log.info("Found {} available parcels (fallback)", availableParcels.size());
+                    }
                 }
             } catch (Exception e) {
                 log.error("Error loading available parcels: {}", e.getMessage(), e);
@@ -89,11 +94,14 @@ public class HouseholdPageController {
             // Get active PTOs to link to households
             List<za.co.taloms.pto.application.dto.PTOResponse> activePtos = new ArrayList<>();
             try {
-                activePtos = ptoService.findByStatus(za.co.taloms.pto.domain.entity.PTOStatus.ACTIVE);
+                activePtos = ptoService.findByStatus(PTOStatus.ACTIVE);
                 log.info("Found {} active PTOs for household creation", activePtos.size());
             } catch (Exception e) {
                 log.error("Error loading active PTOs: {}", e.getMessage(), e);
             }
+
+            // Get authorities for dropdown (optional, can be removed if not needed)
+            var authorities = authorityService.findAllActive();
 
             model.addAttribute("authorities", authorities);
             model.addAttribute("availableParcels", availableParcels);
@@ -104,7 +112,6 @@ public class HouseholdPageController {
         } catch (Exception e) {
             log.error("Error loading create household form: {}", e.getMessage(), e);
             model.addAttribute("errorMessage", "Error loading form: " + e.getMessage());
-            model.addAttribute("authorities", Collections.emptyList());
             model.addAttribute("availableParcels", Collections.emptyList());
             model.addAttribute("activePtos", Collections.emptyList());
             model.addAttribute("pageTitle", "Create Household");
@@ -160,9 +167,7 @@ public class HouseholdPageController {
     @GetMapping("/{id}/edit")
     public String editForm(@PathVariable Long id, Model model) {
         try {
-            if (id == null) {
-                return "redirect:/households";
-            }
+            log.info("Loading household edit form for ID: {}", id);
 
             var household = householdService.findById(id);
             if (household == null) {
@@ -180,16 +185,14 @@ public class HouseholdPageController {
                     .notes(household.getNotes())
                     .build();
 
-            var authorities = authorityService.findAllActive();
-
-            // Get all available parcels
+            // Get available parcels (including the current one)
             List<za.co.taloms.parcel.application.dto.ParcelResponse> availableParcels = new ArrayList<>();
             try {
                 var allParcels = parcelService.findAll();
                 if (allParcels != null && !allParcels.isEmpty()) {
                     availableParcels = allParcels.stream()
-                            .filter(p -> p != null && (p.getStatus() == ParcelStatus.AVAILABLE ||
-                                    p.getId().equals(household.getParcelId())))
+                            .filter(p -> p.getStatus() == ParcelStatus.AVAILABLE ||
+                                    p.getId().equals(household.getParcelId()))
                             .collect(Collectors.toList());
                     log.info("Found {} available parcels for household edit", availableParcels.size());
                 }
@@ -201,7 +204,7 @@ public class HouseholdPageController {
             // Get active PTOs
             List<za.co.taloms.pto.application.dto.PTOResponse> activePtos = new ArrayList<>();
             try {
-                activePtos = ptoService.findByStatus(za.co.taloms.pto.domain.entity.PTOStatus.ACTIVE);
+                activePtos = ptoService.findByStatus(PTOStatus.ACTIVE);
                 if (activePtos == null) {
                     activePtos = Collections.emptyList();
                 }
@@ -212,7 +215,6 @@ public class HouseholdPageController {
 
             model.addAttribute("household", household);
             model.addAttribute("form", form);
-            model.addAttribute("authorities", authorities);
             model.addAttribute("availableParcels", availableParcels);
             model.addAttribute("activePtos", activePtos);
             model.addAttribute("pageTitle", "Edit Household");
@@ -258,8 +260,7 @@ public class HouseholdPageController {
 
         try {
             var response = householdService.deactivateHousehold(id, userDetails.getUsername());
-            ra.addFlashAttribute("successMessage",
-                    "✅ Household deactivated successfully.");
+            ra.addFlashAttribute("successMessage", "✅ Household deactivated successfully.");
         } catch (Exception e) {
             ra.addFlashAttribute("errorMessage", "❌ " + e.getMessage());
         }
@@ -274,8 +275,7 @@ public class HouseholdPageController {
 
         try {
             var response = householdService.activateHousehold(id, userDetails.getUsername());
-            ra.addFlashAttribute("successMessage",
-                    "✅ Household activated successfully.");
+            ra.addFlashAttribute("successMessage", "✅ Household activated successfully.");
         } catch (Exception e) {
             ra.addFlashAttribute("errorMessage", "❌ " + e.getMessage());
         }
@@ -291,21 +291,6 @@ public class HouseholdPageController {
         } catch (Exception e) {
             log.error("Error loading active household: {}", e.getMessage(), e);
             return Collections.emptyMap();
-        }
-    }
-
-    private List<za.co.taloms.parcel.application.dto.ParcelResponse> getAvailableParcels() {
-        try {
-            var allParcels = parcelService.findAll();
-            if (allParcels == null) {
-                return Collections.emptyList();
-            }
-            return allParcels.stream()
-                    .filter(p -> p != null && p.getStatus() == ParcelStatus.AVAILABLE)
-                    .collect(Collectors.toList());
-        } catch (Exception e) {
-            log.error("Error loading available parcels: {}", e.getMessage(), e);
-            return Collections.emptyList();
         }
     }
 }

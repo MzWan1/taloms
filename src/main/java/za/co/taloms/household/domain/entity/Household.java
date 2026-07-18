@@ -40,9 +40,8 @@ public class Household {
     @JoinColumn(name = "pto_id")
     private PTO pto;
 
-    @Column(name = "registration_date", nullable = false)
-    @Builder.Default
-    private LocalDate registrationDate = LocalDate.now();
+    @Column(name = "registration_date")
+    private LocalDate registrationDate;
 
     @Column(name = "active")
     @Builder.Default
@@ -64,8 +63,12 @@ public class Household {
     protected void onCreate() {
         createdAt = LocalDateTime.now();
         updatedAt = LocalDateTime.now();
-        if (registrationDate == null) registrationDate = LocalDate.now();
-        if (active == null) active = true;
+        if (registrationDate == null) {
+            registrationDate = LocalDate.now();
+        }
+        if (active == null) {
+            active = true;
+        }
     }
 
     @PreUpdate
@@ -73,5 +76,7 @@ public class Household {
         updatedAt = LocalDateTime.now();
     }
 
-    public boolean isActive() { return active != null && active; }
+    public boolean isActive() {
+        return active != null && active;
+    }
 }

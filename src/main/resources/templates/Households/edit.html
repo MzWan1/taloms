@@ -220,5 +220,51 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  // ── SA ID number validator (Luhn) ──────────────────────────────────────
+  document.getElementById('householdHeadIdNumber').addEventListener('input', function () {
+    const val = this.value.replace(/\D/g, '');
+    this.value = val;
+    const fb = document.getElementById('idFeedback');
+
+    if (val.length === 13) {
+      const valid = luhn(val);
+      fb.style.display = 'block';
+      if (valid) {
+        fb.innerHTML = '<small class="text-success"><i class="bi bi-check-circle me-1"></i>Valid SA ID</small>';
+        this.classList.remove('is-invalid');
+        this.classList.add('is-valid');
+      } else {
+        fb.innerHTML = '<small class="text-danger"><i class="bi bi-x-circle me-1"></i>Invalid SA ID number</small>';
+        this.classList.add('is-invalid');
+        this.classList.remove('is-valid');
+      }
+    } else {
+      fb.style.display = 'none';
+      this.classList.remove('is-valid', 'is-invalid');
+    }
+  });
+
+  function luhn(id) {
+    let sum = 0;
+    for (let i = 0; i < 13; i++) {
+      let d = parseInt(id[i]);
+      if (i % 2 === 1) {
+        d *= 2;
+        if (d > 9) d -= 9;
+      }
+      sum += d;
+    }
+    return sum % 10 === 0;
+  }
+
+  // ── Phone formatter ────────────────────────────────────────────────────
+  document.getElementById('contactPhone').addEventListener('blur', function () {
+    let v = this.value.replace(/\s/g, '');
+    if (v.startsWith('0') && v.length === 10) {
+      this.value = '+27' + v.substring(1);
+    }
+  });
+</script>
 </body>
 </html>
