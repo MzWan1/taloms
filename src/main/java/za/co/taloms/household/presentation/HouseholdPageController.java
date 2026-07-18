@@ -38,6 +38,7 @@ public class HouseholdPageController {
     @GetMapping
     public String list(Model model) {
         try {
+            log.info("Loading household list");
             var households = householdService.findAll();
             model.addAttribute("households", households);
             model.addAttribute("totalCount", householdService.countAll());
@@ -68,23 +69,15 @@ public class HouseholdPageController {
                         .build());
             }
 
-            // Get available parcels (only AVAILABLE parcels)
+            // Get available parcels (only AVAILABLE parcels with no ACTIVE PTO)
             List<za.co.taloms.parcel.application.dto.ParcelResponse> availableParcels = new ArrayList<>();
             try {
-                // Use findAllAvailable which filters out parcels with ACTIVE PTOs
-                var allParcels = parcelService.findAllAvailable();
+                var allParcels = parcelService.findAll();
                 if (allParcels != null && !allParcels.isEmpty()) {
-                    availableParcels = allParcels;
+                    availableParcels = allParcels.stream()
+                            .filter(p -> p.getStatus() == ParcelStatus.AVAILABLE)
+                            .collect(Collectors.toList());
                     log.info("Found {} available parcels for household creation", availableParcels.size());
-                } else {
-                    // Fallback: filter manually
-                    var parcels = parcelService.findAll();
-                    if (parcels != null) {
-                        availableParcels = parcels.stream()
-                                .filter(p -> p.getStatus() == ParcelStatus.AVAILABLE)
-                                .collect(Collectors.toList());
-                        log.info("Found {} available parcels (fallback)", availableParcels.size());
-                    }
                 }
             } catch (Exception e) {
                 log.error("Error loading available parcels: {}", e.getMessage(), e);
@@ -95,12 +88,15 @@ public class HouseholdPageController {
             List<za.co.taloms.pto.application.dto.PTOResponse> activePtos = new ArrayList<>();
             try {
                 activePtos = ptoService.findByStatus(PTOStatus.ACTIVE);
+                if (activePtos == null) {
+                    activePtos = Collections.emptyList();
+                }
                 log.info("Found {} active PTOs for household creation", activePtos.size());
             } catch (Exception e) {
                 log.error("Error loading active PTOs: {}", e.getMessage(), e);
+                activePtos = Collections.emptyList();
             }
 
-            // Get authorities for dropdown (optional, can be removed if not needed)
             var authorities = authorityService.findAllActive();
 
             model.addAttribute("authorities", authorities);
@@ -130,7 +126,6 @@ public class HouseholdPageController {
                 request.getHouseholdHeadName(), request.getParcelId());
 
         try {
-            // Validate that a parcel was selected
             if (request.getParcelId() == null) {
                 ra.addFlashAttribute("errorMessage", "❌ Please select a parcel for this household.");
                 ra.addFlashAttribute("form", request);
@@ -201,7 +196,6 @@ public class HouseholdPageController {
                 availableParcels = Collections.emptyList();
             }
 
-            // Get active PTOs
             List<za.co.taloms.pto.application.dto.PTOResponse> activePtos = new ArrayList<>();
             try {
                 activePtos = ptoService.findByStatus(PTOStatus.ACTIVE);
@@ -234,7 +228,6 @@ public class HouseholdPageController {
             RedirectAttributes ra) {
 
         try {
-            // Validate that a parcel was selected
             if (request.getParcelId() == null) {
                 ra.addFlashAttribute("errorMessage", "❌ Please select a parcel for this household.");
                 ra.addFlashAttribute("form", request);

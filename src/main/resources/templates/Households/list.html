@@ -62,13 +62,13 @@
     <div class="row g-3 mb-4">
         <div class="col-6 col-md-3">
             <div class="card border-0 shadow-sm text-center py-3">
-                <div class="fw-bold fs-3 text-navy" th:text="${totalCount}">0</div>
+                <div class="fw-bold fs-3 text-navy" th:text="${totalCount != null ? totalCount : 0}">0</div>
                 <div class="small text-muted">Total Households</div>
             </div>
         </div>
         <div class="col-6 col-md-3">
             <div class="card border-0 shadow-sm text-center py-3">
-                <div class="fw-bold fs-3 text-success" th:text="${activeCount}">0</div>
+                <div class="fw-bold fs-3 text-success" th:text="${activeCount != null ? activeCount : 0}">0</div>
                 <div class="small text-muted">Active</div>
             </div>
         </div>

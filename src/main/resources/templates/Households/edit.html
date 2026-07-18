@@ -56,7 +56,8 @@
     <div class="col-12 col-lg-8">
       <form th:action="@{/households/{id}/edit(id=${household.id})}"
             th:object="${form}"
-            method="post">
+            method="post"
+            id="householdForm">
 
         <div class="card border-0 shadow-sm">
           <div class="card-header bg-white border-bottom py-3">
@@ -149,6 +150,7 @@
                           name="parcelId"
                           class="form-select"
                           required>
+                    <option value="">— Select Parcel —</option>
                     <option th:each="p : ${availableParcels}"
                             th:value="${p.id}"
                             th:text="${p.parcelNumber + ' - Stand ' + p.standNumber + ' (' + p.villageName + ')'}"
@@ -156,10 +158,11 @@
                     </option>
                   </select>
                 </div>
+                <div class="form-text">Select a parcel for this household</div>
               </div>
 
               <!-- PTO -->
-              <div class="col-12">
+              <div class="col-12" th:if="${activePtos != null and !activePtos.isEmpty()}">
                 <label for="ptoId" class="form-label">PTO</label>
                 <div class="input-group">
                                     <span class="input-group-text">
@@ -199,7 +202,8 @@
                 <textarea id="notes"
                           name="notes"
                           class="form-control"
-                          rows="2">${form.notes}</textarea>
+                          rows="2"
+                          placeholder="Additional notes...">${form.notes}</textarea>
               </div>
             </div>
           </div>
