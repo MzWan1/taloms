@@ -30,6 +30,10 @@ public class HouseholdServiceImpl implements HouseholdService {
     @Override
     public HouseholdResponse createHousehold(HouseholdRequest request, String createdBy) {
         // Validate parcel exists
+        if (request.getParcelId() == null) {
+            throw new BusinessValidationException("Parcel ID is required");
+        }
+
         var parcel = parcelRepository.findById(request.getParcelId())
                 .orElseThrow(() -> new ResourceNotFoundException("Parcel", request.getParcelId()));
 
@@ -67,10 +71,18 @@ public class HouseholdServiceImpl implements HouseholdService {
 
     @Override
     public HouseholdResponse updateHousehold(Long id, HouseholdRequest request, String updatedBy) {
+        if (id == null) {
+            throw new BusinessValidationException("Household ID is required");
+        }
+
         var household = householdRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Household", id));
 
         // Validate parcel exists
+        if (request.getParcelId() == null) {
+            throw new BusinessValidationException("Parcel ID is required");
+        }
+
         var parcel = parcelRepository.findById(request.getParcelId())
                 .orElseThrow(() -> new ResourceNotFoundException("Parcel", request.getParcelId()));
 
@@ -99,6 +111,9 @@ public class HouseholdServiceImpl implements HouseholdService {
     @Override
     @Transactional(readOnly = true)
     public HouseholdResponse findById(Long id) {
+        if (id == null) {
+            throw new BusinessValidationException("Household ID is required");
+        }
         return householdRepository.findById(id)
                 .map(this::toResponse)
                 .orElseThrow(() -> new ResourceNotFoundException("Household", id));
@@ -107,6 +122,9 @@ public class HouseholdServiceImpl implements HouseholdService {
     @Override
     @Transactional(readOnly = true)
     public HouseholdResponse findActiveByParcelId(Long parcelId) {
+        if (parcelId == null) {
+            return null;
+        }
         return householdRepository.findActiveByParcelId(parcelId)
                 .map(this::toResponse)
                 .orElse(null);
@@ -123,6 +141,9 @@ public class HouseholdServiceImpl implements HouseholdService {
     @Override
     @Transactional(readOnly = true)
     public List<HouseholdResponse> findByParcelId(Long parcelId) {
+        if (parcelId == null) {
+            return List.of();
+        }
         return householdRepository.findByParcelId(parcelId).stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
@@ -131,6 +152,9 @@ public class HouseholdServiceImpl implements HouseholdService {
     @Override
     @Transactional(readOnly = true)
     public List<HouseholdResponse> findByPtoId(Long ptoId) {
+        if (ptoId == null) {
+            return List.of();
+        }
         return householdRepository.findByPtoId(ptoId).stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
@@ -157,6 +181,9 @@ public class HouseholdServiceImpl implements HouseholdService {
 
     @Override
     public HouseholdResponse deactivateHousehold(Long id, String deactivatedBy) {
+        if (id == null) {
+            throw new BusinessValidationException("Household ID is required");
+        }
         var household = householdRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Household", id));
 
@@ -169,6 +196,9 @@ public class HouseholdServiceImpl implements HouseholdService {
 
     @Override
     public HouseholdResponse activateHousehold(Long id, String activatedBy) {
+        if (id == null) {
+            throw new BusinessValidationException("Household ID is required");
+        }
         var household = householdRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Household", id));
 
@@ -203,12 +233,18 @@ public class HouseholdServiceImpl implements HouseholdService {
     @Override
     @Transactional(readOnly = true)
     public long countByParcel(Long parcelId) {
+        if (parcelId == null) {
+            return 0;
+        }
         return householdRepository.countByParcelId(parcelId);
     }
 
     @Override
     @Transactional(readOnly = true)
     public boolean hasActiveHousehold(Long parcelId) {
+        if (parcelId == null) {
+            return false;
+        }
         return householdRepository.existsActiveByParcelId(parcelId);
     }
 

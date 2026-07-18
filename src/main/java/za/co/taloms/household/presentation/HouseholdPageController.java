@@ -160,7 +160,14 @@ public class HouseholdPageController {
     @GetMapping("/{id}/edit")
     public String editForm(@PathVariable Long id, Model model) {
         try {
+            if (id == null) {
+                return "redirect:/households";
+            }
+
             var household = householdService.findById(id);
+            if (household == null) {
+                return "redirect:/households";
+            }
 
             var form = HouseholdRequest.builder()
                     .householdHeadName(household.getHouseholdHeadName())
@@ -175,7 +182,7 @@ public class HouseholdPageController {
 
             var authorities = authorityService.findAllActive();
 
-            // Get all available parcels for the dropdown, including the current one
+            // Get all available parcels
             List<za.co.taloms.parcel.application.dto.ParcelResponse> availableParcels = new ArrayList<>();
             try {
                 var allParcels = parcelService.findAll();
@@ -195,8 +202,12 @@ public class HouseholdPageController {
             List<za.co.taloms.pto.application.dto.PTOResponse> activePtos = new ArrayList<>();
             try {
                 activePtos = ptoService.findByStatus(za.co.taloms.pto.domain.entity.PTOStatus.ACTIVE);
+                if (activePtos == null) {
+                    activePtos = Collections.emptyList();
+                }
             } catch (Exception e) {
                 log.error("Error loading active PTOs: {}", e.getMessage(), e);
+                activePtos = Collections.emptyList();
             }
 
             model.addAttribute("household", household);
@@ -280,6 +291,21 @@ public class HouseholdPageController {
         } catch (Exception e) {
             log.error("Error loading active household: {}", e.getMessage(), e);
             return Collections.emptyMap();
+        }
+    }
+
+    private List<za.co.taloms.parcel.application.dto.ParcelResponse> getAvailableParcels() {
+        try {
+            var allParcels = parcelService.findAll();
+            if (allParcels == null) {
+                return Collections.emptyList();
+            }
+            return allParcels.stream()
+                    .filter(p -> p != null && p.getStatus() == ParcelStatus.AVAILABLE)
+                    .collect(Collectors.toList());
+        } catch (Exception e) {
+            log.error("Error loading available parcels: {}", e.getMessage(), e);
+            return Collections.emptyList();
         }
     }
 }

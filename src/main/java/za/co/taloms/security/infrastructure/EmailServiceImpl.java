@@ -16,17 +16,15 @@ public class EmailServiceImpl implements EmailService {
 
     private final JavaMailSender mailSender;
 
-    @Value("${taloms.app.base-url:http://localhost:8080}")
+    @Value("${taloms.app.base-url}")
     private String baseUrl;
 
-    @Value("${spring.mail.username:noreply@taloms.co.za}")
+    @Value("${spring.mail.username}")
     private String fromEmail;
 
     @Override
     @Async
-    public void sendPasswordResetEmail(String toEmail,
-                                       String resetToken,
-                                       String fullName) {
+    public void sendPasswordResetEmail(String toEmail, String resetToken, String fullName) {
         try {
             String resetLink = baseUrl + "/reset-password?token=" + resetToken;
 
@@ -49,8 +47,7 @@ public class EmailServiceImpl implements EmailService {
             log.info("Password reset email sent to: {}", toEmail);
 
         } catch (Exception e) {
-            log.error("Failed to send password reset email to {}: {}",
-                    toEmail, e.getMessage());
+            log.error("Failed to send password reset email to {}: {}", toEmail, e.getMessage());
         }
     }
 }
