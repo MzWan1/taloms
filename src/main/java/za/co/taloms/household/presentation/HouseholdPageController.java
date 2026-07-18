@@ -295,4 +295,35 @@ public class HouseholdPageController {
             return Collections.emptyMap();
         }
     }
+
+    @GetMapping("/debug")
+    @ResponseBody
+    public String debug() {
+        try {
+            StringBuilder sb = new StringBuilder();
+            sb.append("=== Household Module Debug ===\n");
+
+            // Check if service is working
+            try {
+                var households = householdService.findAll();
+                sb.append("Service: OK\n");
+                sb.append("Household count: ").append(households != null ? households.size() : 0).append("\n");
+            } catch (Exception e) {
+                sb.append("Service Error: ").append(e.getMessage()).append("\n");
+            }
+
+            // Check template availability
+            sb.append("\n=== Template Check ===\n");
+            try {
+                // This will force template resolution
+                return "households/list";
+            } catch (Exception e) {
+                sb.append("Template Error: ").append(e.getMessage()).append("\n");
+            }
+
+            return sb.toString();
+        } catch (Exception e) {
+            return "Debug Error: " + e.getMessage();
+        }
+    }
 }
