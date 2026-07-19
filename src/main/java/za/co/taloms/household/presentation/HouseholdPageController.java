@@ -326,4 +326,14 @@ public class HouseholdPageController {
             return "Debug Error: " + e.getMessage();
         }
     }
+
+    @GetMapping("/test")
+    @ResponseBody
+    public String test() {
+        try {
+            return "Household module is working! Time: " + java.time.LocalDateTime.now();
+        } catch (Exception e) {
+            return "Error: " + e.getMessage();
+        }
+    }
 }
