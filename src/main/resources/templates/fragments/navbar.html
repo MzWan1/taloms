@@ -67,7 +67,8 @@
                 </li>
 
                 <!-- Households -->
-                <li class="nav-item">
+                <li class="nav-item"
+                    sec:authorize="hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER')">
                     <a class="nav-link rounded-2 px-3"
                        th:classappend="${currentPage == 'households'} ? 'active bg-white bg-opacity-10' : ''"
                        th:href="@{/households}">
