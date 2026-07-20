@@ -1,23 +1,38 @@
+version: '3.8'
+
 services:
-  db:
+  app:
+    build: .
+    container_name: taloms-container
+    ports:
+      - 8080:8080
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://taloms_db:5432/taloms_db
+      SPRING_DATASOURCE_USERNAME: taloms_user
+      SPRING_DATASOURCE_PASSWORD: taloms_password
+      SPRING_PROFILES_ACTIVE: dev
+    depends_on:
+      - taloms_db
+    networks:
+      - taloms-network
+
+  taloms_db:
     image: postgis/postgis:16-3.4
     container_name: taloms_db
+    command: ["postgres", "-c", "listen_addresses=*"]
     environment:
       POSTGRES_DB: taloms_db
       POSTGRES_USER: taloms_user
-      POSTGRES_PASSWORD: taloms_pass
+      POSTGRES_PASSWORD: taloms_password
     ports:
-      - "5432:5432"
+      - 5432:5432
     volumes:
-      - taloms_db_data:/var/lib/postgresql/data
-      - ./src/main/docker/init-postgis.sql:/docker-entrypoint-initdb.d/init-postgis.sql
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U taloms_user -d taloms_db"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - taloms-network
+
+networks:
+  taloms-network:
 
 volumes:
-  taloms_db_data:
+  postgres_data:
