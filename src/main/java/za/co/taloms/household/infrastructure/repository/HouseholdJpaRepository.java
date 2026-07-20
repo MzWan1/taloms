@@ -9,16 +9,50 @@ import java.util.Optional;
 
 public interface HouseholdJpaRepository extends JpaRepository<Household, Long> {
 
-    List<Household> findByParcelId(Long parcelId);
+    @Query("""
+           SELECT h FROM Household h
+           LEFT JOIN FETCH h.parcel p
+           LEFT JOIN FETCH p.village v
+           LEFT JOIN FETCH v.traditionalAuthority
+           WHERE h.parcel.id = :parcelId
+           """)
+    List<Household> findByParcelId(@Param("parcelId") Long parcelId);
 
-    List<Household> findByPtoId(Long ptoId);
+    @Query("""
+           SELECT h FROM Household h
+           LEFT JOIN FETCH h.parcel p
+           LEFT JOIN FETCH p.village v
+           LEFT JOIN FETCH v.traditionalAuthority
+           LEFT JOIN FETCH h.pto
+           WHERE h.pto.id = :ptoId
+           """)
+    List<Household> findByPtoId(@Param("ptoId") Long ptoId);
 
+    @Query("""
+           SELECT h FROM Household h
+           LEFT JOIN FETCH h.parcel p
+           LEFT JOIN FETCH p.village v
+           LEFT JOIN FETCH v.traditionalAuthority
+           WHERE h.active = true
+           """)
     List<Household> findByActiveTrue();
 
-    @Query("SELECT h FROM Household h WHERE h.parcel.id = :parcelId AND h.active = true")
+    @Query("""
+           SELECT h FROM Household h
+           LEFT JOIN FETCH h.parcel p
+           LEFT JOIN FETCH p.village v
+           LEFT JOIN FETCH v.traditionalAuthority
+           WHERE h.parcel.id = :parcelId AND h.active = true
+           """)
     Optional<Household> findActiveByParcelId(@Param("parcelId") Long parcelId);
 
-    @Query("SELECT h FROM Household h WHERE LOWER(h.householdHeadName) LIKE LOWER(CONCAT('%', :name, '%'))")
+    @Query("""
+           SELECT h FROM Household h
+           LEFT JOIN FETCH h.parcel p
+           LEFT JOIN FETCH p.village v
+           LEFT JOIN FETCH v.traditionalAuthority
+           WHERE LOWER(h.householdHeadName) LIKE LOWER(CONCAT('%', :name, '%'))
+           """)
     List<Household> findByHouseholdHeadNameContaining(@Param("name") String name);
 
     @Query("SELECT CASE WHEN COUNT(h) > 0 THEN true ELSE false END FROM Household h WHERE h.parcel.id = :parcelId AND h.active = true")
@@ -28,6 +62,21 @@ public interface HouseholdJpaRepository extends JpaRepository<Household, Long> {
 
     long countByParcelId(Long parcelId);
 
-    @Query("SELECT h FROM Household h ORDER BY h.createdAt DESC")
+    @Query("""
+           SELECT h FROM Household h
+           LEFT JOIN FETCH h.parcel p
+           LEFT JOIN FETCH p.village v
+           LEFT JOIN FETCH v.traditionalAuthority
+           WHERE h.id = :id
+           """)
+    Optional<Household> findByIdWithRelations(@Param("id") Long id);
+
+    @Query("""
+           SELECT h FROM Household h
+           LEFT JOIN FETCH h.parcel p
+           LEFT JOIN FETCH p.village v
+           LEFT JOIN FETCH v.traditionalAuthority
+           ORDER BY h.createdAt DESC
+           """)
     List<Household> findAllOrderByCreatedAtDesc();
 }

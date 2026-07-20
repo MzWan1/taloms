@@ -20,7 +20,7 @@ public class HouseholdRepositoryAdapter implements HouseholdRepositoryPort {
 
     @Override
     public Optional<Household> findById(Long id) {
-        return jpaRepository.findById(id);
+        return jpaRepository.findByIdWithRelations(id);
     }
 
     @Override
