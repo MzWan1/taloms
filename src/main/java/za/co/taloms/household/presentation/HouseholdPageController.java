@@ -66,6 +66,19 @@ public class HouseholdPageController {
         }
     }
 
+    @GetMapping("/plain")
+    @ResponseBody
+    public String listPlain() {
+        try {
+            List<HouseholdResponse> households = householdService.findAll();
+            long total = households != null ? households.size() : 0;
+            long active = households != null ? households.stream().filter(HouseholdResponse::getActive).count() : 0;
+            return "Households: total=" + total + ", active=" + active + ", time=" + java.time.LocalDateTime.now();
+        } catch (Exception e) {
+            return "Error loading households: " + e.getClass().getSimpleName() + " - " + e.getMessage();
+        }
+    }
+
     @GetMapping("/create")
     public String createForm(Model model) {
         try {
