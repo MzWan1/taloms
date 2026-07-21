@@ -1,5 +1,8 @@
 FROM eclipse-temurin:21-jdk-alpine AS builder
 
+LABEL maintainer="taloms"
+LABEL version="68641a3"
+
 WORKDIR /app
 
 # Copy Maven files first for better caching
