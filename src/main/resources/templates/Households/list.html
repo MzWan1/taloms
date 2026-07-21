@@ -7,14 +7,58 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Household Management | TALOMS</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link th:href="@{/css/taloms.css}" rel="stylesheet">
 </head>
 <body class="bg-light">
 
-<div class="container-fluid px-4 py-4">
-    <h4 class="fw-bold text-navy mb-0">Household Management</h4>
-    <p class="text-muted small mb-0">Manage all households linked to parcels</p>
-    <p class="text-muted small mb-0" style="color:red; font-weight:bold;">DEPLOY MARKER: 23bb45c</p>
+<nav th:replace="~{fragments/navbar :: navbar('households')}"></nav>
 
+<div class="container-fluid px-4 py-4">
+
+    <!-- Flash Messages -->
+    <div th:if="${successMessage}"
+         class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-4">
+        <i class="bi bi-check-circle-fill me-2"></i>
+        <span th:text="${successMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${errorMessage}"
+         class="alert alert-danger alert-dismissible fade show border-0 shadow-sm mb-4">
+        <i class="bi bi-exclamation-circle-fill me-2"></i>
+        <span th:text="${errorMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
+    <!-- Header -->
+    <div class="d-flex align-items-start justify-content-between mb-4 flex-wrap gap-3">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1 small">
+                    <li class="breadcrumb-item">
+                        <a th:href="@{/dashboard}" class="text-muted text-decoration-none">Dashboard</a>
+                    </li>
+                    <li class="breadcrumb-item active">Household Management</li>
+                </ol>
+            </nav>
+            <h4 class="fw-bold text-navy mb-0">
+                <i class="bi bi-people me-2"></i>Household Management
+            </h4>
+            <p class="text-muted small mb-0">Manage all households linked to parcels</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a th:href="@{/dashboard}" class="btn btn-outline-secondary px-3">
+                <i class="bi bi-arrow-left me-1"></i>Back
+            </a>
+            <a th:href="@{/households/create}"
+               class="btn btn-navy px-4 fw-semibold"
+               sec:authorize="hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_DATA_CAPTURER')">
+                <i class="bi bi-plus-circle me-2"></i>New Household
+            </a>
+        </div>
+    </div>
+
+    <!-- KPI Row -->
     <div class="row g-3 mb-4">
         <div class="col-6 col-md-3">
             <div class="card border-0 shadow-sm text-center py-3">
@@ -30,6 +74,36 @@
         </div>
     </div>
 
+    <!-- Search -->
+    <div class="card border-0 shadow-sm mb-4">
+        <div class="card-body py-3">
+            <form th:action="@{/households}" method="get">
+                <div class="row g-3 align-items-end">
+                    <div class="col-12 col-md-8">
+                        <label class="form-label small mb-1">Search</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-search text-muted"></i></span>
+                            <input type="text" name="search" class="form-control"
+                                   th:value="${searchTerm}"
+                                   placeholder="Search by household head name...">
+                        </div>
+                    </div>
+                    <div class="col-3 col-md-2">
+                        <button type="submit" class="btn btn-navy w-100">
+                            <i class="bi bi-search me-1"></i>Search
+                        </button>
+                    </div>
+                    <div class="col-3 col-md-2">
+                        <a th:href="@{/households}" class="btn btn-outline-secondary w-100">
+                            <i class="bi bi-x-circle me-1"></i>Clear
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Table -->
     <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -49,7 +123,9 @@
                     <tbody>
                     <tr th:if="${households == null or households.empty}">
                         <td colspan="8" class="text-center py-5 text-muted">
-                            <span class="fw-semibold">No households found</span>
+                            <i class="bi bi-people display-5 d-block mb-2 opacity-25"></i>
+                            <span class="fw-semibold">No households found</span><br>
+                            <small>Click "New Household" to create the first record</small>
                         </td>
                     </tr>
                     <tr th:each="household, stat : ${households}">
@@ -74,15 +150,19 @@
                         <td class="small" th:text="${household.registrationDate != null ?
                                 #temporals.format(household.registrationDate,'dd MMM yyyy') : '—'}">Date</td>
                         <td>
-                            <span th:if="${household.active}" class="badge bg-success">Active</span>
-                            <span th:if="${!household.active}" class="badge bg-secondary">Inactive</span>
+                            <span th:if="${household.active}"
+                                  class="badge bg-success">Active</span>
+                            <span th:if="${!household.active}"
+                                  class="badge bg-secondary">Inactive</span>
                         </td>
                         <td class="text-center">
                             <div class="btn-group btn-group-sm">
-                                <a th:href="@{/households/{id}(id=${household.id})}" class="btn btn-outline-info" title="View">
+                                <a th:href="@{/households/{id}(id=${household.id})}"
+                                   class="btn btn-outline-info" title="View">
                                     <i class="bi bi-eye"></i>
                                 </a>
-                                <a th:href="@{/households/{id}/edit(id=${household.id})}" class="btn btn-outline-primary" title="Edit"
+                                <a th:href="@{/households/{id}/edit(id=${household.id})}"
+                                   class="btn btn-outline-primary" title="Edit"
                                    sec:authorize="hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_DATA_CAPTURER')">
                                     <i class="bi bi-pencil"></i>
                                 </a>
