@@ -37,12 +37,11 @@ public class HouseholdPageController {
     private final VillageService villageService;
 
     @GetMapping
-    public String list(Model model) {
+    public Object list(Model model) {
         try {
             log.info("Loading household list");
             List<HouseholdResponse> households = householdService.findAll();
 
-            // Ensure we never pass null to the template
             if (households == null) {
                 households = Collections.emptyList();
             }

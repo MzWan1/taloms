@@ -22,7 +22,7 @@ public class ParcelRepositoryAdapter implements ParcelRepositoryPort {
 
     @Override
     public Optional<Parcel> findById(Long id) {
-        return jpaRepository.findById(id);
+        return jpaRepository.findByIdWithRelations(id);
     }
 
     @Override

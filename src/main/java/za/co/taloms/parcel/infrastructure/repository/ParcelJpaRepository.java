@@ -11,7 +11,86 @@ import java.util.Optional;
 
 public interface ParcelJpaRepository extends JpaRepository<Parcel, Long> {
 
-    Optional<Parcel> findByParcelNumber(String parcelNumber);
+    @Query("""
+           SELECT DISTINCT p FROM Parcel p
+           LEFT JOIN FETCH p.boundaries b
+           LEFT JOIN FETCH p.village v
+           LEFT JOIN FETCH v.traditionalAuthority ta
+           LEFT JOIN FETCH p.pto
+           ORDER BY p.createdAt DESC
+           """)
+    List<Parcel> findAllOrderByCreatedAtDesc();
+
+    @Query("""
+           SELECT DISTINCT p FROM Parcel p
+           LEFT JOIN FETCH p.boundaries b
+           LEFT JOIN FETCH p.village v
+           LEFT JOIN FETCH v.traditionalAuthority ta
+           LEFT JOIN FETCH p.pto
+           WHERE p.parcelNumber = :parcelNumber
+           """)
+    Optional<Parcel> findByParcelNumber(@Param("parcelNumber") String parcelNumber);
+
+    @Query("""
+           SELECT DISTINCT p FROM Parcel p
+           LEFT JOIN FETCH p.boundaries b
+           LEFT JOIN FETCH p.village v
+           LEFT JOIN FETCH v.traditionalAuthority ta
+           LEFT JOIN FETCH p.pto
+           WHERE p.village.id = :villageId
+           """)
+    List<Parcel> findByVillageId(@Param("villageId") Long villageId);
+
+    @Query("""
+           SELECT DISTINCT p FROM Parcel p
+           LEFT JOIN FETCH p.boundaries b
+           LEFT JOIN FETCH p.village v
+           LEFT JOIN FETCH v.traditionalAuthority ta
+           LEFT JOIN FETCH p.pto
+           WHERE p.status = :status
+           """)
+    List<Parcel> findByStatus(@Param("status") ParcelStatus status);
+
+    @Query("""
+           SELECT DISTINCT p FROM Parcel p
+           LEFT JOIN FETCH p.boundaries b
+           LEFT JOIN FETCH p.village v
+           LEFT JOIN FETCH v.traditionalAuthority ta
+           LEFT JOIN FETCH p.pto
+           WHERE p.parcelType = :parcelType
+           """)
+    List<Parcel> findByParcelType(@Param("parcelType") ParcelType parcelType);
+
+    @Query("""
+           SELECT DISTINCT p FROM Parcel p
+           LEFT JOIN FETCH p.boundaries b
+           LEFT JOIN FETCH p.village v
+           LEFT JOIN FETCH v.traditionalAuthority ta
+           LEFT JOIN FETCH p.pto
+           WHERE p.status = :status AND p.village.id = :villageId
+           """)
+    List<Parcel> findByStatusAndVillageId(@Param("status") ParcelStatus status,
+                                          @Param("villageId") Long villageId);
+
+    @Query("""
+           SELECT DISTINCT p FROM Parcel p
+           LEFT JOIN FETCH p.boundaries b
+           LEFT JOIN FETCH p.village v
+           LEFT JOIN FETCH v.traditionalAuthority ta
+           LEFT JOIN FETCH p.pto
+           WHERE p.status = 'AVAILABLE' AND p.village.id = :villageId
+           """)
+    List<Parcel> findAvailableByVillageId(@Param("villageId") Long villageId);
+
+    @Query("""
+           SELECT DISTINCT p FROM Parcel p
+           LEFT JOIN FETCH p.boundaries b
+           LEFT JOIN FETCH p.village v
+           LEFT JOIN FETCH v.traditionalAuthority ta
+           LEFT JOIN FETCH p.pto
+           WHERE p.id = :id
+           """)
+    Optional<Parcel> findByIdWithRelations(@Param("id") Long id);
 
     Optional<Parcel> findByStandNumberAndVillageId(String standNumber, Long villageId);
 
@@ -19,23 +98,7 @@ public interface ParcelJpaRepository extends JpaRepository<Parcel, Long> {
 
     boolean existsByParcelNumber(String parcelNumber);
 
-    List<Parcel> findByVillageId(Long villageId);
-
-    List<Parcel> findByStatus(ParcelStatus status);
-
-    List<Parcel> findByParcelType(ParcelType parcelType);
-
-    @Query("SELECT p FROM Parcel p WHERE p.status = :status AND p.village.id = :villageId")
-    List<Parcel> findByStatusAndVillageId(@Param("status") ParcelStatus status,
-                                          @Param("villageId") Long villageId);
-
-    @Query("SELECT p FROM Parcel p WHERE p.status = 'AVAILABLE' AND p.village.id = :villageId")
-    List<Parcel> findAvailableByVillageId(@Param("villageId") Long villageId);
-
     long countByStatus(ParcelStatus status);
 
     long countByVillageId(Long villageId);
-
-    @Query("SELECT p FROM Parcel p ORDER BY p.createdAt DESC")
-    List<Parcel> findAllOrderByCreatedAtDesc();
 }
