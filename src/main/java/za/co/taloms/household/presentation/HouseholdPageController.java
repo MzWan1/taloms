@@ -95,65 +95,6 @@ public class HouseholdPageController {
         }
     }
 
-    @GetMapping("/html")
-    public String listHtml(Model model) {
-        try {
-            log.info("Loading household list HTML");
-            List<HouseholdResponse> households = householdService.findAll();
-
-            if (households == null) {
-                households = Collections.emptyList();
-            }
-
-            model.addAttribute("households", households);
-            model.addAttribute("totalCount", households.size());
-            model.addAttribute("activeCount", households.stream().filter(HouseholdResponse::getActive).count());
-            model.addAttribute("pageTitle", "Household Management");
-            model.addAttribute("currentPage", "households");
-
-            log.info("Found {} households", households.size());
-            return "households/list";
-        } catch (Exception e) {
-            log.error("Error loading household list HTML: {}", e.getMessage(), e);
-            model.addAttribute("errorMessage", "Error loading households: " + e.getMessage());
-            model.addAttribute("households", Collections.emptyList());
-            model.addAttribute("totalCount", 0L);
-            model.addAttribute("activeCount", 0L);
-            model.addAttribute("pageTitle", "Household Management");
-            model.addAttribute("currentPage", "households");
-            return "households/list";
-        }
-    }
-
-            long totalCount = households.size();
-            long activeCount = households.stream().filter(HouseholdResponse::getActive).count();
-
-            StringBuilder sb = new StringBuilder();
-            sb.append("=== Household Management ===\n");
-            sb.append("Total: ").append(totalCount).append("\n");
-            sb.append("Active: ").append(activeCount).append("\n");
-            sb.append("Time: ").append(java.time.LocalDateTime.now()).append("\n\n");
-
-            if (households.isEmpty()) {
-                sb.append("No households found.\n");
-            } else {
-                for (var h : households) {
-                    sb.append(String.format("- %s (ID: %s, Parcel: %s, Village: %s, Active: %s)%n",
-                            h.getHouseholdHeadName(),
-                            h.getHouseholdHeadIdNumber(),
-                            h.getStandNumber() != null ? h.getStandNumber() : h.getParcelNumber(),
-                            h.getVillageName() != null ? h.getVillageName() : "N/A",
-                            h.getActive() ? "Yes" : "No"));
-                }
-            }
-
-            return sb.toString();
-        } catch (Exception e) {
-            log.error("Error loading household list: {}", e.getMessage(), e);
-            return "Error loading households: " + e.getClass().getSimpleName() + " - " + e.getMessage();
-        }
-    }
-
     @GetMapping("/create")
     public String createForm(Model model) {
         try {
