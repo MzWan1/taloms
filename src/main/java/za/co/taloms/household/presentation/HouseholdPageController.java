@@ -36,8 +36,27 @@ public class HouseholdPageController {
     private final TraditionalAuthorityService authorityService;
     private final VillageService villageService;
 
+    @GetMapping("/test")
+    @ResponseBody
+    public String test() {
+        return "Household module is working! Time: " + java.time.LocalDateTime.now();
+    }
+
+    @GetMapping("/plain")
+    @ResponseBody
+    public String listPlain() {
+        try {
+            List<HouseholdResponse> households = householdService.findAll();
+            long total = households != null ? households.size() : 0;
+            long active = households != null ? households.stream().filter(HouseholdResponse::getActive).count() : 0;
+            return "Households: total=" + total + ", active=" + active + ", time=" + java.time.LocalDateTime.now();
+        } catch (Exception e) {
+            return "Error loading households: " + e.getClass().getSimpleName() + " - " + e.getMessage();
+        }
+    }
+
     @GetMapping
-    public Object list(Model model) {
+    public String list(Model model) {
         try {
             log.info("Loading household list");
             List<HouseholdResponse> households = householdService.findAll();
@@ -66,19 +85,6 @@ public class HouseholdPageController {
         }
     }
 
-    @GetMapping("/plain")
-    @ResponseBody
-    public String listPlain() {
-        try {
-            List<HouseholdResponse> households = householdService.findAll();
-            long total = households != null ? households.size() : 0;
-            long active = households != null ? households.stream().filter(HouseholdResponse::getActive).count() : 0;
-            return "Households: total=" + total + ", active=" + active + ", time=" + java.time.LocalDateTime.now();
-        } catch (Exception e) {
-            return "Error loading households: " + e.getClass().getSimpleName() + " - " + e.getMessage();
-        }
-    }
-
     @GetMapping("/create")
     public String createForm(Model model) {
         try {
@@ -90,7 +96,6 @@ public class HouseholdPageController {
                         .build());
             }
 
-            // Get available parcels (only AVAILABLE parcels)
             List<za.co.taloms.parcel.application.dto.ParcelResponse> availableParcels = new ArrayList<>();
             try {
                 var allParcels = parcelService.findAll();
@@ -105,7 +110,6 @@ public class HouseholdPageController {
                 availableParcels = Collections.emptyList();
             }
 
-            // Get active PTOs to link to households
             List<za.co.taloms.pto.application.dto.PTOResponse> activePtos = new ArrayList<>();
             try {
                 activePtos = ptoService.findByStatus(PTOStatus.ACTIVE);
@@ -148,19 +152,19 @@ public class HouseholdPageController {
 
         try {
             if (request.getParcelId() == null) {
-                ra.addFlashAttribute("errorMessage", "❌ Please select a parcel for this household.");
+                ra.addFlashAttribute("errorMessage", "Please select a parcel for this household.");
                 ra.addFlashAttribute("form", request);
                 return "redirect:/households/create";
             }
 
             var response = householdService.createHousehold(request, userDetails.getUsername());
             ra.addFlashAttribute("successMessage",
-                    "✅ Household created successfully for " + response.getHouseholdHeadName() + ".");
+                    "Household created successfully for " + response.getHouseholdHeadName() + ".");
             return "redirect:/households";
 
         } catch (Exception e) {
             log.error("Error creating household: {}", e.getMessage(), e);
-            ra.addFlashAttribute("errorMessage", "❌ Error creating household: " + e.getMessage());
+            ra.addFlashAttribute("errorMessage", "Error creating household: " + e.getMessage());
             ra.addFlashAttribute("form", request);
             return "redirect:/households/create";
         }
@@ -201,7 +205,6 @@ public class HouseholdPageController {
                     .notes(household.getNotes())
                     .build();
 
-            // Get available parcels (including the current one)
             List<za.co.taloms.parcel.application.dto.ParcelResponse> availableParcels = new ArrayList<>();
             try {
                 var allParcels = parcelService.findAll();
@@ -250,18 +253,18 @@ public class HouseholdPageController {
 
         try {
             if (request.getParcelId() == null) {
-                ra.addFlashAttribute("errorMessage", "❌ Please select a parcel for this household.");
+                ra.addFlashAttribute("errorMessage", "Please select a parcel for this household.");
                 ra.addFlashAttribute("form", request);
                 return "redirect:/households/" + id + "/edit";
             }
 
             var response = householdService.updateHousehold(id, request, userDetails.getUsername());
             ra.addFlashAttribute("successMessage",
-                    "✅ Household updated successfully for " + response.getHouseholdHeadName() + ".");
+                    "Household updated successfully for " + response.getHouseholdHeadName() + ".");
             return "redirect:/households/" + id;
         } catch (Exception e) {
             log.error("Error updating household: {}", e.getMessage(), e);
-            ra.addFlashAttribute("errorMessage", "❌ " + e.getMessage());
+            ra.addFlashAttribute("errorMessage", "Error: " + e.getMessage());
             return "redirect:/households/" + id + "/edit";
         }
     }
@@ -274,9 +277,9 @@ public class HouseholdPageController {
 
         try {
             var response = householdService.deactivateHousehold(id, userDetails.getUsername());
-            ra.addFlashAttribute("successMessage", "✅ Household deactivated successfully.");
+            ra.addFlashAttribute("successMessage", "Household deactivated successfully.");
         } catch (Exception e) {
-            ra.addFlashAttribute("errorMessage", "❌ " + e.getMessage());
+            ra.addFlashAttribute("errorMessage", "Error: " + e.getMessage());
         }
         return "redirect:/households/" + id;
     }
@@ -289,9 +292,9 @@ public class HouseholdPageController {
 
         try {
             var response = householdService.activateHousehold(id, userDetails.getUsername());
-            ra.addFlashAttribute("successMessage", "✅ Household activated successfully.");
+            ra.addFlashAttribute("successMessage", "Household activated successfully.");
         } catch (Exception e) {
-            ra.addFlashAttribute("errorMessage", "❌ " + e.getMessage());
+            ra.addFlashAttribute("errorMessage", "Error: " + e.getMessage());
         }
         return "redirect:/households/" + id;
     }
@@ -315,7 +318,6 @@ public class HouseholdPageController {
             StringBuilder sb = new StringBuilder();
             sb.append("=== Household Module Debug ===\n");
 
-            // Check if service is working
             try {
                 var households = householdService.findAll();
                 sb.append("Service: OK\n");
@@ -324,10 +326,8 @@ public class HouseholdPageController {
                 sb.append("Service Error: ").append(e.getMessage()).append("\n");
             }
 
-            // Check template availability
             sb.append("\n=== Template Check ===\n");
             try {
-                // This will force template resolution
                 return "households/list";
             } catch (Exception e) {
                 sb.append("Template Error: ").append(e.getMessage()).append("\n");
@@ -336,16 +336,6 @@ public class HouseholdPageController {
             return sb.toString();
         } catch (Exception e) {
             return "Debug Error: " + e.getMessage();
-        }
-    }
-
-    @GetMapping("/test")
-    @ResponseBody
-    public String test() {
-        try {
-            return "Household module is working! Time: " + java.time.LocalDateTime.now();
-        } catch (Exception e) {
-            return "Error: " + e.getMessage();
         }
     }
 }

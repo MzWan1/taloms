@@ -1,5 +1,6 @@
 package za.co.taloms.household.presentation;
 
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -11,6 +12,11 @@ import org.springframework.web.bind.annotation.ResponseBody;
 @ControllerAdvice
 @Order(Ordered.HIGHEST_PRECEDENCE)
 public class HouseholdExceptionHandler {
+
+    @PostConstruct
+    public void init() {
+        log.warn("!!! HouseholdExceptionHandler INITIALIZED - this should appear in logs !!!");
+    }
 
     @ExceptionHandler(Throwable.class)
     @ResponseBody
