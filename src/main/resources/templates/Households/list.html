@@ -132,8 +132,8 @@
                         <td class="px-4 text-muted small" th:text="${stat.count}">1</td>
                         <td>
                             <div class="d-flex align-items-center gap-3">
-                                <div class="household-avatar"
-                                     th:text="${#strings.substring(household.householdHeadName,0,2).toUpperCase()}">HH</div>
+                                 <div class="household-avatar"
+                                      th:text="${household.householdHeadName != null ? #strings.substring(household.householdHeadName,0,2).toUpperCase() : 'HH'}">HH</div>
                                 <div>
                                     <a th:href="@{/households/{id}(id=${household.id})}"
                                        class="fw-semibold text-navy text-decoration-none small"
