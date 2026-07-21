@@ -133,7 +133,7 @@
                         <td>
                             <div class="d-flex align-items-center gap-3">
                                 <div class="household-avatar"
-                                     th:text="${household.householdHeadName != null ? #strings.substring(household.householdHeadName,0,2).toUpperCase() : 'HH'}">HH</div>
+                                     th:text="${household.householdHeadName != null ? household.householdHeadName.substring(0, Math.min(2, household.householdHeadName.length())).toUpperCase() : 'HH'}">HH</div>
                                 <div>
                                     <a th:href="@{/households/{id}(id=${household.id})}"
                                        class="fw-semibold text-navy text-decoration-none small"
