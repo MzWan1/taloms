@@ -153,7 +153,7 @@
                     <option value="">— Select Parcel —</option>
                     <option th:each="p : ${availableParcels}"
                             th:value="${p.id}"
-                            th:text="${p.parcelNumber + ' - Stand ' + p.standNumber + ' (' + p.villageName + ')'}"
+                            th:text="${p.parcelNumber + ' - Stand ' + p.standNumber + ' (' + (p.villageName != null ? p.villageName : '') + ')'}"
                             th:selected="${p.id == form.parcelId}">
                     </option>
                   </select>
@@ -174,8 +174,8 @@
                     <option value="">— Select PTO —</option>
                     <option th:each="pto : ${activePtos}"
                             th:value="${pto.id}"
-                            th:text="${pto.ptoNumber + ' - ' + pto.ptoHolderName}"
-                            th:selected="${pto.id == form.ptoId}">
+                            th:text="${pto.ptoNumber + ' - ' + (pto.ptoHolderName != null ? pto.ptoHolderName : '')}"
+                            th:selected="${pto.id == form.parcelId}">
                     </option>
                   </select>
                 </div>

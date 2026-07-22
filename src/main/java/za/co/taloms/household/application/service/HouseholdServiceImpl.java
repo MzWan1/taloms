@@ -217,26 +217,32 @@ public class HouseholdServiceImpl implements HouseholdService {
     }
 
     private HouseholdResponse toResponse(Household household) {
+        if (household == null) {
+            return null;
+        }
+
+        var parcel = household.getParcel();
+        var village = parcel != null ? parcel.getVillage() : null;
+        var authority = village != null ? village.getTraditionalAuthority() : null;
+        var pto = household.getPto();
+
         return HouseholdResponse.builder()
                 .id(household.getId())
                 .householdHeadName(household.getHouseholdHeadName())
                 .householdHeadIdNumber(household.getHouseholdHeadIdNumber())
                 .contactPhone(household.getContactPhone())
                 .contactEmail(household.getContactEmail())
-                .parcelId(household.getParcel() != null ? household.getParcel().getId() : null)
-                .standNumber(household.getParcel() != null ? household.getParcel().getStandNumber() : null)
-                .parcelNumber(household.getParcel() != null ? household.getParcel().getParcelNumber() : null)
-                .villageName(household.getParcel() != null && household.getParcel().getVillage() != null ?
-                        household.getParcel().getVillage().getVillageName() : null)
-                .authorityName(household.getParcel() != null && household.getParcel().getVillage() != null &&
-                        household.getParcel().getVillage().getTraditionalAuthority() != null ?
-                        household.getParcel().getVillage().getTraditionalAuthority().getAuthorityName() : null)
-                .ptoId(household.getPto() != null ? household.getPto().getId() : null)
-                .ptoNumber(household.getPto() != null ? household.getPto().getPtoNumber() : null)
-                .ptoHolderName(household.getPto() != null ? household.getPto().getPtoHolderName() : null)
+                .parcelId(parcel != null ? parcel.getId() : null)
+                .standNumber(parcel != null ? parcel.getStandNumber() : null)
+                .parcelNumber(parcel != null ? parcel.getParcelNumber() : null)
+                .villageName(village != null ? village.getVillageName() : null)
+                .authorityName(authority != null ? authority.getAuthorityName() : null)
+                .ptoId(pto != null ? pto.getId() : null)
+                .ptoNumber(pto != null ? pto.getPtoNumber() : null)
+                .ptoHolderName(pto != null ? pto.getPtoHolderName() : null)
                 .registrationDate(household.getRegistrationDate())
                 .active(household.getActive() != null ? household.getActive() : false)
-                .statusDisplay(household.isActive() ? "Active" : "Inactive")
+                .statusDisplay(Boolean.TRUE.equals(household.getActive()) ? "Active" : "Inactive")
                 .notes(household.getNotes())
                 .createdBy(household.getCreatedBy())
                 .createdAt(household.getCreatedAt())
