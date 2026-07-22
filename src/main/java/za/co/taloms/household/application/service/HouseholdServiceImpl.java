@@ -235,7 +235,7 @@ public class HouseholdServiceImpl implements HouseholdService {
                 .ptoNumber(household.getPto() != null ? household.getPto().getPtoNumber() : null)
                 .ptoHolderName(household.getPto() != null ? household.getPto().getPtoHolderName() : null)
                 .registrationDate(household.getRegistrationDate())
-                .active(household.getActive())
+                .active(household.getActive() != null ? household.getActive() : false)
                 .statusDisplay(household.isActive() ? "Active" : "Inactive")
                 .notes(household.getNotes())
                 .createdBy(household.getCreatedBy())

@@ -50,7 +50,7 @@ public class HouseholdPageController {
             long total = households != null ? households.size() : 0;
             long active = households != null ? households.stream().filter(HouseholdResponse::getActive).count() : 0;
             return "Households: total=" + total + ", active=" + active + ", time=" + java.time.LocalDateTime.now();
-        } catch (Exception e) {
+        } catch (Throwable e) {
             return "Error loading households: " + e.getClass().getSimpleName() + " - " + e.getMessage();
         }
     }
@@ -73,7 +73,7 @@ public class HouseholdPageController {
 
             log.info("Found {} households", households.size());
             return "households/list";
-        } catch (Exception e) {
+        } catch (Throwable e) {
             log.error("Error loading household list: {}", e.getMessage(), e);
             model.addAttribute("errorMessage", "Error loading households: " + e.getMessage());
             model.addAttribute("households", Collections.emptyList());
@@ -105,7 +105,7 @@ public class HouseholdPageController {
                             .collect(Collectors.toList());
                     log.info("Found {} available parcels for household creation", availableParcels.size());
                 }
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 log.error("Error loading available parcels: {}", e.getMessage(), e);
                 availableParcels = Collections.emptyList();
             }
@@ -117,7 +117,7 @@ public class HouseholdPageController {
                     activePtos = Collections.emptyList();
                 }
                 log.info("Found {} active PTOs for household creation", activePtos.size());
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 log.error("Error loading active PTOs: {}", e.getMessage(), e);
                 activePtos = Collections.emptyList();
             }
@@ -130,7 +130,7 @@ public class HouseholdPageController {
             model.addAttribute("pageTitle", "Create Household");
             model.addAttribute("currentPage", "households");
             return "households/create";
-        } catch (Exception e) {
+        } catch (Throwable e) {
             log.error("Error loading create household form: {}", e.getMessage(), e);
             model.addAttribute("errorMessage", "Error loading form: " + e.getMessage());
             model.addAttribute("availableParcels", Collections.emptyList());
@@ -159,10 +159,10 @@ public class HouseholdPageController {
 
             var response = householdService.createHousehold(request, userDetails.getUsername());
             ra.addFlashAttribute("successMessage",
-                    "Household created successfully for " + response.getHouseholdHeadName() + ".");
+                    "Household created successfully for " + (response.getHouseholdHeadName() != null ? response.getHouseholdHeadName() : "record") + ".");
             return "redirect:/households";
 
-        } catch (Exception e) {
+        } catch (Throwable e) {
             log.error("Error creating household: {}", e.getMessage(), e);
             ra.addFlashAttribute("errorMessage", "Error creating household: " + e.getMessage());
             ra.addFlashAttribute("form", request);
@@ -175,10 +175,10 @@ public class HouseholdPageController {
         try {
             var household = householdService.findById(id);
             model.addAttribute("household", household);
-            model.addAttribute("pageTitle", "Household - " + household.getHouseholdHeadName());
+            model.addAttribute("pageTitle", "Household - " + (household.getHouseholdHeadName() != null ? household.getHouseholdHeadName() : "Unknown"));
             model.addAttribute("currentPage", "households");
             return "households/detail";
-        } catch (Exception e) {
+        } catch (Throwable e) {
             log.error("Error loading household detail: {}", e.getMessage(), e);
             return "redirect:/households";
         }
@@ -215,7 +215,7 @@ public class HouseholdPageController {
                             .collect(Collectors.toList());
                     log.info("Found {} available parcels for household edit", availableParcels.size());
                 }
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 log.error("Error loading available parcels: {}", e.getMessage(), e);
                 availableParcels = Collections.emptyList();
             }
@@ -226,7 +226,7 @@ public class HouseholdPageController {
                 if (activePtos == null) {
                     activePtos = Collections.emptyList();
                 }
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 log.error("Error loading active PTOs: {}", e.getMessage(), e);
                 activePtos = Collections.emptyList();
             }
@@ -238,7 +238,7 @@ public class HouseholdPageController {
             model.addAttribute("pageTitle", "Edit Household");
             model.addAttribute("currentPage", "households");
             return "households/edit";
-        } catch (Exception e) {
+        } catch (Throwable e) {
             log.error("Error loading edit form: {}", e.getMessage(), e);
             return "redirect:/households/" + id;
         }
@@ -260,9 +260,9 @@ public class HouseholdPageController {
 
             var response = householdService.updateHousehold(id, request, userDetails.getUsername());
             ra.addFlashAttribute("successMessage",
-                    "Household updated successfully for " + response.getHouseholdHeadName() + ".");
+                    "Household updated successfully for " + (response.getHouseholdHeadName() != null ? response.getHouseholdHeadName() : "record") + ".");
             return "redirect:/households/" + id;
-        } catch (Exception e) {
+        } catch (Throwable e) {
             log.error("Error updating household: {}", e.getMessage(), e);
             ra.addFlashAttribute("errorMessage", "Error: " + e.getMessage());
             return "redirect:/households/" + id + "/edit";
@@ -278,7 +278,7 @@ public class HouseholdPageController {
         try {
             var response = householdService.deactivateHousehold(id, userDetails.getUsername());
             ra.addFlashAttribute("successMessage", "Household deactivated successfully.");
-        } catch (Exception e) {
+        } catch (Throwable e) {
             ra.addFlashAttribute("errorMessage", "Error: " + e.getMessage());
         }
         return "redirect:/households/" + id;
@@ -293,7 +293,7 @@ public class HouseholdPageController {
         try {
             var response = householdService.activateHousehold(id, userDetails.getUsername());
             ra.addFlashAttribute("successMessage", "Household activated successfully.");
-        } catch (Exception e) {
+        } catch (Throwable e) {
             ra.addFlashAttribute("errorMessage", "Error: " + e.getMessage());
         }
         return "redirect:/households/" + id;
@@ -305,7 +305,7 @@ public class HouseholdPageController {
         try {
             var household = householdService.findActiveByParcelId(parcelId);
             return household != null ? household : Collections.emptyMap();
-        } catch (Exception e) {
+        } catch (Throwable e) {
             log.error("Error loading active household: {}", e.getMessage(), e);
             return Collections.emptyMap();
         }
@@ -322,19 +322,19 @@ public class HouseholdPageController {
                 var households = householdService.findAll();
                 sb.append("Service: OK\n");
                 sb.append("Household count: ").append(households != null ? households.size() : 0).append("\n");
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 sb.append("Service Error: ").append(e.getMessage()).append("\n");
             }
 
             sb.append("\n=== Template Check ===\n");
             try {
                 return "households/list";
-            } catch (Exception e) {
+            } catch (Throwable e) {
                 sb.append("Template Error: ").append(e.getMessage()).append("\n");
             }
 
             return sb.toString();
-        } catch (Exception e) {
+        } catch (Throwable e) {
             return "Debug Error: " + e.getMessage();
         }
     }

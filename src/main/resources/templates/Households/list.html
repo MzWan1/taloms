@@ -150,9 +150,9 @@
                         <td class="small" th:text="${household.registrationDate != null ?
                                 #temporals.format(household.registrationDate,'dd MMM yyyy') : '—'}">Date</td>
                         <td>
-                            <span th:if="${household.active}"
+                            <span th:if="${household.active != null && household.active}"
                                   class="badge bg-success">Active</span>
-                            <span th:if="${!household.active}"
+                            <span th:if="${household.active != null && !household.active}"
                                   class="badge bg-secondary">Inactive</span>
                         </td>
                         <td class="text-center">
