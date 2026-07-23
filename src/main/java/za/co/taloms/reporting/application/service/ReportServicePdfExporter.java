@@ -1,5 +1,7 @@
 package za.co.taloms.reporting.application.service;
 
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.PDPageContentStream;
@@ -7,10 +9,7 @@ import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.font.PDType1Font;
 import org.apache.pdfbox.pdmodel.font.Standard14Fonts;
 import org.springframework.stereotype.Service;
-import za.co.taloms.parcel.application.dto.ParcelResponse;
-import za.co.taloms.parcel.application.service.ParcelService;
-import za.co.taloms.pto.application.dto.PTOResponse;
-import za.co.taloms.pto.application.service.PTOService;
+import za.co.taloms.reporting.application.dto.ReportData;
 import za.co.taloms.reporting.application.dto.ReportRequest;
 import za.co.taloms.reporting.application.dto.ReportResponse;
 
@@ -18,238 +17,239 @@ import java.io.ByteArrayOutputStream;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 
 @Service
+@RequiredArgsConstructor
+@Slf4j
 public class ReportServicePdfExporter implements ReportService {
 
-    private final PTOService ptoService;
-    private final ParcelService parcelService;
+    private final ReportDataService reportDataService;
 
-    public ReportServicePdfExporter(PTOService ptoService, ParcelService parcelService) {
-        this.ptoService = ptoService;
-        this.parcelService = parcelService;
+    @Override
+    public ReportResponse generatePtoOccupancyRegisterReport(ReportRequest request) {
+        return buildPdfReport(reportDataService.generatePtoOccupancyRegisterReport(request), "PTO Occupancy Register");
     }
 
     @Override
-    public ReportResponse generatePTOReport(ReportRequest request) {
-        List<PTOResponse> ptos;
-        if (request.getAuthorityId() != null) {
-            ptos = ptoService.findByAuthority(request.getAuthorityId());
-        } else if (request.getVillageId() != null) {
-            ptos = ptoService.findByVillage(request.getVillageId());
-        } else {
-            ptos = ptoService.findAll();
-        }
-
-        byte[] pdfBytes = generatePTOPDF(ptos);
-        return buildResponse(pdfBytes, "PTO_Report", "application/pdf");
+    public ReportResponse generateLandParcelUtilisationReport(ReportRequest request) {
+        return buildPdfReport(reportDataService.generateLandParcelUtilisationReport(request), "Land Parcel Utilisation");
     }
 
     @Override
-    public ReportResponse generateParcelReport(ReportRequest request) {
-        List<ParcelResponse> parcels;
-        if (request.getAuthorityId() != null) {
-            parcels = parcelService.findAll();
-        } else if (request.getVillageId() != null) {
-            parcels = parcelService.findByVillage(request.getVillageId());
-        } else {
-            parcels = parcelService.findAll();
-        }
-
-        byte[] pdfBytes = generateParcelPDF(parcels);
-        return buildResponse(pdfBytes, "Parcel_Report", "application/pdf");
+    public ReportResponse generateStandAllocationReport(ReportRequest request) {
+        return buildPdfReport(reportDataService.generateStandAllocationReport(request), "Stand Allocation");
     }
 
     @Override
-    public ReportResponse generatePopulationReport(ReportRequest request) {
-        byte[] pdfBytes = generatePlaceholderPDF("Population Report");
-        return buildResponse(pdfBytes, "Population_Report", "application/pdf");
+    public ReportResponse generateVillagePopulationReport(ReportRequest request) {
+        return buildPdfReport(reportDataService.generateVillagePopulationReport(request), "Village Population");
     }
 
     @Override
-    public ReportResponse generateLandUtilisationReport(ReportRequest request) {
-        byte[] pdfBytes = generatePlaceholderPDF("Land Utilisation Report");
-        return buildResponse(pdfBytes, "Land_Utilisation_Report", "application/pdf");
+    public ReportResponse generateHouseholdRegisterReport(ReportRequest request) {
+        return buildPdfReport(reportDataService.generateHouseholdRegisterReport(request), "Household Register");
     }
 
-    private byte[] generatePTOPDF(List<PTOResponse> ptos) {
+    @Override
+    public ReportResponse generateResidentDemographicsReport(ReportRequest request) {
+        return buildPdfReport(reportDataService.generateResidentDemographicsReport(request), "Resident Demographics");
+    }
+
+    @Override
+    public ReportResponse generateBusinessOccupancyReport(ReportRequest request) {
+        return buildPdfReport(reportDataService.generateBusinessOccupancyReport(request), "Business Occupancy");
+    }
+
+    @Override
+    public ReportResponse generateEconomicActivityReport(ReportRequest request) {
+        return buildPdfReport(reportDataService.generateEconomicActivityReport(request), "Economic Activity");
+    }
+
+    @Override
+    public ReportResponse generateUserActivityAuditReport(ReportRequest request) {
+        return buildPdfReport(reportDataService.generateUserActivityAuditReport(request), "User Activity Audit");
+    }
+
+    @Override
+    public ReportResponse generateDocumentManagementReport(ReportRequest request) {
+        return buildPdfReport(reportDataService.generateDocumentManagementReport(request), "Document Management");
+    }
+
+    @Override
+    public ReportResponse generatePerformanceDashboardReport(ReportRequest request) {
+        return buildPdfReport(reportDataService.generatePerformanceDashboardReport(request), "Performance Dashboard");
+    }
+
+    @Override
+    public ReportResponse generateLandBoundaryReport(ReportRequest request) {
+        return buildPdfReport(reportDataService.generateLandBoundaryReport(request), "Land Boundary");
+    }
+
+    private ReportResponse buildPdfReport(ReportData data, String reportTitle) {
         try (PDDocument document = new PDDocument()) {
             PDPage page = new PDPage(PDRectangle.A4);
             document.addPage(page);
 
-            try (PDPageContentStream cs = new PDPageContentStream(document, page)) {
-                // Title
-                cs.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD), 16);
-                cs.beginText();
-                cs.newLineAtOffset(50, 750);
-                cs.showText("TALOMS - PTO Report");
-                cs.endText();
+            drawPdfPage(document, page, data, 0);
 
-                // Subtitle
-                cs.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), 12);
-                cs.beginText();
-                cs.newLineAtOffset(50, 720);
-                cs.showText("Generated: " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm")));
-                cs.endText();
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            document.save(baos);
+            return buildResponse(baos.toByteArray(), reportTitle.replaceAll("\\s+", "_"), "application/pdf");
+        } catch (Exception e) {
+            log.error("Failed to generate PDF report", e);
+            throw new RuntimeException("Failed to generate PDF report: " + e.getMessage(), e);
+        }
+    }
 
-                // Table headers
-                float y = 680;
-                float margin = 50;
-                float[] columnWidths = {80, 100, 100, 100, 120};
+    private void drawPdfPage(PDDocument document, PDPage page, ReportData data, int pageNum) throws Exception {
+        try (PDPageContentStream cs = new PDPageContentStream(document, page)) {
+            float margin = 50;
+            float width = PDRectangle.A4.getWidth() - 2 * margin;
+            float y = 780;
 
-                cs.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD), 10);
-                drawTableHeader(cs, margin, y, columnWidths, new String[]{"PTO Number", "Holder", "Purpose", "Status", "Village"});
+            cs.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD), 16);
+            cs.beginText();
+            cs.newLineAtOffset(margin, y);
+            cs.showText("TALOMS - " + (data.reportTitle() != null ? data.reportTitle() : "Report"));
+            cs.endText();
+            y -= 25;
 
-                // Table rows
-                y -= 20;
-                cs.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), 9);
-                for (PTOResponse pto : ptos) {
-                    String[] rowData = {
-                            pto.getPtoNumber(),
-                            pto.getPtoHolderName(),
-                            pto.getPurposeDisplay(),
-                            pto.getStatusDisplay(),
-                            pto.getVillageName() != null ? pto.getVillageName() : "—"
-                    };
-                    drawTableRow(cs, margin, y, columnWidths, rowData);
-                    y -= 20;
+            cs.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), 10);
+            cs.beginText();
+            cs.newLineAtOffset(margin, y);
+            String filterInfo = buildFilterInfo(data);
+            cs.showText("Generated: " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm"))
+                    + "    Filters: " + filterInfo);
+            cs.endText();
+            y -= 30;
+
+            for (za.co.taloms.reporting.application.dto.ReportSection section : data.sections()) {
+                if (y < 100) {
+                    PDPage newPage = new PDPage(PDRectangle.A4);
+                    document.addPage(newPage);
+                    y = 780;
+                    drawFooter(cs, margin, data, pageNum + 1);
                 }
 
-                // Footer
-                cs.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), 8);
+                cs.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD), 12);
                 cs.beginText();
-                cs.newLineAtOffset(margin, 30);
-                cs.showText("Total PTOs: " + ptos.size());
+                cs.newLineAtOffset(margin, y);
+                cs.showText(section.sectionTitle() != null ? section.sectionTitle() : "");
                 cs.endText();
-
-                cs.beginText();
-                cs.newLineAtOffset(400, 30);
-                cs.showText("Generated by TALOMS v1.0");
-                cs.endText();
-            }
-
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            document.save(baos);
-            return baos.toByteArray();
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to generate PDF", e);
-        }
-    }
-
-    private byte[] generateParcelPDF(List<ParcelResponse> parcels) {
-        try (PDDocument document = new PDDocument()) {
-            PDPage page = new PDPage(PDRectangle.A4);
-            document.addPage(page);
-
-            try (PDPageContentStream cs = new PDPageContentStream(document, page)) {
-                // Title
-                cs.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD), 16);
-                cs.beginText();
-                cs.newLineAtOffset(50, 750);
-                cs.showText("TALOMS - Parcel Report");
-                cs.endText();
-
-                cs.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), 12);
-                cs.beginText();
-                cs.newLineAtOffset(50, 720);
-                cs.showText("Generated: " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("dd MMM yyyy HH:mm")));
-                cs.endText();
-
-                // Table headers
-                float y = 680;
-                float margin = 50;
-                float[] columnWidths = {80, 80, 100, 80, 80};
-
-                cs.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD), 10);
-                drawTableHeader(cs, margin, y, columnWidths, new String[]{"Parcel #", "Stand #", "Type", "Status", "Village"});
-
                 y -= 20;
-                cs.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), 9);
-                for (ParcelResponse parcel : parcels) {
-                    String[] rowData = {
-                            parcel.getParcelNumber(),
-                            parcel.getStandNumber(),
-                            parcel.getParcelTypeDisplay(),
-                            parcel.getStatusDisplay(),
-                            parcel.getVillageName() != null ? parcel.getVillageName() : "—"
-                    };
-                    drawTableRow(cs, margin, y, columnWidths, rowData);
-                    y -= 20;
+
+                if (section.metrics() != null && !section.metrics().isEmpty()) {
+                    y = drawMetricsTable(cs, margin, y, width, section.metrics());
+                    y -= 15;
                 }
 
-                // Footer
-                cs.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), 8);
-                cs.beginText();
-                cs.newLineAtOffset(margin, 30);
-                cs.showText("Total Parcels: " + parcels.size());
-                cs.endText();
+                if (section.tableHeaders() != null && !section.tableHeaders().isEmpty()) {
+                    y = drawDataTable(cs, margin, y, width, section.tableHeaders(), section.tableRows());
+                }
+
+                y -= 20;
             }
 
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            document.save(baos);
-            return baos.toByteArray();
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to generate PDF", e);
+            drawFooter(cs, margin, data, pageNum + 1);
         }
     }
 
-    private byte[] generatePlaceholderPDF(String title) {
-        try (PDDocument document = new PDDocument()) {
-            PDPage page = new PDPage(PDRectangle.A4);
-            document.addPage(page);
+    private void drawFooter(PDPageContentStream cs, float margin, ReportData data, int pageNum) throws Exception {
+        cs.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), 8);
+        cs.beginText();
+        cs.newLineAtOffset(margin, 30);
+        cs.showText("Page " + pageNum + "    Generated by TALOMS");
+        cs.endText();
+    }
 
-            try (PDPageContentStream cs = new PDPageContentStream(document, page)) {
-                cs.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD), 20);
-                cs.beginText();
-                cs.newLineAtOffset(50, 750);
-                cs.showText("TALOMS - " + title);
-                cs.endText();
+    private String buildFilterInfo(ReportData data) {
+        StringBuilder sb = new StringBuilder();
+        if (data.authorityName() != null) sb.append("Authority: ").append(data.authorityName()).append("  ");
+        if (data.villageName() != null) sb.append("Village: ").append(data.villageName()).append("  ");
+        if (data.dateFrom() != null) sb.append("From: ").append(data.dateFrom()).append("  ");
+        if (data.dateTo() != null) sb.append("To: ").append(data.dateTo());
+        return sb.toString().trim();
+    }
 
-                cs.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), 12);
+    private float drawMetricsTable(PDPageContentStream cs, float x, float y, float width, List<Map<String, String>> metrics)
+            throws Exception {
+        float rowHeight = 16;
+        float currentY = y;
+
+        float keyWidth = width * 0.6f;
+        float valueWidth = width - keyWidth;
+
+        cs.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD), 9);
+        cs.setNonStrokingColor(200, 200, 200);
+        cs.addRect(x, currentY - rowHeight + 5, width, rowHeight);
+        cs.fill();
+        cs.setNonStrokingColor(0, 0, 0);
+        cs.beginText();
+        cs.newLineAtOffset(x + 5, currentY - rowHeight + 5);
+        cs.showText("Metric");
+        cs.endText();
+        cs.beginText();
+        cs.newLineAtOffset(x + keyWidth + 5, currentY - rowHeight + 5);
+        cs.showText("Value");
+        cs.endText();
+        currentY -= rowHeight;
+
+        cs.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), 9);
+        for (Map<String, String> metric : metrics) {
+            for (Map.Entry<String, String> entry : metric.entrySet()) {
                 cs.beginText();
-                cs.newLineAtOffset(50, 700);
-                cs.showText("This report is under development. Please check back later.");
+                cs.newLineAtOffset(x + 5, currentY - rowHeight + 5);
+                cs.showText(entry.getKey() != null ? entry.getKey() : "");
                 cs.endText();
+                cs.beginText();
+                cs.newLineAtOffset(x + keyWidth + 5, currentY - rowHeight + 5);
+                cs.showText(entry.getValue() != null ? entry.getValue() : "");
+                cs.endText();
+                currentY -= rowHeight;
             }
-
-            ByteArrayOutputStream baos = new ByteArrayOutputStream();
-            document.save(baos);
-            return baos.toByteArray();
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to generate placeholder PDF", e);
         }
+        return currentY;
     }
 
-    private void drawTableHeader(PDPageContentStream cs, float x, float y, float[] columnWidths, String[] headers) throws Exception {
+    private float drawDataTable(PDPageContentStream cs, float x, float y, float width, List<String> headers,
+                                List<List<String>> rows) throws Exception {
+        float currentY = y;
+        float rowHeight = 16;
+
+        cs.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA_BOLD), 8);
+        cs.setNonStrokingColor(200, 200, 200);
+        cs.addRect(x, currentY - rowHeight + 5, width, rowHeight);
+        cs.fill();
+        cs.setNonStrokingColor(0, 0, 0);
+
+        int colCount = headers.size();
+        float colWidth = width / colCount;
+
         float cx = x;
-        for (int i = 0; i < headers.length; i++) {
+        for (String header : headers) {
             cs.beginText();
-            cs.newLineAtOffset(cx + 5, y - 5);
-            cs.showText(headers[i]);
+            cs.newLineAtOffset(cx + 3, currentY - rowHeight + 5);
+            cs.showText(header != null ? header : "");
             cs.endText();
-            cx += columnWidths[i];
+            cx += colWidth;
         }
-        // Draw header line
-        cs.moveTo(x, y - 15);
-        cs.lineTo(x + sumArray(columnWidths), y - 15);
-        cs.stroke();
-    }
+        currentY -= rowHeight;
 
-    private void drawTableRow(PDPageContentStream cs, float x, float y, float[] columnWidths, String[] rowData) throws Exception {
-        float cx = x;
-        for (int i = 0; i < rowData.length; i++) {
-            cs.beginText();
-            cs.newLineAtOffset(cx + 5, y - 5);
-            cs.showText(rowData[i]);
-            cs.endText();
-            cx += columnWidths[i];
+        cs.setFont(new PDType1Font(Standard14Fonts.FontName.HELVETICA), 8);
+        for (List<String> row : rows) {
+            cx = x;
+            for (int i = 0; i < colCount; i++) {
+                String val = i < row.size() ? row.get(i) : "";
+                cs.beginText();
+                cs.newLineAtOffset(cx + 3, currentY - rowHeight + 5);
+                cs.showText(val != null ? val : "");
+                cs.endText();
+                cx += colWidth;
+            }
+            currentY -= rowHeight;
         }
-    }
-
-    private float sumArray(float[] arr) {
-        float sum = 0;
-        for (float f : arr) sum += f;
-        return sum;
+        return currentY;
     }
 
     private ReportResponse buildResponse(byte[] content, String baseName, String contentType) {
