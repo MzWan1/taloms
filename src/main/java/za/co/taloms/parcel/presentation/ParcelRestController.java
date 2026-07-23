@@ -79,6 +79,11 @@ public class ParcelRestController {
                 "Parcels retrieved successfully"));
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<List<ParcelResponse>>> search(@RequestParam String q) {
+        return ResponseEntity.ok(ApiResponse.success(parcelService.search(q), "Search completed"));
+    }
+
     @GetMapping("/available/{villageId}")
     public ResponseEntity<ApiResponse<List<ParcelResponse>>> getAvailable(@PathVariable Long villageId) {
         return ResponseEntity.ok(ApiResponse.success(parcelService.findAvailable(villageId),

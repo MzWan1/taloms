@@ -9,6 +9,7 @@ public interface VillageService {
     VillageResponse findById(Long id);
     List<VillageResponse> findAll();
     List<VillageResponse> findByAuthority(Long authorityId);
+    List<VillageResponse> searchByName(String name);
     void deactivate(Long id);
     void activate(Long id);
 }

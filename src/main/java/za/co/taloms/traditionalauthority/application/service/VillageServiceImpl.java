@@ -114,6 +114,22 @@ public class VillageServiceImpl implements VillageService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<VillageResponse> searchByName(String name) {
+        if (name == null || name.trim().isEmpty()) {
+            return findAll();
+        }
+        return villageRepository.findAll().stream()
+                .filter(v -> v.getVillageName().toLowerCase().contains(name.trim().toLowerCase())
+                        || (v.getHeadmanName() != null && v.getHeadmanName().toLowerCase().contains(name.trim().toLowerCase()))
+                        || (v.getRegion() != null && v.getRegion().toLowerCase().contains(name.trim().toLowerCase()))
+                        || (v.getTraditionalAuthority() != null &&
+                            v.getTraditionalAuthority().getAuthorityName().toLowerCase().contains(name.trim().toLowerCase())))
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public void deactivate(Long id) {
         var village = villageRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(

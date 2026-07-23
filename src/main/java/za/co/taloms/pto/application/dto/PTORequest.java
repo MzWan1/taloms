@@ -48,4 +48,12 @@ public class PTORequest {
 
     @NotNull(message = "Parcel is required")
     private Long parcelId;
+
+    @NotNull(message = "Stand Number is required")
+    @Size(max = 50, message = "Stand number must not exceed 50 characters")
+    private String standNumber;
+
+    @NotNull(message = "Parcel Number is required")
+    @Size(max = 50, message = "Parcel number must not exceed 50 characters")
+    private String parcelNumber;
 }

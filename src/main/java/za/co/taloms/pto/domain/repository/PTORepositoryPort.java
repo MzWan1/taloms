@@ -22,4 +22,8 @@ public interface PTORepositoryPort {
     long countByStatus(PTOStatus status);
     long countByTraditionalAuthorityId(Long authorityId);
     long countAll();
+    List<PTO> findByIdNumberAndStatus(String idNumber, PTOStatus status);
+    boolean existsByIdNumberAndVillageIdAndStatus(String idNumber, Long villageId, PTOStatus status);
+    List<PTO> search(String holderName, String idNumber, String ptoNumber, PTOStatus status,
+                     za.co.taloms.pto.domain.entity.PTOPurpose purpose, Long villageId, Long authorityId);
 }

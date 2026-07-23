@@ -18,6 +18,7 @@ public interface ParcelService {
     List<ParcelResponse> findByParcelType(ParcelType parcelType);
     List<ParcelResponse> findAvailable(Long villageId);
     List<ParcelResponse> findAllAvailable();  // NEW METHOD
+    List<ParcelResponse> search(String query);
     ParcelResponse updateStatus(Long id, ParcelStatus status, String updatedBy);
     ParcelResponse allocateParcel(Long id, Long ptoId, String allocatedBy);
     void deleteParcel(Long id, String deletedBy);

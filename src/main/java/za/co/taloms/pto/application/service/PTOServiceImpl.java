@@ -35,28 +35,54 @@ public class PTOServiceImpl implements PTOService {
 
     @Override
     public PTOResponse createPTO(PTORequest request, String createdBy) {
-        // Get the parcel
+        // ===== VALIDATION 1: Traditional Authority must exist =====
+        var authority = authorityRepository.findById(request.getTraditionalAuthorityId())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Traditional Authority", request.getTraditionalAuthorityId()));
+
+        // ===== VALIDATION 2: Village must exist AND belong to the Authority =====
+        var village = villageRepository.findById(request.getVillageId())
+                .orElseThrow(() -> new ResourceNotFoundException("Village", request.getVillageId()));
+
+        if (!village.getTraditionalAuthority().getId().equals(authority.getId())) {
+            throw new BusinessValidationException(
+                    "Village '" + village.getVillageName() +
+                            "' does not belong to Traditional Authority '" + authority.getAuthorityName() + "'");
+        }
+
+        // ===== VALIDATION 3: Parcel must exist in this village =====
         var parcel = parcelRepository.findById(request.getParcelId())
                 .orElseThrow(() -> new ResourceNotFoundException("Parcel", request.getParcelId()));
 
-        // ===== VALIDATION 1: Check if the parcel already has an ACTIVE PTO =====
-        // A parcel can only have ONE active PTO at a time
+        if (parcel.getVillage() == null || !parcel.getVillage().getId().equals(village.getId())) {
+            throw new BusinessValidationException(
+                    "Parcel " + parcel.getParcelNumber() +
+                            " does not belong to village '" + village.getVillageName() + "'");
+        }
+
+        // ===== VALIDATION 4: Stand number must match =====
+        if (!parcel.getStandNumber().equals(request.getStandNumber())) {
+            throw new BusinessValidationException(
+                    "Stand number mismatch. Parcel " + parcel.getParcelNumber() +
+                            " has stand number '" + parcel.getStandNumber() +
+                            "' but request specifies '" + request.getStandNumber() + "'");
+        }
+
+        // ===== VALIDATION 5: Check if the parcel already has an ACTIVE PTO =====
         if (ptoRepository.existsByParcelIdAndStatus(request.getParcelId(), PTOStatus.ACTIVE)) {
             throw new BusinessValidationException(
                     "This parcel already has an ACTIVE PTO. Parcel: " + parcel.getParcelNumber() +
                             " - Stand: " + parcel.getStandNumber());
         }
 
-        // ===== VALIDATION 2: Check if the parcel already has a SUSPENDED PTO =====
-        // A parcel with a suspended PTO cannot get a new PTO
+        // ===== VALIDATION 6: Check if the parcel already has a SUSPENDED PTO =====
         if (ptoRepository.existsByParcelIdAndStatus(request.getParcelId(), PTOStatus.SUSPENDED)) {
             throw new BusinessValidationException(
                     "This parcel has a SUSPENDED PTO. Please reactivate or revoke the existing PTO first. " +
                             "Parcel: " + parcel.getParcelNumber() + " - Stand: " + parcel.getStandNumber());
         }
 
-        // ===== VALIDATION 3: Check if this person already has an ACTIVE PTO on THIS parcel =====
-        // A person cannot have duplicate PTOs on the same parcel
+        // ===== VALIDATION 7: Check if this person already has an ACTIVE PTO on THIS parcel =====
         if (ptoRepository.existsByIdNumberAndParcelIdAndStatus(
                 request.getIdNumber(),
                 request.getParcelId(),
@@ -66,7 +92,7 @@ public class PTOServiceImpl implements PTOService {
                             "Parcel: " + parcel.getParcelNumber() + " - Stand: " + parcel.getStandNumber());
         }
 
-        // ===== VALIDATION 4: Check if this person already has a SUSPENDED PTO on THIS parcel =====
+        // ===== VALIDATION 8: Check if this person already has a SUSPENDED PTO on THIS parcel =====
         if (ptoRepository.existsByIdNumberAndParcelIdAndStatus(
                 request.getIdNumber(),
                 request.getParcelId(),
@@ -75,20 +101,12 @@ public class PTOServiceImpl implements PTOService {
                     "This person has a SUSPENDED PTO on this parcel. Please reactivate or revoke it first.");
         }
 
-        // ===== VALIDATION 5: Check if the parcel status is AVAILABLE =====
-        // Only AVAILABLE parcels can get new PTOs
+        // ===== VALIDATION 9: Check if the parcel status is AVAILABLE =====
         if (!parcel.isAvailable()) {
             throw new BusinessValidationException(
                     "Parcel is not available for PTO allocation. Current status: " +
                             parcel.getStatus().getDisplayName());
         }
-
-        // Get authority and village
-        var authority = authorityRepository.findById(request.getTraditionalAuthorityId())
-                .orElseThrow(() -> new ResourceNotFoundException("Traditional Authority", request.getTraditionalAuthorityId()));
-
-        var village = villageRepository.findById(request.getVillageId())
-                .orElseThrow(() -> new ResourceNotFoundException("Village", request.getVillageId()));
 
         // Generate unique PTO number
         String ptoNumber = numberGenerator.generate();
@@ -339,21 +357,15 @@ public class PTOServiceImpl implements PTOService {
     @Override
     @Transactional(readOnly = true)
     public List<PTOResponse> search(PTOSearchCriteria criteria) {
-        return ptoRepository.findAll().stream()
-                .filter(p -> criteria.getHolderName() == null
-                        || p.getPtoHolderName().toLowerCase().contains(criteria.getHolderName().toLowerCase()))
-                .filter(p -> criteria.getIdNumber() == null
-                        || p.getIdNumber().contains(criteria.getIdNumber()))
-                .filter(p -> criteria.getPtoNumber() == null
-                        || p.getPtoNumber().toLowerCase().contains(criteria.getPtoNumber().toLowerCase()))
-                .filter(p -> criteria.getStatus() == null
-                        || p.getStatus() == criteria.getStatus())
-                .filter(p -> criteria.getPurpose() == null
-                        || p.getPurpose() == criteria.getPurpose())
-                .filter(p -> criteria.getVillageId() == null
-                        || (p.getVillage() != null && p.getVillage().getId().equals(criteria.getVillageId())))
-                .filter(p -> criteria.getAuthorityId() == null
-                        || (p.getTraditionalAuthority() != null && p.getTraditionalAuthority().getId().equals(criteria.getAuthorityId())))
+        return ptoRepository.search(
+                criteria.getHolderName(),
+                criteria.getIdNumber(),
+                criteria.getPtoNumber(),
+                criteria.getStatus(),
+                criteria.getPurpose(),
+                criteria.getVillageId(),
+                criteria.getAuthorityId()
+        ).stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
@@ -383,6 +395,27 @@ public class PTOServiceImpl implements PTOService {
 
         var village = villageRepository.findById(request.getVillageId())
                 .orElseThrow(() -> new ResourceNotFoundException("Village", request.getVillageId()));
+
+        if (!village.getTraditionalAuthority().getId().equals(authority.getId())) {
+            throw new BusinessValidationException(
+                    "Village does not belong to this Authority");
+        }
+
+        if (parcel.getVillage() == null || !parcel.getVillage().getId().equals(village.getId())) {
+            throw new BusinessValidationException(
+                    "Parcel does not belong to this Village");
+        }
+
+        if (!parcel.getStandNumber().equals(request.getStandNumber())) {
+            throw new BusinessValidationException(
+                    "Stand number does not match for this parcel");
+        }
+
+        if (!parcel.getId().equals(pto.getParcel() != null ? pto.getParcel().getId() : null) &&
+                ptoRepository.existsByParcelIdAndStatus(parcel.getId(), PTOStatus.ACTIVE)) {
+            throw new BusinessValidationException(
+                    "Cannot update: The target parcel already has an ACTIVE PTO.");
+        }
 
         pto.setPtoHolderName(request.getPtoHolderName());
         pto.setIdNumber(request.getIdNumber());

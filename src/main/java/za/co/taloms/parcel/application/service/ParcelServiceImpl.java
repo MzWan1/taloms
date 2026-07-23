@@ -219,6 +219,24 @@ public class ParcelServiceImpl implements ParcelService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<ParcelResponse> search(String query) {
+        if (query == null || query.trim().isEmpty()) {
+            return findAll();
+        }
+        String q = query.trim().toLowerCase();
+        return parcelRepository.findAll().stream()
+                .filter(p -> p.getParcelNumber() != null && p.getParcelNumber().toLowerCase().contains(q))
+                .filter(p -> p.getStandNumber() != null && p.getStandNumber().toLowerCase().contains(q))
+                .filter(p -> p.getVillage() != null && p.getVillage().getVillageName() != null
+                        && p.getVillage().getVillageName().toLowerCase().contains(q))
+                .filter(p -> p.getVillage() != null && p.getVillage().getTraditionalAuthority() != null
+                        && p.getVillage().getTraditionalAuthority().getAuthorityName().toLowerCase().contains(q))
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<ParcelResponse> findAvailable(Long villageId) {
         // Get all parcels with AVAILABLE status
         List<Parcel> availableParcels = parcelRepository.findAvailable(villageId);

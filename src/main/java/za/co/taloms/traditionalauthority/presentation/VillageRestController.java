@@ -43,6 +43,14 @@ public class VillageRestController {
                         "Village retrieved successfully"));
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<List<VillageResponse>>> search(
+            @RequestParam String name) {
+        return ResponseEntity.ok(
+                ApiResponse.success(villageService.searchByName(name),
+                        "Search completed"));
+    }
+
     @GetMapping("/by-authority/{authorityId}")
     public ResponseEntity<ApiResponse<List<VillageResponse>>>
     getByAuthority(@PathVariable Long authorityId) {

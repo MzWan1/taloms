@@ -110,6 +110,20 @@ public class TraditionalAuthorityServiceImpl
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<TraditionalAuthorityResponse> searchByName(String name) {
+        if (name == null || name.trim().isEmpty()) {
+            return findAll();
+        }
+        return authorityRepository.findAll().stream()
+                .filter(a -> a.getAuthorityName().toLowerCase().contains(name.trim().toLowerCase())
+                        || (a.getChiefName() != null && a.getChiefName().toLowerCase().contains(name.trim().toLowerCase()))
+                        || (a.getRegion() != null && a.getRegion().toLowerCase().contains(name.trim().toLowerCase())))
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public void deactivate(Long id) {
         var authority = authorityRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(

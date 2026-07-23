@@ -68,6 +68,14 @@ public class TraditionalAuthorityRestController {
                         "Authority updated successfully"));
     }
 
+    @GetMapping("/search")
+    public ResponseEntity<ApiResponse<List<TraditionalAuthorityResponse>>> search(
+            @RequestParam String name) {
+        return ResponseEntity.ok(
+                ApiResponse.success(authorityService.searchByName(name),
+                        "Search completed"));
+    }
+
     @PatchMapping("/{id}/deactivate")
     @PreAuthorize("hasRole('SYSTEM_ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deactivate(

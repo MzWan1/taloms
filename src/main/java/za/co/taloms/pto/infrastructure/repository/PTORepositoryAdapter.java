@@ -3,6 +3,7 @@ package za.co.taloms.pto.infrastructure.repository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import za.co.taloms.pto.domain.entity.PTO;
+import za.co.taloms.pto.domain.entity.PTOPurpose;
 import za.co.taloms.pto.domain.entity.PTOStatus;
 import za.co.taloms.pto.domain.repository.PTORepositoryPort;
 import java.util.List;
@@ -90,7 +91,23 @@ public class PTORepositoryAdapter implements PTORepositoryPort {
     }
 
     @Override
+    public List<PTO> findByIdNumberAndStatus(String idNumber, PTOStatus status) {
+        return jpaRepository.findByIdNumberAndStatus(idNumber, status);
+    }
+
+    @Override
+    public boolean existsByIdNumberAndVillageIdAndStatus(String idNumber, Long villageId, PTOStatus status) {
+        return jpaRepository.existsByIdNumberAndVillageIdAndStatus(idNumber, villageId, status);
+    }
+
+    @Override
     public long countAll() {
         return jpaRepository.count();
+    }
+
+    @Override
+    public List<PTO> search(String holderName, String idNumber, String ptoNumber,
+                             PTOStatus status, PTOPurpose purpose, Long villageId, Long authorityId) {
+        return jpaRepository.search(holderName, idNumber, ptoNumber, status, purpose, villageId, authorityId);
     }
 }

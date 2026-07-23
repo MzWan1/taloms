@@ -33,6 +33,7 @@ public class HouseholdRequest {
     @NotNull(message = "Parcel is required")
     private Long parcelId;
 
+    @NotNull(message = "PTO is required")
     private Long ptoId;
 
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)

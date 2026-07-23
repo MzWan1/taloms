@@ -11,6 +11,7 @@ public interface TraditionalAuthorityService {
     TraditionalAuthorityResponse findById(Long id);
     List<TraditionalAuthorityResponse> findAll();
     List<TraditionalAuthorityResponse> findAllActive();
+    List<TraditionalAuthorityResponse> searchByName(String name);
     void deactivate(Long id);
     void activate(Long id);
 }

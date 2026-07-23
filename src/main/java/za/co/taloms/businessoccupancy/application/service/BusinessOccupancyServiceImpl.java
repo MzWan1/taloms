@@ -15,6 +15,7 @@ import za.co.taloms.businessoccupancy.domain.entity.BusinessType;
 import za.co.taloms.businessoccupancy.domain.repository.BusinessOccupancyRepositoryPort;
 import za.co.taloms.parcel.domain.entity.ParcelStatus;
 import za.co.taloms.parcel.domain.repository.ParcelRepositoryPort;
+import za.co.taloms.pto.domain.entity.PTOStatus;
 import za.co.taloms.pto.domain.repository.PTORepositoryPort;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -35,9 +36,28 @@ public class BusinessOccupancyServiceImpl implements BusinessOccupancyService {
         var parcel = parcelRepository.findById(request.getParcelId())
                 .orElseThrow(() -> new ResourceNotFoundException("Parcel", request.getParcelId()));
 
-        // Validate PTO exists
+        // ===== VALIDATION 1: PTO is required =====
+        if (request.getPtoId() == null) {
+            throw new BusinessValidationException(
+                    "PTO is required to register a business occupancy.");
+        }
+
+        // ===== VALIDATION 2: PTO must exist and be ACTIVE =====
         var pto = ptoRepository.findById(request.getPtoId())
                 .orElseThrow(() -> new ResourceNotFoundException("PTO", request.getPtoId()));
+
+        if (pto.getStatus() != PTOStatus.ACTIVE) {
+            throw new BusinessValidationException(
+                    "Cannot register business: PTO " + pto.getPtoNumber() +
+                            " is not ACTIVE. Current status: " + pto.getStatus().getDisplayName());
+        }
+
+        // ===== VALIDATION 3: PTO must belong to the same parcel =====
+        if (pto.getParcel() == null || !pto.getParcel().getId().equals(parcel.getId())) {
+            throw new BusinessValidationException(
+                    "PTO " + pto.getPtoNumber() +
+                            " does not belong to parcel " + parcel.getParcelNumber() + " (" + parcel.getStandNumber() + ")");
+        }
 
         // Check if parcel already has a business
         if (businessRepository.existsByParcelId(request.getParcelId())) {
@@ -86,9 +106,27 @@ public class BusinessOccupancyServiceImpl implements BusinessOccupancyService {
         var parcel = parcelRepository.findById(request.getParcelId())
                 .orElseThrow(() -> new ResourceNotFoundException("Parcel", request.getParcelId()));
 
-        // Validate PTO exists
+        // ===== VALIDATION: PTO is required =====
+        if (request.getPtoId() == null) {
+            throw new BusinessValidationException(
+                    "PTO is required for business occupancy.");
+        }
+
+        // ===== VALIDATION: PTO must be ACTIVE =====
         var pto = ptoRepository.findById(request.getPtoId())
                 .orElseThrow(() -> new ResourceNotFoundException("PTO", request.getPtoId()));
+
+        if (pto.getStatus() != PTOStatus.ACTIVE) {
+            throw new BusinessValidationException(
+                    "PTO " + pto.getPtoNumber() +
+                            " is not ACTIVE. Current status: " + pto.getStatus().getDisplayName());
+        }
+
+        if (pto.getParcel() == null || !pto.getParcel().getId().equals(parcel.getId())) {
+            throw new BusinessValidationException(
+                    "PTO " + pto.getPtoNumber() +
+                            " does not belong to parcel " + parcel.getParcelNumber() + " (" + parcel.getStandNumber() + ")");
+        }
 
         // Check if registration number is being changed and if it's already used
         if (request.getRegistrationNumber() != null && !request.getRegistrationNumber().isBlank()) {
