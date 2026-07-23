@@ -153,19 +153,19 @@
             <div class="col-12 col-md-6 col-lg-4" th:each="rt : ${reportTypes}" th:if="${rt.name() == 'PTO_OCCUPANCY_REGISTER' || rt.name() == 'LAND_PARCEL_UTILISATION' || rt.name() == 'STAND_ALLOCATION'}">
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-body text-center p-4">
-                        <div th:class="'report-icon bg-' + ${rt.getColor()}">
-                            <i th:class="'bi ' + ${rt.getIcon()} + ' text-white fs-1'"></i>
+                        <div th:class="${'report-icon bg-' + rt.getColor()}">
+                            <i th:class="${'bi ' + rt.getIcon() + ' text-white fs-1'}"></i>
                         </div>
                         <h5 class="fw-bold mt-3" th:text="${rt.getDisplayName()}">Report</h5>
                         <p class="text-muted small">Land administration and occupancy management</p>
                         <hr>
                         <div class="d-grid gap-2">
                             <a href="#" class="btn btn-outline-primary btn-sm"
-                               th:onclick="'generateReport(\'' + ${rt.name()} + '\', \'PDF\')'">
+                               th:onclick="${'generateReport(\'' + rt.name() + '\', \'PDF\')'}">
                                 <i class="bi bi-file-earmark-pdf"></i> Export PDF
                             </a>
                             <a href="#" class="btn btn-outline-success btn-sm"
-                               th:onclick="'generateReport(\'' + ${rt.name()} + '\', \'EXCEL\')'">
+                               th:onclick="${'generateReport(\'' + rt.name() + '\', \'EXCEL\')'}">
                                 <i class="bi bi-file-earmark-excel"></i> Export Excel
                             </a>
                         </div>
@@ -184,19 +184,19 @@
             <div class="col-12 col-md-6 col-lg-4" th:each="rt : ${reportTypes}" th:if="${rt.name() == 'VILLAGE_POPULATION' || rt.name() == 'HOUSEHOLD_REGISTER' || rt.name() == 'RESIDENT_DEMOGRAPHICS'}">
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-body text-center p-4">
-                        <div th:class="'report-icon bg-' + ${rt.getColor()}">
-                            <i th:class="'bi ' + ${rt.getIcon()} + ' text-white fs-1'"></i>
+                        <div th:class="${'report-icon bg-' + rt.getColor()}">
+                            <i th:class="${'bi ' + rt.getIcon() + ' text-white fs-1'}"></i>
                         </div>
                         <h5 class="fw-bold mt-3" th:text="${rt.getDisplayName()}">Report</h5>
                         <p class="text-muted small">Population, household, and resident demographics</p>
                         <hr>
                         <div class="d-grid gap-2">
                             <a href="#" class="btn btn-outline-primary btn-sm"
-                               th:onclick="'generateReport(\'' + ${rt.name()} + '\', \'PDF\')'">
+                               th:onclick="${'generateReport(\'' + rt.name() + '\', \'PDF\')'}">
                                 <i class="bi bi-file-earmark-pdf"></i> Export PDF
                             </a>
                             <a href="#" class="btn btn-outline-success btn-sm"
-                               th:onclick="'generateReport(\'' + ${rt.name()} + '\', \'EXCEL\')'">
+                               th:onclick="${'generateReport(\'' + rt.name() + '\', \'EXCEL\')'}">
                                 <i class="bi bi-file-earmark-excel"></i> Export Excel
                             </a>
                         </div>
@@ -215,19 +215,19 @@
             <div class="col-12 col-md-6 col-lg-4" th:each="rt : ${reportTypes}" th:if="${rt.name() == 'BUSINESS_OCCUPANCY_REGISTER' || rt.name() == 'ECONOMIC_ACTIVITY'}">
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-body text-center p-4">
-                        <div th:class="'report-icon bg-' + ${rt.getColor()}">
-                            <i th:class="'bi ' + ${rt.getIcon()} + ' text-white fs-1'"></i>
+                        <div th:class="${'report-icon bg-' + rt.getColor()}">
+                            <i th:class="${'bi ' + rt.getIcon() + ' text-white fs-1'}"></i>
                         </div>
                         <h5 class="fw-bold mt-3" th:text="${rt.getDisplayName()}">Report</h5>
                         <p class="text-muted small">Business occupancy and economic activity analysis</p>
                         <hr>
                         <div class="d-grid gap-2">
                             <a href="#" class="btn btn-outline-primary btn-sm"
-                               th:onclick="'generateReport(\'' + ${rt.name()} + '\', \'PDF\')'">
+                               th:onclick="${'generateReport(\'' + rt.name() + '\', \'PDF\')'}">
                                 <i class="bi bi-file-earmark-pdf"></i> Export PDF
                             </a>
                             <a href="#" class="btn btn-outline-success btn-sm"
-                               th:onclick="'generateReport(\'' + ${rt.name()} + '\', \'EXCEL\')'">
+                               th:onclick="${'generateReport(\'' + rt.name() + '\', \'EXCEL\')'}">
                                 <i class="bi bi-file-earmark-excel"></i> Export Excel
                             </a>
                         </div>
@@ -246,19 +246,19 @@
             <div class="col-12 col-md-6 col-lg-4" th:each="rt : ${reportTypes}" th:if="${rt.name() == 'USER_ACTIVITY_AUDIT' || rt.name() == 'DOCUMENT_MANAGEMENT' || rt.name() == 'PERFORMANCE_DASHBOARD'}">
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-body text-center p-4">
-                        <div th:class="'report-icon bg-' + ${rt.getColor()}">
-                            <i th:class="'bi ' + ${rt.getIcon()} + ' text-white fs-1'"></i>
+                        <div th:class="${'report-icon bg-' + rt.getColor()}">
+                            <i th:class="${'bi ' + rt.getIcon() + ' text-white fs-1'}"></i>
                         </div>
                         <h5 class="fw-bold mt-3" th:text="${rt.getDisplayName()}">Report</h5>
                         <p class="text-muted small">User activity, document management, and performance tracking</p>
                         <hr>
                         <div class="d-grid gap-2">
                             <a href="#" class="btn btn-outline-primary btn-sm"
-                               th:onclick="'generateReport(\'' + ${rt.name()} + '\', \'PDF\')'">
+                               th:onclick="${'generateReport(\'' + rt.name() + '\', \'PDF\')'}">
                                 <i class="bi bi-file-earmark-pdf"></i> Export PDF
                             </a>
                             <a href="#" class="btn btn-outline-success btn-sm"
-                               th:onclick="'generateReport(\'' + ${rt.name()} + '\', \'EXCEL\')'">
+                               th:onclick="${'generateReport(\'' + rt.name() + '\', \'EXCEL\')'}">
                                 <i class="bi bi-file-earmark-excel"></i> Export Excel
                             </a>
                         </div>
@@ -277,19 +277,19 @@
             <div class="col-12 col-md-6 col-lg-4" th:each="rt : ${reportTypes}" th:if="${rt.name() == 'LAND_BOUNDARY'}">
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-body text-center p-4">
-                        <div th:class="'report-icon bg-' + ${rt.getColor()}">
-                            <i th:class="'bi ' + ${rt.getIcon()} + ' text-white fs-1'"></i>
+                        <div th:class="${'report-icon bg-' + rt.getColor()}">
+                            <i th:class="${'bi ' + rt.getIcon() + ' text-white fs-1'}"></i>
                         </div>
                         <h5 class="fw-bold mt-3" th:text="${rt.getDisplayName()}">Report</h5>
                         <p class="text-muted small">Boundary capture, mapping status, and spatial analysis</p>
                         <hr>
                         <div class="d-grid gap-2">
                             <a href="#" class="btn btn-outline-primary btn-sm"
-                               th:onclick="'generateReport(\'' + ${rt.name()} + '\', \'PDF\')'">
+                               th:onclick="${'generateReport(\'' + rt.name() + '\', \'PDF\')'}">
                                 <i class="bi bi-file-earmark-pdf"></i> Export PDF
                             </a>
                             <a href="#" class="btn btn-outline-success btn-sm"
-                               th:onclick="'generateReport(\'' + ${rt.name()} + '\', \'EXCEL\')'">
+                               th:onclick="${'generateReport(\'' + rt.name() + '\', \'EXCEL\')'}">
                                 <i class="bi bi-file-earmark-excel"></i> Export Excel
                             </a>
                         </div>
@@ -359,81 +359,80 @@
 <script th:inline="javascript">
     /*<![CDATA[*/
 
+    const safeNum = (v, fallback = 0) => (v == null ? fallback : typeof v === 'number' ? v : parseInt(v, 10) || fallback);
+
     // Pie Charts
-    const ptoStatusCtx = document.getElementById('ptoStatusChart').getContext('2d');
-    new Chart(ptoStatusCtx, {
-        type: 'pie',
-        data: {
-            labels: ['Pending', 'Active', 'Suspended', 'Revoked', 'Expired'],
-            datasets: [{
-                data: [
-                    [[${ptoPending}]],
-                    [[${ptoActive}]],
-                    [[${ptoSuspended}]],
-                    [[${ptoRevoked}]],
-                    [[${ptoExpired}]]
-                ],
-                backgroundColor: ['#ffc107', '#198754', '#fd7e14', '#dc3545', '#6c757d'],
-                borderWidth: 2,
-                borderColor: '#fff'
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: { position: 'bottom' }
+    if (document.getElementById('ptoStatusChart')) {
+        new Chart(document.getElementById('ptoStatusChart'), {
+            type: 'pie',
+            data: {
+                labels: ['Pending', 'Active', 'Suspended', 'Revoked', 'Expired'],
+                datasets: [{
+                    data: [
+                        safeNum([[${ptoPending}]]),
+                        safeNum([[${ptoActive}]]),
+                        safeNum([[${ptoSuspended}]]),
+                        safeNum([[${ptoRevoked}]]),
+                        safeNum([[${ptoExpired}]])
+                    ],
+                    backgroundColor: ['#ffc107', '#198754', '#fd7e14', '#dc3545', '#6c757d'],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { position: 'bottom' } }
             }
-        }
-    });
+        });
+    }
 
-    const parcelStatusCtx = document.getElementById('parcelStatusChart').getContext('2d');
-    new Chart(parcelStatusCtx, {
-        type: 'pie',
-        data: {
-            labels: ['Available', 'Allocated', 'Disputed', 'Reserved', 'Inactive'],
-            datasets: [{
-                data: [
-                    [[${parcelAvailable}]],
-                    [[${parcelAllocated}]],
-                    [[${parcelDisputed}]],
-                    [[${parcelReserved}]],
-                    [[${parcelInactive}]]
-                ],
-                backgroundColor: ['#198754', '#0d6efd', '#dc3545', '#ffc107', '#6c757d'],
-                borderWidth: 2,
-                borderColor: '#fff'
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: { position: 'bottom' }
+    if (document.getElementById('parcelStatusChart')) {
+        new Chart(document.getElementById('parcelStatusChart'), {
+            type: 'pie',
+            data: {
+                labels: ['Available', 'Allocated', 'Disputed', 'Reserved', 'Inactive'],
+                datasets: [{
+                    data: [
+                        safeNum([[${parcelAvailable}]]),
+                        safeNum([[${parcelAllocated}]]),
+                        safeNum([[${parcelDisputed}]]),
+                        safeNum([[${parcelReserved}]]),
+                        safeNum([[${parcelInactive}]])
+                    ],
+                    backgroundColor: ['#198754', '#0d6efd', '#dc3545', '#ffc107', '#6c757d'],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { position: 'bottom' } }
             }
-        }
-    });
+        });
+    }
 
-    const genderCtx = document.getElementById('genderChart').getContext('2d');
-    new Chart(genderCtx, {
-        type: 'pie',
-        data: {
-            labels: ['Male', 'Female'],
-            datasets: [{
-                data: [
-                    [[${maleResidents}]],
-                    [[${femaleResidents}]]
-                ],
-                backgroundColor: ['#0d6efd', '#e83e8c'],
-                borderWidth: 2,
-                borderColor: '#fff'
-            }]
-        },
-        options: {
-            responsive: true,
-            plugins: {
-                legend: { position: 'bottom' }
+    if (document.getElementById('genderChart')) {
+        new Chart(document.getElementById('genderChart'), {
+            type: 'pie',
+            data: {
+                labels: ['Male', 'Female'],
+                datasets: [{
+                    data: [
+                        safeNum([[${maleResidents}]]),
+                        safeNum([[${femaleResidents}]])
+                    ],
+                    backgroundColor: ['#0d6efd', '#e83e8c'],
+                    borderWidth: 2,
+                    borderColor: '#fff'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { position: 'bottom' } }
             }
-        }
-    });
+        });
+    }
 
     function generateReport(reportType, format) {
         const authorityId = document.getElementById('authorityId').value;
