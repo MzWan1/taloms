@@ -961,15 +961,12 @@ public class ReportDataServiceImpl implements ReportDataService {
     }
 
     private List<PTOResponse> fetchPtos(ReportRequest request) {
-        List<PTOResponse> ptos;
-        if (request.getVillageId() != null) {
-            ptos = ptoService.findByVillage(request.getVillageId());
-        } else if (request.getAuthorityId() != null) {
-            ptos = ptoService.findAll();
-        } else {
-            ptos = ptoService.findAll();
+        if (request.getAuthorityId() != null) {
+            return ptoService.findByAuthority(request.getAuthorityId());
+        } else if (request.getVillageId() != null) {
+            return ptoService.findByVillage(request.getVillageId());
         }
-        return ptos;
+        return ptoService.findAll();
     }
 
     private List<ParcelResponse> fetchAllParcels(ReportRequest request) {
@@ -978,6 +975,14 @@ public class ReportDataServiceImpl implements ReportDataService {
             parcels = parcelService.findByVillage(request.getVillageId());
         } else {
             parcels = parcelService.findAll();
+        }
+        if (request.getAuthorityId() != null) {
+            TraditionalAuthorityResponse auth = getAuthority(request.getAuthorityId());
+            if (auth != null) {
+                parcels = parcels.stream()
+                        .filter(p -> auth.getAuthorityName().equals(p.getAuthorityName()))
+                        .collect(Collectors.toList());
+            }
         }
         return parcels;
     }
@@ -989,6 +994,14 @@ public class ReportDataServiceImpl implements ReportDataService {
             if (village != null) {
                 businesses = businesses.stream()
                         .filter(b -> village.getVillageName().equals(b.getVillageName()))
+                        .collect(Collectors.toList());
+            }
+        }
+        if (request.getAuthorityId() != null) {
+            TraditionalAuthorityResponse auth = getAuthority(request.getAuthorityId());
+            if (auth != null) {
+                businesses = businesses.stream()
+                        .filter(b -> auth.getAuthorityName().equals(b.getAuthorityName()))
                         .collect(Collectors.toList());
             }
         }
