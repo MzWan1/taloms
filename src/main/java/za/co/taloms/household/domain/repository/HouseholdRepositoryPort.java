@@ -9,6 +9,7 @@ public interface HouseholdRepositoryPort {
     Optional<Household> findById(Long id);
     List<Household> findAll();
     List<Household> findByParcelId(Long parcelId);
+    List<Household> findByParcelIdIn(List<Long> parcelIds);
     List<Household> findByPtoId(Long ptoId);
     List<Household> findByActiveTrue();
     Optional<Household> findActiveByParcelId(Long parcelId);

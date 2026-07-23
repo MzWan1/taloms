@@ -13,6 +13,8 @@ public interface BusinessOccupancyJpaRepository extends JpaRepository<BusinessOc
 
     List<BusinessOccupancy> findByParcelId(Long parcelId);
 
+    List<BusinessOccupancy> findByParcelIdIn(List<Long> parcelIds);
+
     List<BusinessOccupancy> findByPtoId(Long ptoId);
 
     List<BusinessOccupancy> findByStatus(BusinessStatus status);

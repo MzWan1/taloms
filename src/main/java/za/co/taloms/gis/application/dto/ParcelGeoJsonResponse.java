@@ -39,6 +39,7 @@ public class ParcelGeoJsonResponse {
         private Double areaM2;
         private String ptoNumber;
         private String ptoHolderName;
+        private String occupantTag;
     }
 
     @Data

@@ -10,12 +10,24 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link th:href="@{/css/taloms.css}" rel="stylesheet">
-    <style>
-        #map { height: 70vh; border-radius: 8px; }
-        .legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
-        .legend-color { width: 20px; height: 12px; border-radius: 2px; flex-shrink: 0; }
-        .map-controls { position: absolute; top: 10px; right: 10px; z-index: 1000; }
-    </style>
+        <style>
+            #map { height: 70vh; border-radius: 8px; }
+            .legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+            .legend-color { width: 20px; height: 12px; border-radius: 2px; flex-shrink: 0; }
+            .map-controls { position: absolute; top: 10px; right: 10px; z-index: 1000; }
+            .parcel-label {
+                background: rgba(255, 255, 255, 0.92);
+                border: 1px solid #dee2e6;
+                border-radius: 4px;
+                padding: 2px 6px;
+                font-size: 11px;
+                font-weight: 600;
+                color: #212529;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+                white-space: nowrap;
+                text-align: center;
+            }
+        </style>
 </head>
 <body class="bg-light">
 
@@ -280,6 +292,7 @@
             },
             onEachFeature: function(feature, layer) {
                 const props = feature.properties;
+                const occupant = props.occupantTag || 'Not Assigned';
                 const popupContent = `
                 <div class="fw-bold">${props.standNumber || 'N/A'}</div>
                 <div><strong>Parcel:</strong> ${props.parcelNumber || 'N/A'}</div>
@@ -287,12 +300,18 @@
                 <div><strong>Status:</strong> ${props.statusDisplay || 'N/A'}</div>
                 <div><strong>Village:</strong> ${props.villageName || 'N/A'}</div>
                 <div><strong>Area:</strong> ${props.areaM2 ? props.areaM2.toFixed(2) + ' m²' : 'N/A'}</div>
+                <div><strong>Occupant:</strong> ${occupant}</div>
                 ${props.ptoNumber ? `<div><strong>PTO:</strong> ${props.ptoNumber}</div>` : ''}
                 ${props.ptoHolderName ? `<div><strong>Holder:</strong> ${props.ptoHolderName}</div>` : ''}
                 <hr class="my-1">
                 <a href="/parcels/${props.id}" class="btn btn-sm btn-navy w-100">View Parcel</a>
             `;
                 layer.bindPopup(popupContent);
+                layer.bindTooltip(occupant, {
+                    permanent: true,
+                    direction: 'center',
+                    className: 'parcel-label'
+                });
             }
         }).addTo(map);
 

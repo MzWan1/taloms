@@ -34,6 +34,11 @@ public class HouseholdRepositoryAdapter implements HouseholdRepositoryPort {
     }
 
     @Override
+    public List<Household> findByParcelIdIn(List<Long> parcelIds) {
+        return jpaRepository.findByParcelIdIn(parcelIds);
+    }
+
+    @Override
     public List<Household> findByPtoId(Long ptoId) {
         return jpaRepository.findByPtoId(ptoId);
     }

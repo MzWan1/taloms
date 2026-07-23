@@ -11,6 +11,7 @@ public interface BusinessOccupancyRepositoryPort {
     Optional<BusinessOccupancy> findById(Long id);
     List<BusinessOccupancy> findAll();
     List<BusinessOccupancy> findByParcelId(Long parcelId);
+    List<BusinessOccupancy> findByParcelIdIn(List<Long> parcelIds);
     List<BusinessOccupancy> findByPtoId(Long ptoId);
     List<BusinessOccupancy> findByStatus(BusinessStatus status);
     List<BusinessOccupancy> findByBusinessType(BusinessType businessType);

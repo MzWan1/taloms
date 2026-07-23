@@ -5,9 +5,14 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import za.co.taloms.common.ResourceNotFoundException;
+import za.co.taloms.businessoccupancy.domain.entity.BusinessOccupancy;
+import za.co.taloms.businessoccupancy.domain.entity.BusinessStatus;
+import za.co.taloms.businessoccupancy.domain.repository.BusinessOccupancyRepositoryPort;
 import za.co.taloms.gis.application.dto.GeoJsonFeature;
 import za.co.taloms.gis.application.dto.GeoJsonResponse;
 import za.co.taloms.gis.application.dto.ParcelGeoJsonResponse;
+import za.co.taloms.household.domain.entity.Household;
+import za.co.taloms.household.domain.repository.HouseholdRepositoryPort;
 import za.co.taloms.parcel.application.dto.ParcelResponse;
 import za.co.taloms.parcel.application.service.ParcelService;
 import za.co.taloms.parcel.domain.entity.ParcelStatus;
@@ -27,6 +32,8 @@ public class GisServiceImpl implements GisService {
     private final ParcelService parcelService;
     private final TraditionalAuthorityService authorityService;
     private final VillageService villageService;
+    private final BusinessOccupancyRepositoryPort businessOccupancyRepository;
+    private final HouseholdRepositoryPort householdRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -153,6 +160,20 @@ public class GisServiceImpl implements GisService {
     private ParcelGeoJsonResponse buildParcelGeoJsonResponse(List<ParcelResponse> parcels, Object entity) {
         List<ParcelGeoJsonResponse.ParcelFeature> features = new ArrayList<>();
 
+        List<Long> parcelIds = parcels.stream()
+                .map(ParcelResponse::getId)
+                .collect(Collectors.toList());
+
+        List<BusinessOccupancy> businessOccupancies = businessOccupancyRepository.findByParcelIdIn(parcelIds);
+        Map<Long, String> businessByParcel = businessOccupancies.stream()
+                .filter(b -> b.getParcel() != null && b.getParcel().getId() != null)
+                .collect(Collectors.toMap(b -> b.getParcel().getId(), b -> b.getBusinessName(), (a, b) -> a));
+
+        List<Household> households = householdRepository.findByParcelIdIn(parcelIds);
+        Map<Long, String> householdByParcel = households.stream()
+                .filter(h -> Boolean.TRUE.equals(h.getActive()) && h.getParcel() != null && h.getParcel().getId() != null)
+                .collect(Collectors.toMap(h -> h.getParcel().getId(), h -> h.getHouseholdHeadName(), (a, b) -> a));
+
         for (ParcelResponse parcel : parcels) {
             if (parcel.getBoundaries() == null || parcel.getBoundaries().isEmpty()) {
                 continue;
@@ -170,6 +191,8 @@ public class GisServiceImpl implements GisService {
             geometry.put("type", "Polygon");
             geometry.put("coordinates", Collections.singletonList(coordinates));
 
+            String occupantTag = determineOccupantTag(parcel, businessByParcel, householdByParcel);
+
             ParcelGeoJsonResponse.ParcelProperties properties =
                     ParcelGeoJsonResponse.ParcelProperties.builder()
                             .id(parcel.getId())
@@ -183,9 +206,9 @@ public class GisServiceImpl implements GisService {
                             .areaM2(parcel.getAreaM2())
                             .ptoNumber(parcel.getPtoNumber())
                             .ptoHolderName(parcel.getPtoHolderName())
+                            .occupantTag(occupantTag)
                             .build();
 
-            // Build feature using direct setter instead of builder
             ParcelGeoJsonResponse.ParcelFeature feature = new ParcelGeoJsonResponse.ParcelFeature();
             feature.setType("Feature");
             feature.setGeometry(geometry);
@@ -220,6 +243,20 @@ public class GisServiceImpl implements GisService {
     private GeoJsonResponse buildGeoJsonResponse(List<ParcelResponse> parcels) {
         List<GeoJsonFeature> features = new ArrayList<>();
 
+        List<Long> parcelIds = parcels.stream()
+                .map(ParcelResponse::getId)
+                .collect(Collectors.toList());
+
+        List<BusinessOccupancy> businessOccupancies = businessOccupancyRepository.findByParcelIdIn(parcelIds);
+        Map<Long, String> businessByParcel = businessOccupancies.stream()
+                .filter(b -> b.getParcel() != null && b.getParcel().getId() != null)
+                .collect(Collectors.toMap(b -> b.getParcel().getId(), b -> b.getBusinessName(), (a, b) -> a));
+
+        List<Household> households = householdRepository.findByParcelIdIn(parcelIds);
+        Map<Long, String> householdByParcel = households.stream()
+                .filter(h -> Boolean.TRUE.equals(h.getActive()) && h.getParcel() != null && h.getParcel().getId() != null)
+                .collect(Collectors.toMap(h -> h.getParcel().getId(), h -> h.getHouseholdHeadName(), (a, b) -> a));
+
         for (ParcelResponse parcel : parcels) {
             if (parcel.getBoundaries() == null || parcel.getBoundaries().isEmpty()) {
                 continue;
@@ -237,6 +274,8 @@ public class GisServiceImpl implements GisService {
             geometry.put("type", "Polygon");
             geometry.put("coordinates", Collections.singletonList(coordinates));
 
+            String occupantTag = determineOccupantTag(parcel, businessByParcel, householdByParcel);
+
             Map<String, Object> properties = new HashMap<>();
             properties.put("id", parcel.getId());
             properties.put("parcelNumber", parcel.getParcelNumber());
@@ -245,6 +284,7 @@ public class GisServiceImpl implements GisService {
             properties.put("status", parcel.getStatusDisplay());
             properties.put("villageName", parcel.getVillageName());
             properties.put("areaM2", parcel.getAreaM2());
+            properties.put("occupantTag", occupantTag);
 
             GeoJsonFeature feature = GeoJsonFeature.builder()
                     .type("Feature")
@@ -262,5 +302,29 @@ public class GisServiceImpl implements GisService {
                 .features(features)
                 .metadata(metadata)
                 .build();
+    }
+
+    private String determineOccupantTag(ParcelResponse parcel,
+                                        Map<Long, String> businessByParcel,
+                                        Map<Long, String> householdByParcel) {
+        if (parcel == null || parcel.getId() == null) {
+            return "Not Assigned";
+        }
+
+        Long parcelId = parcel.getId();
+
+        if (businessByParcel.containsKey(parcelId)) {
+            return businessByParcel.get(parcelId);
+        }
+
+        if (householdByParcel.containsKey(parcelId)) {
+            return householdByParcel.get(parcelId);
+        }
+
+        if (parcel.getPtoHolderName() != null && !parcel.getPtoHolderName().isBlank()) {
+            return parcel.getPtoHolderName();
+        }
+
+        return "Not Assigned";
     }
 }

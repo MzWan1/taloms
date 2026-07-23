@@ -36,6 +36,11 @@ public class BusinessOccupancyRepositoryAdapter implements BusinessOccupancyRepo
     }
 
     @Override
+    public List<BusinessOccupancy> findByParcelIdIn(List<Long> parcelIds) {
+        return jpaRepository.findByParcelIdIn(parcelIds);
+    }
+
+    @Override
     public List<BusinessOccupancy> findByPtoId(Long ptoId) {
         return jpaRepository.findByPtoId(ptoId);
     }

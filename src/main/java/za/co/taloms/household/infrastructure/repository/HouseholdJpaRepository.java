@@ -23,6 +23,15 @@ public interface HouseholdJpaRepository extends JpaRepository<Household, Long> {
            LEFT JOIN FETCH h.parcel p
            LEFT JOIN FETCH p.village v
            LEFT JOIN FETCH v.traditionalAuthority
+           WHERE h.parcel.id IN :parcelIds
+           """)
+    List<Household> findByParcelIdIn(@Param("parcelIds") List<Long> parcelIds);
+
+    @Query("""
+           SELECT h FROM Household h
+           LEFT JOIN FETCH h.parcel p
+           LEFT JOIN FETCH p.village v
+           LEFT JOIN FETCH v.traditionalAuthority
            LEFT JOIN FETCH h.pto
            WHERE h.pto.id = :ptoId
            """)
