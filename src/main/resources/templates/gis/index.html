@@ -204,7 +204,7 @@
             return;
         }
 
-        fetch('/api/traditional-authorities/' + authorityId + '/villages')
+        fetch('/api/villages/by-authority/' + authorityId)
             .then(r => r.json())
             .then(response => {
                 if (response.success) {
@@ -228,12 +228,15 @@
     function loadParcels() {
         const villageId = document.getElementById('villageSelect').value;
         const status = document.getElementById('statusFilter').value;
+        const authorityId = document.getElementById('authoritySelect').value;
 
         let url = '/api/gis/parcels/';
         if (villageId) {
             url += 'village/' + villageId;
+        } else if (authorityId) {
+            url += 'authority/' + authorityId;
         } else {
-            url += 'authority/1'; // Default
+            url += 'authority/1';
         }
 
         // Add status filter via query param
@@ -242,12 +245,19 @@
         }
 
         fetch(url)
-            .then(r => r.json())
+            .then(r => {
+                if (!r.ok) {
+                    throw new Error('HTTP ' + r.status + ': ' + r.statusText);
+                }
+                return r.json();
+            })
             .then(response => {
                 if (response.success) {
                     geoJsonData = response.data;
                     renderParcels(geoJsonData);
                     updateKPIs(geoJsonData.metadata);
+                } else {
+                    console.warn('API returned success=false:', response.message);
                 }
             })
             .catch(err => {
@@ -336,11 +346,13 @@
     // ── Reset Map ──────────────────────────────────────────────────────────
     function resetMap() {
         document.getElementById('authoritySelect').value = '';
-        document.getElementById('villageSelect').innerHTML = '<option value="">All Villages</option>';
         document.getElementById('statusFilter').value = '';
 
-        // Load all parcels
-        fetch('/api/gis/parcels/authority/1')
+        const villageSelect = document.getElementById('villageSelect');
+        villageSelect.innerHTML = '<option value="">All Villages</option>';
+
+        const url = '/api/gis/parcels/authority/1';
+        fetch(url)
             .then(r => r.json())
             .then(response => {
                 if (response.success) {
@@ -353,8 +365,12 @@
     }
 
     // ── Initialize ────────────────────────────────────────────────────────
-    // Load initial data
-    setTimeout(loadParcels, 500);
+    // Auto-select first village so parcels load on initial view
+    const villageSelect = document.getElementById('villageSelect');
+    if (villageSelect && villageSelect.options.length > 1) {
+        villageSelect.selectedIndex = 1;
+    }
+    loadParcels();
 </script>
 </body>
 </html>

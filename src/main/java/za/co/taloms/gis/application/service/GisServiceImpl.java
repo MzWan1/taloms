@@ -164,15 +164,20 @@ public class GisServiceImpl implements GisService {
                 .map(ParcelResponse::getId)
                 .collect(Collectors.toList());
 
-        List<BusinessOccupancy> businessOccupancies = businessOccupancyRepository.findByParcelIdIn(parcelIds);
-        Map<Long, String> businessByParcel = businessOccupancies.stream()
-                .filter(b -> b.getParcel() != null && b.getParcel().getId() != null)
-                .collect(Collectors.toMap(b -> b.getParcel().getId(), b -> b.getBusinessName(), (a, b) -> a));
+        Map<Long, String> businessByParcel = Collections.emptyMap();
+        Map<Long, String> householdByParcel = Collections.emptyMap();
 
-        List<Household> households = householdRepository.findByParcelIdIn(parcelIds);
-        Map<Long, String> householdByParcel = households.stream()
-                .filter(h -> Boolean.TRUE.equals(h.getActive()) && h.getParcel() != null && h.getParcel().getId() != null)
-                .collect(Collectors.toMap(h -> h.getParcel().getId(), h -> h.getHouseholdHeadName(), (a, b) -> a));
+        if (!parcelIds.isEmpty()) {
+            List<BusinessOccupancy> businessOccupancies = businessOccupancyRepository.findByParcelIdIn(parcelIds);
+            businessByParcel = businessOccupancies.stream()
+                    .filter(b -> b.getParcel() != null && b.getParcel().getId() != null)
+                    .collect(Collectors.toMap(b -> b.getParcel().getId(), b -> b.getBusinessName(), (a, b) -> a));
+
+            List<Household> households = householdRepository.findByParcelIdIn(parcelIds);
+            householdByParcel = households.stream()
+                    .filter(h -> Boolean.TRUE.equals(h.getActive()) && h.getParcel() != null && h.getParcel().getId() != null)
+                    .collect(Collectors.toMap(h -> h.getParcel().getId(), h -> h.getHouseholdHeadName(), (a, b) -> a));
+        }
 
         for (ParcelResponse parcel : parcels) {
             if (parcel.getBoundaries() == null || parcel.getBoundaries().isEmpty()) {
@@ -247,15 +252,20 @@ public class GisServiceImpl implements GisService {
                 .map(ParcelResponse::getId)
                 .collect(Collectors.toList());
 
-        List<BusinessOccupancy> businessOccupancies = businessOccupancyRepository.findByParcelIdIn(parcelIds);
-        Map<Long, String> businessByParcel = businessOccupancies.stream()
-                .filter(b -> b.getParcel() != null && b.getParcel().getId() != null)
-                .collect(Collectors.toMap(b -> b.getParcel().getId(), b -> b.getBusinessName(), (a, b) -> a));
+        Map<Long, String> businessByParcel = Collections.emptyMap();
+        Map<Long, String> householdByParcel = Collections.emptyMap();
 
-        List<Household> households = householdRepository.findByParcelIdIn(parcelIds);
-        Map<Long, String> householdByParcel = households.stream()
-                .filter(h -> Boolean.TRUE.equals(h.getActive()) && h.getParcel() != null && h.getParcel().getId() != null)
-                .collect(Collectors.toMap(h -> h.getParcel().getId(), h -> h.getHouseholdHeadName(), (a, b) -> a));
+        if (!parcelIds.isEmpty()) {
+            List<BusinessOccupancy> businessOccupancies = businessOccupancyRepository.findByParcelIdIn(parcelIds);
+            businessByParcel = businessOccupancies.stream()
+                    .filter(b -> b.getParcel() != null && b.getParcel().getId() != null)
+                    .collect(Collectors.toMap(b -> b.getParcel().getId(), b -> b.getBusinessName(), (a, b) -> a));
+
+            List<Household> households = householdRepository.findByParcelIdIn(parcelIds);
+            householdByParcel = households.stream()
+                    .filter(h -> Boolean.TRUE.equals(h.getActive()) && h.getParcel() != null && h.getParcel().getId() != null)
+                    .collect(Collectors.toMap(h -> h.getParcel().getId(), h -> h.getHouseholdHeadName(), (a, b) -> a));
+        }
 
         for (ParcelResponse parcel : parcels) {
             if (parcel.getBoundaries() == null || parcel.getBoundaries().isEmpty()) {
@@ -281,7 +291,8 @@ public class GisServiceImpl implements GisService {
             properties.put("parcelNumber", parcel.getParcelNumber());
             properties.put("standNumber", parcel.getStandNumber());
             properties.put("parcelType", parcel.getParcelTypeDisplay());
-            properties.put("status", parcel.getStatusDisplay());
+            properties.put("status", parcel.getStatus().name());
+            properties.put("statusDisplay", parcel.getStatus().getDisplayName());
             properties.put("villageName", parcel.getVillageName());
             properties.put("areaM2", parcel.getAreaM2());
             properties.put("occupantTag", occupantTag);
