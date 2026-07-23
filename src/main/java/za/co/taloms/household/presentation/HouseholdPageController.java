@@ -56,6 +56,7 @@ public class HouseholdPageController {
     }
 
     @GetMapping
+    @ResponseBody
     public String list(Model model) {
         try {
             log.info("Loading household list");
@@ -65,23 +66,137 @@ public class HouseholdPageController {
                 households = Collections.emptyList();
             }
 
-            model.addAttribute("households", households);
-            model.addAttribute("totalCount", households.size());
-            model.addAttribute("activeCount", households.stream().filter(HouseholdResponse::getActive).count());
-            model.addAttribute("pageTitle", "Household Management");
-            model.addAttribute("currentPage", "households");
+            long totalCount = households.size();
+            long activeCount = households.stream().filter(HouseholdResponse::getActive).count();
 
-            log.info("Found {} households", households.size());
-            return "households/list";
+            StringBuilder sb = new StringBuilder();
+            sb.append("<!DOCTYPE html><html lang='en'><head>");
+            sb.append("<meta charset='UTF-8'>");
+            sb.append("<meta name='viewport' content='width=device-width, initial-scale=1.0'>");
+            sb.append("<title>Household Management | TALOMS</title>");
+            sb.append("<link href='https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css' rel='stylesheet'>");
+            sb.append("<link href='https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css' rel='stylesheet'>");
+            sb.append("<link href='/css/taloms.css' rel='stylesheet'>");
+            sb.append("</head><body class='bg-light'>");
+
+            sb.append("<nav class='navbar navbar-expand-lg navbar-dark bg-navy shadow-sm sticky-top'>");
+            sb.append("<div class='container-fluid px-4'>");
+            sb.append("<a class='navbar-brand fw-bold' href='/dashboard'><i class='bi bi-geo-alt-fill me-2'></i>TALOMS</a>");
+            sb.append("<button class='navbar-toggler border-0' type='button' data-bs-toggle='collapse' data-bs-target='#mainNav'>");
+            sb.append("<span class='navbar-toggler-icon'></span>");
+            sb.append("</button>");
+            sb.append("<div class='collapse navbar-collapse' id='mainNav'>");
+            sb.append("<ul class='navbar-nav me-auto gap-1'>");
+            sb.append("<li class='nav-item'><a class='nav-link rounded-2 px-3' href='/dashboard'><i class='bi bi-speedometer2 me-1'></i>Dashboard</a></li>");
+            sb.append("<li class='nav-item'><a class='nav-link rounded-2 px-3' href='/users'><i class='bi bi-people me-1'></i>Users</a></li>");
+            sb.append("<li class='nav-item'><a class='nav-link rounded-2 px-3' href='/authorities'><i class='bi bi-building me-1'></i>Authorities</a></li>");
+            sb.append("<li class='nav-item'><a class='nav-link rounded-2 px-3' href='/ptos'><i class='bi bi-file-earmark-text me-1'></i>PTOs</a></li>");
+            sb.append("<li class='nav-item'><a class='nav-link rounded-2 px-3' href='/parcels'><i class='bi bi-map me-1'></i>Parcels</a></li>");
+            sb.append("<li class='nav-item'><a class='nav-link rounded-2 px-3 active bg-white bg-opacity-10' href='/households'><i class='bi bi-people me-1'></i>Households</a></li>");
+            sb.append("<li class='nav-item'><a class='nav-link rounded-2 px-3' href='/residents'><i class='bi bi-person-badge me-1'></i>Residents</a></li>");
+            sb.append("<li class='nav-item'><a class='nav-link rounded-2 px-3' href='/reports'><i class='bi bi-bar-chart me-1'></i>Reports</a></li>");
+            sb.append("<li class='nav-item'><a class='nav-link rounded-2 px-3' href='/business-occupancies'><i class='bi bi-shop me-1'></i>Business</a></li>");
+            sb.append("<li class='nav-item'><a class='nav-link rounded-2 px-3' href='/documents'><i class='bi bi-files me-1'></i>Documents</a></li>");
+            sb.append("<li class='nav-item'><a class='nav-link rounded-2 px-3' href='/audit'><i class='bi bi-clock-history me-1'></i>Audit</a></li>");
+            sb.append("<li class='nav-item'><a class='nav-link rounded-2 px-3' href='/gis'><i class='bi bi-map me-1'></i>GIS</a></li>");
+            sb.append("</ul>");
+            sb.append("</div></div></nav>");
+
+            sb.append("<div class='container-fluid px-4 py-4'>");
+
+            sb.append("<div class='d-flex align-items-start justify-content-between mb-4 flex-wrap gap-3'>");
+            sb.append("<div>");
+            sb.append("<nav aria-label='breadcrumb'><ol class='breadcrumb mb-1 small'>");
+            sb.append("<li class='breadcrumb-item'><a href='/dashboard' class='text-muted text-decoration-none'>Dashboard</a></li>");
+            sb.append("<li class='breadcrumb-item active'>Household Management</li>");
+            sb.append("</ol></nav>");
+            sb.append("<h4 class='fw-bold text-navy mb-0'><i class='bi bi-people me-2'></i>Household Management</h4>");
+            sb.append("<p class='text-muted small mb-0'>Manage all households linked to parcels</p>");
+            sb.append("</div>");
+            sb.append("<div class='d-flex gap-2'>");
+            sb.append("<a href='/dashboard' class='btn btn-outline-secondary px-3'><i class='bi bi-arrow-left me-1'></i>Back</a>");
+            sb.append("<a href='/households/create' class='btn btn-navy px-4 fw-semibold'><i class='bi bi-plus-circle me-2'></i>New Household</a>");
+            sb.append("</div></div>");
+
+            sb.append("<div class='row g-3 mb-4'>");
+            sb.append("<div class='col-6 col-md-3'>");
+            sb.append("<div class='card border-0 shadow-sm text-center py-3'>");
+            sb.append("<div class='fw-bold fs-3 text-navy'>").append(totalCount).append("</div>");
+            sb.append("<div class='small text-muted'>Total Households</div>");
+            sb.append("</div></div>");
+            sb.append("<div class='col-6 col-md-3'>");
+            sb.append("<div class='card border-0 shadow-sm text-center py-3'>");
+            sb.append("<div class='fw-bold fs-3 text-success'>").append(activeCount).append("</div>");
+            sb.append("<div class='small text-muted'>Active</div>");
+            sb.append("</div></div>");
+            sb.append("</div>");
+
+            sb.append("<div class='card border-0 shadow-sm'>");
+            sb.append("<div class='card-body p-0'><div class='table-responsive'>");
+            sb.append("<table class='table table-hover mb-0'>");
+            sb.append("<thead><tr>");
+            sb.append("<th class='px-4'>#</th><th>Household Head</th><th>ID Number</th><th>Parcel</th><th>Village</th><th>Registration Date</th><th>Status</th><th class='text-center'>Actions</th>");
+            sb.append("</tr></thead><tbody>");
+
+            if (households.isEmpty()) {
+                sb.append("<tr><td colspan='8' class='text-center py-5 text-muted'>");
+                sb.append("<i class='bi bi-people display-5 d-block mb-2 opacity-25'></i>");
+                sb.append("<span class='fw-semibold'>No households found</span><br>");
+                sb.append("<small>Click 'New Household' to create the first record</small>");
+                sb.append("</td></tr>");
+            } else {
+                int i = 1;
+                for (var h : households) {
+                    String name = h.getHouseholdHeadName() != null ? h.getHouseholdHeadName() : "Unknown";
+                    String idNum = h.getHouseholdHeadIdNumber() != null ? h.getHouseholdHeadIdNumber() : "";
+                    String stand = h.getStandNumber() != null ? h.getStandNumber() : "";
+                    String village = h.getVillageName() != null ? h.getVillageName() : "";
+                    String regDate = h.getRegistrationDate() != null ? h.getRegistrationDate().toString() : "—";
+                    boolean active = Boolean.TRUE.equals(h.getActive());
+
+                    String initials = name.length() >= 2 ? name.substring(0, 2).toUpperCase() : (name.isEmpty() ? "HH" : name);
+
+                    sb.append("<tr>");
+                    sb.append("<td class='px-4 text-muted small'>").append(i++).append("</td>");
+                    sb.append("<td><div class='d-flex align-items-center gap-3'>");
+                    sb.append("<div class='household-avatar' style='width:36px;height:36px;background:#D6E4F0;color:#1B3A6B;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;flex-shrink:0;'>").append(initials).append("</div>");
+                    sb.append("<div>");
+                    sb.append("<a href='/households/").append(h.getId()).append("' class='fw-semibold text-navy text-decoration-none small'>").append(name).append("</a>");
+                    if (h.getContactPhone() != null) {
+                        sb.append("<div class='text-muted' style='font-size:0.78rem'>").append(h.getContactPhone()).append("</div>");
+                    }
+                    sb.append("</div></div></td>");
+                    sb.append("<td><code class='small'>").append(idNum).append("</code></td>");
+                    sb.append("<td class='small'>").append(stand).append("</td>");
+                    sb.append("<td class='small'>").append(village).append("</td>");
+                    sb.append("<td class='small'>").append(regDate).append("</td>");
+                    sb.append("<td>");
+                    if (active) {
+                        sb.append("<span class='badge bg-success'>Active</span>");
+                    } else {
+                        sb.append("<span class='badge bg-secondary'>Inactive</span>");
+                    }
+                    sb.append("</td>");
+                    sb.append("<td class='text-center'>");
+                    sb.append("<div class='btn-group btn-group-sm'>");
+                    sb.append("<a href='/households/").append(h.getId()).append("' class='btn btn-outline-info' title='View'><i class='bi bi-eye'></i></a>");
+                    sb.append("<a href='/households/").append(h.getId()).append("/edit' class='btn btn-outline-primary' title='Edit'><i class='bi bi-pencil'></i></a>");
+                    sb.append("</div></td>");
+                    sb.append("</tr>");
+                }
+            }
+
+            sb.append("</tbody></table></div></div></div>");
+            sb.append("</div>");
+
+            sb.append("<style>.household-avatar{width:36px;height:36px;background:#D6E4F0;color:#1B3A6B;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;flex-shrink:0;}</style>");
+            sb.append("<script src='https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js'></script>");
+            sb.append("</body></html>");
+
+            return sb.toString();
         } catch (Throwable e) {
             log.error("Error loading household list: {}", e.getMessage(), e);
-            model.addAttribute("errorMessage", "Error loading households: " + e.getMessage());
-            model.addAttribute("households", Collections.emptyList());
-            model.addAttribute("totalCount", 0L);
-            model.addAttribute("activeCount", 0L);
-            model.addAttribute("pageTitle", "Household Management");
-            model.addAttribute("currentPage", "households");
-            return "households/list";
+            return "<html><body><h1>Error loading households</h1><p>" + e.getClass().getSimpleName() + " - " + e.getMessage() + "</p></body></html>";
         }
     }
 
