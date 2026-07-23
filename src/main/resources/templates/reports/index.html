@@ -8,7 +8,6 @@
     <title>Reports | TALOMS</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     <link th:href="@{/css/taloms.css}" rel="stylesheet">
 </head>
 <body class="bg-light">
@@ -17,7 +16,6 @@
 
 <div class="container-fluid px-4 py-4">
 
-    <!-- Flash Messages -->
     <div th:if="${successMessage}"
          class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-4">
         <i class="bi bi-check-circle-fill me-2"></i>
@@ -31,7 +29,6 @@
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 
-    <!-- Header -->
     <div class="d-flex align-items-start justify-content-between mb-4 flex-wrap gap-3">
         <div>
             <nav aria-label="breadcrumb">
@@ -52,7 +49,6 @@
         </a>
     </div>
 
-    <!-- KPI Row with Charts -->
     <div class="row g-3 mb-4">
         <div class="col-6 col-md-3">
             <div class="card border-0 shadow-sm text-center py-3">
@@ -104,68 +100,108 @@
         </div>
     </div>
 
-    <!-- Charts Row -->
     <div class="row g-4 mb-4">
-        <div class="col-12 col-md-4">
-            <div class="card border-0 shadow-sm h-100">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
                 <div class="card-header bg-white border-bottom py-3">
                     <h6 class="fw-bold text-navy mb-0">
-                        <i class="bi bi-pie-chart me-2"></i>PTO Status Distribution
+                        <i class="bi bi-pie-chart me-2"></i>Analytics Overview
                     </h6>
                 </div>
                 <div class="card-body">
-                    <canvas id="ptoStatusChart"></canvas>
-                </div>
-            </div>
-        </div>
-        <div class="col-12 col-md-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-white border-bottom py-3">
-                    <h6 class="fw-bold text-navy mb-0">
-                        <i class="bi bi-pie-chart me-2"></i>Parcel Status Distribution
-                    </h6>
-                </div>
-                <div class="card-body">
-                    <canvas id="parcelStatusChart"></canvas>
-                </div>
-            </div>
-        </div>
-        <div class="col-12 col-md-4">
-            <div class="card border-0 shadow-sm h-100">
-                <div class="card-header bg-white border-bottom py-3">
-                    <h6 class="fw-bold text-navy mb-0">
-                        <i class="bi bi-people me-2"></i>Gender Distribution
-                    </h6>
-                </div>
-                <div class="card-body">
-                    <canvas id="genderChart"></canvas>
+                    <div class="row g-3">
+                        <div class="col-12 col-md-4">
+                            <h6 class="fw-bold text-navy mb-2">PTO Status Distribution</h6>
+                            <table class="table table-sm table-borderless mb-0">
+                                <tr><td class="text-muted small">Pending</td><td class="text-end fw-bold" th:text="${ptoPending}">0</td></tr>
+                                <tr><td class="text-muted small">Active</td><td class="text-end fw-bold text-success" th:text="${ptoActive}">0</td></tr>
+                                <tr><td class="text-muted small">Suspended</td><td class="text-end fw-bold text-warning" th:text="${ptoSuspended}">0</td></tr>
+                                <tr><td class="text-muted small">Revoked</td><td class="text-end fw-bold text-danger" th:text="${ptoRevoked}">0</td></tr>
+                                <tr><td class="text-muted small">Expired</td><td class="text-end fw-bold text-muted" th:text="${ptoExpired}">0</td></tr>
+                            </table>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <h6 class="fw-bold text-navy mb-2">Parcel Status Distribution</h6>
+                            <table class="table table-sm table-borderless mb-0">
+                                <tr><td class="text-muted small">Available</td><td class="text-end fw-bold text-success" th:text="${parcelAvailable}">0</td></tr>
+                                <tr><td class="text-muted small">Allocated</td><td class="text-end fw-bold text-primary" th:text="${parcelAllocated}">0</td></tr>
+                                <tr><td class="text-muted small">Disputed</td><td class="text-end fw-bold text-danger" th:text="${parcelDisputed}">0</td></tr>
+                                <tr><td class="text-muted small">Reserved</td><td class="text-end fw-bold text-warning" th:text="${parcelReserved}">0</td></tr>
+                                <tr><td class="text-muted small">Inactive</td><td class="text-end fw-bold text-muted" th:text="${parcelInactive}">0</td></tr>
+                            </table>
+                        </div>
+                        <div class="col-12 col-md-4">
+                            <h6 class="fw-bold text-navy mb-2">Gender Distribution</h6>
+                            <table class="table table-sm table-borderless mb-0">
+                                <tr><td class="text-muted small">Male</td><td class="text-end fw-bold text-primary" th:text="${maleResidents}">0</td></tr>
+                                <tr><td class="text-muted small">Female</td><td class="text-end fw-bold text-pink" th:text="${femaleResidents}">0</td></tr>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- Category 1: Land Administration -->
     <div class="mb-4">
         <h5 class="fw-bold text-navy mb-3">
             <i class="bi bi-gear me-2"></i>Category 1 — Land Administration
         </h5>
         <div class="row g-4">
-            <div class="col-12 col-md-6 col-lg-4" th:each="rt : ${reportTypes}" th:if="${rt.name() == 'PTO_OCCUPANCY_REGISTER' || rt.name() == 'LAND_PARCEL_UTILISATION' || rt.name() == 'STAND_ALLOCATION'}">
+            <div class="col-12 col-md-6 col-lg-4">
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-body text-center p-4">
-                        <div th:class="${'report-icon bg-' + rt.getColor()}">
-                            <i th:class="${'bi ' + rt.getIcon() + ' text-white fs-1'}"></i>
+                        <div class="report-icon bg-primary">
+                            <i class="bi bi-file-earmark-text text-white fs-1"></i>
                         </div>
-                        <h5 class="fw-bold mt-3" th:text="${rt.getDisplayName()}">Report</h5>
-                        <p class="text-muted small">Land administration and occupancy management</p>
+                        <h5 class="fw-bold mt-3">PTO Occupancy Register</h5>
+                        <p class="text-muted small">Primary legal document for Traditional Authority land records</p>
                         <hr>
                         <div class="d-grid gap-2">
-                            <a href="#" class="btn btn-outline-primary btn-sm"
-                               th:onclick="${'generateReport(\'' + rt.name() + '\', \'PDF\')'}">
+                            <a href="#" class="btn btn-outline-primary btn-sm" onclick="generateReport('PTO_OCCUPANCY_REGISTER','PDF')">
                                 <i class="bi bi-file-earmark-pdf"></i> Export PDF
                             </a>
-                            <a href="#" class="btn btn-outline-success btn-sm"
-                               th:onclick="${'generateReport(\'' + rt.name() + '\', \'EXCEL\')'}">
+                            <a href="#" class="btn btn-outline-success btn-sm" onclick="generateReport('PTO_OCCUPANCY_REGISTER','EXCEL')">
+                                <i class="bi bi-file-earmark-excel"></i> Export Excel
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body text-center p-4">
+                        <div class="report-icon bg-success">
+                            <i class="bi bi-map text-white fs-1"></i>
+                        </div>
+                        <h5 class="fw-bold mt-3">Land Parcel Utilisation</h5>
+                        <p class="text-muted small">Land planning, allocation, and utilisation analysis</p>
+                        <hr>
+                        <div class="d-grid gap-2">
+                            <a href="#" class="btn btn-outline-primary btn-sm" onclick="generateReport('LAND_PARCEL_UTILISATION','PDF')">
+                                <i class="bi bi-file-earmark-pdf"></i> Export PDF
+                            </a>
+                            <a href="#" class="btn btn-outline-success btn-sm" onclick="generateReport('LAND_PARCEL_UTILISATION','EXCEL')">
+                                <i class="bi bi-file-earmark-excel"></i> Export Excel
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body text-center p-4">
+                        <div class="report-icon bg-info">
+                            <i class="bi bi-grid-1x2 text-white fs-1"></i>
+                        </div>
+                        <h5 class="fw-bold mt-3">Stand Allocation Summary</h5>
+                        <p class="text-muted small">Council meetings and land allocation committees</p>
+                        <hr>
+                        <div class="d-grid gap-2">
+                            <a href="#" class="btn btn-outline-primary btn-sm" onclick="generateReport('STAND_ALLOCATION','PDF')">
+                                <i class="bi bi-file-earmark-pdf"></i> Export PDF
+                            </a>
+                            <a href="#" class="btn btn-outline-success btn-sm" onclick="generateReport('STAND_ALLOCATION','EXCEL')">
                                 <i class="bi bi-file-earmark-excel"></i> Export Excel
                             </a>
                         </div>
@@ -175,28 +211,65 @@
         </div>
     </div>
 
-    <!-- Category 2: Population and Demographic -->
     <div class="mb-4">
         <h5 class="fw-bold text-navy mb-3">
             <i class="bi bi-people me-2"></i>Category 2 — Population and Demographic
         </h5>
         <div class="row g-4">
-            <div class="col-12 col-md-6 col-lg-4" th:each="rt : ${reportTypes}" th:if="${rt.name() == 'VILLAGE_POPULATION' || rt.name() == 'HOUSEHOLD_REGISTER' || rt.name() == 'RESIDENT_DEMOGRAPHICS'}">
+            <div class="col-12 col-md-6 col-lg-4">
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-body text-center p-4">
-                        <div th:class="${'report-icon bg-' + rt.getColor()}">
-                            <i th:class="${'bi ' + rt.getIcon() + ' text-white fs-1'}"></i>
+                        <div class="report-icon bg-warning">
+                            <i class="bi bi-people text-white fs-1"></i>
                         </div>
-                        <h5 class="fw-bold mt-3" th:text="${rt.getDisplayName()}">Report</h5>
-                        <p class="text-muted small">Population, household, and resident demographics</p>
+                        <h5 class="fw-bold mt-3">Village Population Report</h5>
+                        <p class="text-muted small">Census submissions and service delivery planning</p>
                         <hr>
                         <div class="d-grid gap-2">
-                            <a href="#" class="btn btn-outline-primary btn-sm"
-                               th:onclick="${'generateReport(\'' + rt.name() + '\', \'PDF\')'}">
+                            <a href="#" class="btn btn-outline-primary btn-sm" onclick="generateReport('VILLAGE_POPULATION','PDF')">
                                 <i class="bi bi-file-earmark-pdf"></i> Export PDF
                             </a>
-                            <a href="#" class="btn btn-outline-success btn-sm"
-                               th:onclick="${'generateReport(\'' + rt.name() + '\', \'EXCEL\')'}">
+                            <a href="#" class="btn btn-outline-success btn-sm" onclick="generateReport('VILLAGE_POPULATION','EXCEL')">
+                                <i class="bi bi-file-earmark-excel"></i> Export Excel
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body text-center p-4">
+                        <div class="report-icon bg-danger">
+                            <i class="bi bi-house-door text-white fs-1"></i>
+                        </div>
+                        <h5 class="fw-bold mt-3">Household Register</h5>
+                        <p class="text-muted small">Legal record required under Traditional Leadership legislation</p>
+                        <hr>
+                        <div class="d-grid gap-2">
+                            <a href="#" class="btn btn-outline-primary btn-sm" onclick="generateReport('HOUSEHOLD_REGISTER','PDF')">
+                                <i class="bi bi-file-earmark-pdf"></i> Export PDF
+                            </a>
+                            <a href="#" class="btn btn-outline-success btn-sm" onclick="generateReport('HOUSEHOLD_REGISTER','EXCEL')">
+                                <i class="bi bi-file-earmark-excel"></i> Export Excel
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body text-center p-4">
+                        <div class="report-icon bg-dark">
+                            <i class="bi bi-person-lines-fill text-white fs-1"></i>
+                        </div>
+                        <h5 class="fw-bold mt-3">Resident Demographics Report</h5>
+                        <p class="text-muted small">Government grants, service delivery, and planning</p>
+                        <hr>
+                        <div class="d-grid gap-2">
+                            <a href="#" class="btn btn-outline-primary btn-sm" onclick="generateReport('RESIDENT_DEMOGRAPHICS','PDF')">
+                                <i class="bi bi-file-earmark-pdf"></i> Export PDF
+                            </a>
+                            <a href="#" class="btn btn-outline-success btn-sm" onclick="generateReport('RESIDENT_DEMOGRAPHICS','EXCEL')">
                                 <i class="bi bi-file-earmark-excel"></i> Export Excel
                             </a>
                         </div>
@@ -206,28 +279,45 @@
         </div>
     </div>
 
-    <!-- Category 3: Business and Economic -->
     <div class="mb-4">
         <h5 class="fw-bold text-navy mb-3">
             <i class="bi bi-shop me-2"></i>Category 3 — Business and Economic
         </h5>
         <div class="row g-4">
-            <div class="col-12 col-md-6 col-lg-4" th:each="rt : ${reportTypes}" th:if="${rt.name() == 'BUSINESS_OCCUPANCY_REGISTER' || rt.name() == 'ECONOMIC_ACTIVITY'}">
+            <div class="col-12 col-md-6 col-lg-4">
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-body text-center p-4">
-                        <div th:class="${'report-icon bg-' + rt.getColor()}">
-                            <i th:class="${'bi ' + rt.getIcon() + ' text-white fs-1'}"></i>
+                        <div class="report-icon bg-primary">
+                            <i class="bi bi-shop text-white fs-1"></i>
                         </div>
-                        <h5 class="fw-bold mt-3" th:text="${rt.getDisplayName()}">Report</h5>
-                        <p class="text-muted small">Business occupancy and economic activity analysis</p>
+                        <h5 class="fw-bold mt-3">Business Occupancy Register</h5>
+                        <p class="text-muted small">Economic development planning and LED</p>
                         <hr>
                         <div class="d-grid gap-2">
-                            <a href="#" class="btn btn-outline-primary btn-sm"
-                               th:onclick="${'generateReport(\'' + rt.name() + '\', \'PDF\')'}">
+                            <a href="#" class="btn btn-outline-primary btn-sm" onclick="generateReport('BUSINESS_OCCUPANCY_REGISTER','PDF')">
                                 <i class="bi bi-file-earmark-pdf"></i> Export PDF
                             </a>
-                            <a href="#" class="btn btn-outline-success btn-sm"
-                               th:onclick="${'generateReport(\'' + rt.name() + '\', \'EXCEL\')'}">
+                            <a href="#" class="btn btn-outline-success btn-sm" onclick="generateReport('BUSINESS_OCCUPANCY_REGISTER','EXCEL')">
+                                <i class="bi bi-file-earmark-excel"></i> Export Excel
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body text-center p-4">
+                        <div class="report-icon bg-success">
+                            <i class="bi bi-graph-up-arrow text-white fs-1"></i>
+                        </div>
+                        <h5 class="fw-bold mt-3">Economic Activity Summary</h5>
+                        <p class="text-muted small">LED office and district municipality submissions</p>
+                        <hr>
+                        <div class="d-grid gap-2">
+                            <a href="#" class="btn btn-outline-primary btn-sm" onclick="generateReport('ECONOMIC_ACTIVITY','PDF')">
+                                <i class="bi bi-file-earmark-pdf"></i> Export PDF
+                            </a>
+                            <a href="#" class="btn btn-outline-success btn-sm" onclick="generateReport('ECONOMIC_ACTIVITY','EXCEL')">
                                 <i class="bi bi-file-earmark-excel"></i> Export Excel
                             </a>
                         </div>
@@ -237,28 +327,65 @@
         </div>
     </div>
 
-    <!-- Category 4: Administrative and Compliance -->
     <div class="mb-4">
         <h5 class="fw-bold text-navy mb-3">
             <i class="bi bi-shield-check me-2"></i>Category 4 — Administrative and Compliance
         </h5>
         <div class="row g-4">
-            <div class="col-12 col-md-6 col-lg-4" th:each="rt : ${reportTypes}" th:if="${rt.name() == 'USER_ACTIVITY_AUDIT' || rt.name() == 'DOCUMENT_MANAGEMENT' || rt.name() == 'PERFORMANCE_DASHBOARD'}">
+            <div class="col-12 col-md-6 col-lg-4">
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-body text-center p-4">
-                        <div th:class="${'report-icon bg-' + rt.getColor()}">
-                            <i th:class="${'bi ' + rt.getIcon() + ' text-white fs-1'}"></i>
+                        <div class="report-icon bg-warning">
+                            <i class="bi bi-shield-check text-white fs-1"></i>
                         </div>
-                        <h5 class="fw-bold mt-3" th:text="${rt.getDisplayName()}">Report</h5>
-                        <p class="text-muted small">User activity, document management, and performance tracking</p>
+                        <h5 class="fw-bold mt-3">User Activity and Audit Report</h5>
+                        <p class="text-muted small">POPIA compliance and internal governance</p>
                         <hr>
                         <div class="d-grid gap-2">
-                            <a href="#" class="btn btn-outline-primary btn-sm"
-                               th:onclick="${'generateReport(\'' + rt.name() + '\', \'PDF\')'}">
+                            <a href="#" class="btn btn-outline-primary btn-sm" onclick="generateReport('USER_ACTIVITY_AUDIT','PDF')">
                                 <i class="bi bi-file-earmark-pdf"></i> Export PDF
                             </a>
-                            <a href="#" class="btn btn-outline-success btn-sm"
-                               th:onclick="${'generateReport(\'' + rt.name() + '\', \'EXCEL\')'}">
+                            <a href="#" class="btn btn-outline-success btn-sm" onclick="generateReport('USER_ACTIVITY_AUDIT','EXCEL')">
+                                <i class="bi bi-file-earmark-excel"></i> Export Excel
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body text-center p-4">
+                        <div class="report-icon bg-info">
+                            <i class="bi bi-folder-fill text-white fs-1"></i>
+                        </div>
+                        <h5 class="fw-bold mt-3">Document Management Report</h5>
+                        <p class="text-muted small">Record-keeping compliance and document tracking</p>
+                        <hr>
+                        <div class="d-grid gap-2">
+                            <a href="#" class="btn btn-outline-primary btn-sm" onclick="generateReport('DOCUMENT_MANAGEMENT','PDF')">
+                                <i class="bi bi-file-earmark-pdf"></i> Export PDF
+                            </a>
+                            <a href="#" class="btn btn-outline-success btn-sm" onclick="generateReport('DOCUMENT_MANAGEMENT','EXCEL')">
+                                <i class="bi bi-file-earmark-excel"></i> Export Excel
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-12 col-md-6 col-lg-4">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-body text-center p-4">
+                        <div class="report-icon bg-danger">
+                            <i class="bi bi-speedometer2 text-white fs-1"></i>
+                        </div>
+                        <h5 class="fw-bold mt-3">Authority Performance Dashboard</h5>
+                        <p class="text-muted small">Traditional Council meetings monthly summary</p>
+                        <hr>
+                        <div class="d-grid gap-2">
+                            <a href="#" class="btn btn-outline-primary btn-sm" onclick="generateReport('PERFORMANCE_DASHBOARD','PDF')">
+                                <i class="bi bi-file-earmark-pdf"></i> Export PDF
+                            </a>
+                            <a href="#" class="btn btn-outline-success btn-sm" onclick="generateReport('PERFORMANCE_DASHBOARD','EXCEL')">
                                 <i class="bi bi-file-earmark-excel"></i> Export Excel
                             </a>
                         </div>
@@ -268,28 +395,25 @@
         </div>
     </div>
 
-    <!-- Category 5: GIS and Spatial -->
     <div class="mb-4">
         <h5 class="fw-bold text-navy mb-3">
             <i class="bi bi-pin-map-fill me-2"></i>Category 5 — GIS and Spatial
         </h5>
         <div class="row g-4">
-            <div class="col-12 col-md-6 col-lg-4" th:each="rt : ${reportTypes}" th:if="${rt.name() == 'LAND_BOUNDARY'}">
+            <div class="col-12 col-md-6 col-lg-4">
                 <div class="card border-0 shadow-sm h-100">
                     <div class="card-body text-center p-4">
-                        <div th:class="${'report-icon bg-' + rt.getColor()}">
-                            <i th:class="${'bi ' + rt.getIcon() + ' text-white fs-1'}"></i>
+                        <div class="report-icon bg-dark">
+                            <i class="bi bi-pin-map-fill text-white fs-1"></i>
                         </div>
-                        <h5 class="fw-bold mt-3" th:text="${rt.getDisplayName()}">Report</h5>
+                        <h5 class="fw-bold mt-3">Land Boundary Report</h5>
                         <p class="text-muted small">Boundary capture, mapping status, and spatial analysis</p>
                         <hr>
                         <div class="d-grid gap-2">
-                            <a href="#" class="btn btn-outline-primary btn-sm"
-                               th:onclick="${'generateReport(\'' + rt.name() + '\', \'PDF\')'}">
+                            <a href="#" class="btn btn-outline-primary btn-sm" onclick="generateReport('LAND_BOUNDARY','PDF')">
                                 <i class="bi bi-file-earmark-pdf"></i> Export PDF
                             </a>
-                            <a href="#" class="btn btn-outline-success btn-sm"
-                               th:onclick="${'generateReport(\'' + rt.name() + '\', \'EXCEL\')'}">
+                            <a href="#" class="btn btn-outline-success btn-sm" onclick="generateReport('LAND_BOUNDARY','EXCEL')">
                                 <i class="bi bi-file-earmark-excel"></i> Export Excel
                             </a>
                         </div>
@@ -299,7 +423,6 @@
         </div>
     </div>
 
-    <!-- Report Filters -->
     <div class="card border-0 shadow-sm mt-4">
         <div class="card-header bg-white border-bottom py-3">
             <h6 class="fw-bold text-navy mb-0">
@@ -356,84 +479,7 @@
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script th:inline="javascript">
-    /*<![CDATA[*/
-
-    const safeNum = (v, fallback = 0) => (v == null ? fallback : typeof v === 'number' ? v : parseInt(v, 10) || fallback);
-
-    // Pie Charts
-    if (document.getElementById('ptoStatusChart')) {
-        new Chart(document.getElementById('ptoStatusChart'), {
-            type: 'pie',
-            data: {
-                labels: ['Pending', 'Active', 'Suspended', 'Revoked', 'Expired'],
-                datasets: [{
-                    data: [
-                        safeNum([[${ptoPending}]]),
-                        safeNum([[${ptoActive}]]),
-                        safeNum([[${ptoSuspended}]]),
-                        safeNum([[${ptoRevoked}]]),
-                        safeNum([[${ptoExpired}]])
-                    ],
-                    backgroundColor: ['#ffc107', '#198754', '#fd7e14', '#dc3545', '#6c757d'],
-                    borderWidth: 2,
-                    borderColor: '#fff'
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: { legend: { position: 'bottom' } }
-            }
-        });
-    }
-
-    if (document.getElementById('parcelStatusChart')) {
-        new Chart(document.getElementById('parcelStatusChart'), {
-            type: 'pie',
-            data: {
-                labels: ['Available', 'Allocated', 'Disputed', 'Reserved', 'Inactive'],
-                datasets: [{
-                    data: [
-                        safeNum([[${parcelAvailable}]]),
-                        safeNum([[${parcelAllocated}]]),
-                        safeNum([[${parcelDisputed}]]),
-                        safeNum([[${parcelReserved}]]),
-                        safeNum([[${parcelInactive}]])
-                    ],
-                    backgroundColor: ['#198754', '#0d6efd', '#dc3545', '#ffc107', '#6c757d'],
-                    borderWidth: 2,
-                    borderColor: '#fff'
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: { legend: { position: 'bottom' } }
-            }
-        });
-    }
-
-    if (document.getElementById('genderChart')) {
-        new Chart(document.getElementById('genderChart'), {
-            type: 'pie',
-            data: {
-                labels: ['Male', 'Female'],
-                datasets: [{
-                    data: [
-                        safeNum([[${maleResidents}]]),
-                        safeNum([[${femaleResidents}]])
-                    ],
-                    backgroundColor: ['#0d6efd', '#e83e8c'],
-                    borderWidth: 2,
-                    borderColor: '#fff'
-                }]
-            },
-            options: {
-                responsive: true,
-                plugins: { legend: { position: 'bottom' } }
-            }
-        });
-    }
-
+<script>
     function generateReport(reportType, format) {
         const authorityId = document.getElementById('authorityId').value;
         const villageId = document.getElementById('villageId').value;
@@ -471,6 +517,7 @@
         }
 
         const btn = event.target.closest('a');
+        if (!btn) return;
         const originalText = btn.innerHTML;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Generating...';
         btn.disabled = true;
@@ -483,7 +530,7 @@
             .then(response => {
                 if (!response.ok) throw new Error('Failed to generate report');
                 const contentDisposition = response.headers.get('Content-Disposition');
-                let filename = `${reportType}_Report_${new Date().toISOString().slice(0,10)}.${format === 'EXCEL' ? 'xlsx' : 'pdf'}`;
+                let filename = reportType + '_Report_' + new Date().toISOString().slice(0,10) + '.' + (format === 'EXCEL' ? 'xlsx' : 'pdf');
                 if (contentDisposition) {
                     const match = contentDisposition.match(/filename="?([^"]+)"?/);
                     if (match) filename = match[1];
@@ -509,7 +556,6 @@
                 btn.disabled = false;
             });
     }
-    /*]]> */
 </script>
 </body>
 </html>
