@@ -367,11 +367,11 @@
             labels: ['Pending', 'Active', 'Suspended', 'Revoked', 'Expired'],
             datasets: [{
                 data: [
-                    ${ptoPending},
-                    ${ptoActive},
-                    ${ptoSuspended},
-                    ${ptoRevoked},
-                    ${ptoExpired}
+                    [[${ptoPending}]],
+                    [[${ptoActive}]],
+                    [[${ptoSuspended}]],
+                    [[${ptoRevoked}]],
+                    [[${ptoExpired}]]
                 ],
                 backgroundColor: ['#ffc107', '#198754', '#fd7e14', '#dc3545', '#6c757d'],
                 borderWidth: 2,
@@ -393,11 +393,11 @@
             labels: ['Available', 'Allocated', 'Disputed', 'Reserved', 'Inactive'],
             datasets: [{
                 data: [
-                    ${parcelAvailable},
-                    ${parcelAllocated},
-                    ${parcelDisputed},
-                    ${parcelReserved},
-                    ${parcelInactive}
+                    [[${parcelAvailable}]],
+                    [[${parcelAllocated}]],
+                    [[${parcelDisputed}]],
+                    [[${parcelReserved}]],
+                    [[${parcelInactive}]]
                 ],
                 backgroundColor: ['#198754', '#0d6efd', '#dc3545', '#ffc107', '#6c757d'],
                 borderWidth: 2,
@@ -419,8 +419,8 @@
             labels: ['Male', 'Female'],
             datasets: [{
                 data: [
-                    ${maleResidents},
-                    ${femaleResidents}
+                    [[${maleResidents}]],
+                    [[${femaleResidents}]]
                 ],
                 backgroundColor: ['#0d6efd', '#e83e8c'],
                 borderWidth: 2,
