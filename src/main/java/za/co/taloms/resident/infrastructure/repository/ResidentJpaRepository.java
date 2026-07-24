@@ -27,8 +27,8 @@ public interface ResidentJpaRepository extends JpaRepository<Resident, Long> {
 
     long countByActiveTrue();
 
-    @Query("SELECT COUNT(r) FROM Resident r WHERE r.gender = :gender")
-    long countByGender(@Param("gender") za.co.taloms.resident.domain.entity.Gender gender);
+    @Query(value = "SELECT COUNT(*) FROM residents WHERE gender = :gender", nativeQuery = true)
+    long countByGender(@Param("gender") String gender);
 
     @Query("SELECT r FROM Resident r ORDER BY r.createdAt DESC")
     List<Resident> findAllOrderByCreatedAtDesc();
