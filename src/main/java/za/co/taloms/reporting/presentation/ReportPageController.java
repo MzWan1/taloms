@@ -87,8 +87,8 @@ public class ReportPageController {
             model.addAttribute("parcelInactive", parcelService.countByStatus(za.co.taloms.parcel.domain.entity.ParcelStatus.INACTIVE));
 
             // Gender counts for charts
-            long maleCount = residentService.findAll().stream().filter(r -> r.getGender() == za.co.taloms.resident.domain.entity.Gender.MALE).count();
-            long femaleCount = residentService.findAll().stream().filter(r -> r.getGender() == za.co.taloms.resident.domain.entity.Gender.FEMALE).count();
+            long maleCount = residentService.countByGender(za.co.taloms.resident.domain.entity.Gender.MALE);
+            long femaleCount = residentService.countByGender(za.co.taloms.resident.domain.entity.Gender.FEMALE);
             model.addAttribute("maleResidents", maleCount);
             model.addAttribute("femaleResidents", femaleCount);
 

@@ -70,6 +70,11 @@ public class ResidentRepositoryAdapter implements ResidentRepositoryPort {
     }
 
     @Override
+    public long countByGender(za.co.taloms.resident.domain.entity.Gender gender) {
+        return jpaRepository.countByGender(gender);
+    }
+
+    @Override
     public long countAll() {
         return jpaRepository.count();
     }

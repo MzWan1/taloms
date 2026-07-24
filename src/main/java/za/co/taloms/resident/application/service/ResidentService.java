@@ -20,5 +20,6 @@ public interface ResidentService {
     long countAll();
     long countActive();
     long countByHousehold(Long householdId);
+    long countByGender(za.co.taloms.resident.domain.entity.Gender gender);
     boolean existsByIdNumber(String idNumber);
 }

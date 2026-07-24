@@ -17,5 +17,6 @@ public interface ResidentRepositoryPort {
     boolean existsByIdNumber(String idNumber);
     long countByHouseholdId(Long householdId);
     long countByActiveTrue();
+    long countByGender(za.co.taloms.resident.domain.entity.Gender gender);
     long countAll();
 }

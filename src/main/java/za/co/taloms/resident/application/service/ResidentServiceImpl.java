@@ -217,6 +217,11 @@ public class ResidentServiceImpl implements ResidentService {
         return residentRepository.existsByIdNumber(idNumber);
     }
 
+    @Override
+    public long countByGender(za.co.taloms.resident.domain.entity.Gender gender) {
+        return residentRepository.countByGender(gender);
+    }
+
     private ResidentResponse toResponse(Resident resident) {
         return ResidentResponse.builder()
                 .id(resident.getId())
@@ -225,10 +230,10 @@ public class ResidentServiceImpl implements ResidentService {
                 .dateOfBirth(resident.getDateOfBirth())
                 .age(resident.getAge())
                 .gender(resident.getGender())
-                .genderDisplay(resident.getGender().getDisplayName())
+                .genderDisplay(resident.getGender() != null ? resident.getGender().getDisplayName() : null)
                 .relationshipType(resident.getRelationshipType())
-                .relationshipDisplay(resident.getRelationshipType().getDisplayName())
-                .relationshipBadgeClass(resident.getRelationshipType().getBadgeClass())
+                .relationshipDisplay(resident.getRelationshipType() != null ? resident.getRelationshipType().getDisplayName() : null)
+                .relationshipBadgeClass(resident.getRelationshipType() != null ? resident.getRelationshipType().getBadgeClass() : null)
                 .occupation(resident.getOccupation())
                 .contactPhone(resident.getContactPhone())
                 .contactEmail(resident.getContactEmail())
