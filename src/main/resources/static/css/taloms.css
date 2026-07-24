@@ -150,3 +150,49 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
     font-weight: 700; font-size: 0.85rem; color: #fff;
     flex-shrink: 0;
 }
+
+/* ── Print Styles ─────────────────────────────────────────────────── */
+@media print {
+    .navbar, .btn, footer, .modal {
+        display: none !important;
+    }
+    body {
+        background: #fff !important;
+        font-size: 12pt;
+    }
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        margin-bottom: 0 !important;
+    }
+    .card-header {
+        border-bottom: 2px solid #1B3A6B !important;
+        background: #fff !important;
+    }
+    .container-fluid {
+        padding: 0 !important;
+        max-width: 100% !important;
+    }
+    .print-only {
+        display: block !important;
+    }
+    .no-print {
+        display: none !important;
+    }
+    a {
+        text-decoration: none !important;
+    }
+    .table thead th {
+        background-color: #1B3A6B !important;
+        color: #fff !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+    .badge {
+        border: 1px solid currentColor;
+    }
+    .page-break {
+        page-break-after: always;
+    }
+}

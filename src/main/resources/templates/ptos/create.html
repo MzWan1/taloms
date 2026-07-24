@@ -330,56 +330,54 @@
               </div>
             </div>
 
-            <!-- Step 4: Document Upload (Required) -->
-            <div class="card border-0 shadow-sm mb-4">
-              <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
-                <h6 class="fw-bold text-navy mb-0">
-                  <span class="badge bg-navy rounded-circle me-2">4</span>
-                  <i class="bi bi-file-earmark-text me-2"></i>
-                  PTO Documents
-                  <span class="text-danger ms-1">*</span>
-                  <span class="badge bg-warning text-dark ms-2">Required</span>
-                </h6>
-              </div>
-              <div class="card-body p-4">
-                <p class="text-muted small mb-3">
-                  <i class="bi bi-info-circle me-1"></i>
-                  A PTO Certificate is required for legal documentation.
-                  Please upload the signed certificate from the Traditional Authority.
-                  <br>
-                  <span class="text-danger">* Required before submitting</span>
-                </p>
+             <!-- Step 4: Identity Document Upload (Required) -->
+             <div class="card border-0 shadow-sm mb-4">
+               <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                 <h6 class="fw-bold text-navy mb-0">
+                   <span class="badge bg-navy rounded-circle me-2">4</span>
+                   <i class="bi bi-person-badge me-2"></i>
+                   Identity Document
+                   <span class="text-danger ms-1">*</span>
+                   <span class="badge bg-warning text-dark ms-2">Required</span>
+                 </h6>
+               </div>
+               <div class="card-body p-4">
+                 <p class="text-muted small mb-3">
+                   <i class="bi bi-info-circle me-1"></i>
+                   Please upload a copy of the applicant's ID or Passport for identification purposes.
+                   <br>
+                   <span class="text-danger">* Required before submitting</span>
+                 </p>
 
-                <!-- PTO Certificate Upload -->
-                <div class="document-upload-area" id="uploadArea">
-                  <div class="py-3">
-                    <i class="bi bi-file-earmark-pdf fs-2 text-navy"></i>
-                    <p class="mb-1 mt-2 fw-semibold">Upload PTO Certificate</p>
-                    <p class="text-muted small mb-0">Drag & drop or click to upload (PDF only)</p>
-                    <input type="file"
-                           id="ptoCertificate"
-                           name="ptoCertificate"
-                           class="d-none"
-                           accept=".pdf"
-                           required>
-                  </div>
-                  <div class="upload-progress" id="uploadProgress" style="display:none;">
-                    <div class="upload-progress-bar" id="uploadProgressBar"></div>
-                  </div>
-                </div>
-                <div id="uploadStatus" class="mt-2"></div>
+                 <!-- ID / Passport Upload -->
+                 <div class="document-upload-area" id="uploadArea">
+                   <div class="py-3">
+                     <i class="bi bi-person-badge fs-2 text-navy"></i>
+                     <p class="mb-1 mt-2 fw-semibold">Upload ID / Passport Copy</p>
+                     <p class="text-muted small mb-0">Drag & drop or click to upload (PDF, JPG, PNG)</p>
+                     <input type="file"
+                            id="idCopyDocument"
+                            name="idCopyDocument"
+                            class="d-none"
+                            accept=".pdf,.jpg,.jpeg,.png">
+                   </div>
+                   <div class="upload-progress" id="uploadProgress" style="display:none;">
+                     <div class="upload-progress-bar" id="uploadProgressBar"></div>
+                   </div>
+                 </div>
+                 <div id="uploadStatus" class="mt-2"></div>
 
-                <!-- Uploaded Documents List -->
-                <div id="documentList" class="mt-3" style="display:none;">
-                  <hr>
-                  <div class="d-flex align-items-center justify-content-between">
-                    <span class="fw-semibold small">Uploaded Documents</span>
-                    <span class="badge bg-success">1</span>
-                  </div>
-                  <div id="uploadedDocuments" class="mt-2"></div>
-                </div>
-              </div>
-            </div>
+                 <!-- Uploaded Documents List -->
+                 <div id="documentList" class="mt-3" style="display:none;">
+                   <hr>
+                   <div class="d-flex align-items-center justify-content-between">
+                     <span class="fw-semibold small">Uploaded Documents</span>
+                     <span class="badge bg-success">1</span>
+                   </div>
+                   <div id="uploadedDocuments" class="mt-2"></div>
+                 </div>
+               </div>
+             </div>
 
             <!-- Summary Card -->
             <div class="card border-0 shadow-sm mb-4 border-start border-4 border-navy">
@@ -394,8 +392,8 @@
                   <div class="col-7 fw-semibold" id="summaryVillage">—</div>
                   <div class="col-5 text-muted">Holder:</div>
                   <div class="col-7 fw-semibold" id="summaryHolder">—</div>
-                  <div class="col-5 text-muted">Documents:</div>
-                  <div class="col-7" id="summaryDocuments">
+                  <div class="col-5 text-muted">ID Document:</div>
+                  <div class="col-7" id="summaryIdDoc">
                     <span class="text-danger">Pending</span>
                   </div>
                   <div class="col-5 text-muted">Status:</div>
@@ -405,37 +403,37 @@
             </div>
 
             <!-- Info Box -->
-            <div class="card border-0 shadow-sm mb-4 border-start border-4 border-info">
-              <div class="card-body p-3">
-                <div class="d-flex gap-3 align-items-start">
-                  <i class="bi bi-info-circle-fill text-info fs-5 flex-shrink-0 mt-1"></i>
-                  <div class="small">
-                    <div class="fw-semibold mb-1">What happens next?</div>
-                    <ol class="mb-0 ps-3">
-                      <li>PTO is created with <strong>PENDING</strong> status</li>
-                      <li>PTO Certificate is attached to the record</li>
-                      <li>TA Administrator reviews and <strong>approves</strong> the PTO</li>
-                      <li>Once approved, you can <strong>create the Household</strong></li>
-                      <li>Add <strong>Residents</strong> to the Household</li>
-                    </ol>
-                  </div>
-                </div>
-              </div>
-            </div>
+             <div class="card border-0 shadow-sm mb-4 border-start border-4 border-info">
+               <div class="card-body p-3">
+                 <div class="d-flex gap-3 align-items-start">
+                   <i class="bi bi-info-circle-fill text-info fs-5 flex-shrink-0 mt-1"></i>
+                   <div class="small">
+                     <div class="fw-semibold mb-1">What happens next?</div>
+                     <ol class="mb-0 ps-3">
+                       <li>PTO is created with <strong>PENDING</strong> status</li>
+                       <li>ID / Passport document is attached to the record</li>
+                       <li>TA Administrator reviews and <strong>approves</strong> the PTO</li>
+                       <li>Once approved, you can <strong>create the Household</strong></li>
+                       <li>Add <strong>Residents</strong> to the Household</li>
+                     </ol>
+                   </div>
+                 </div>
+               </div>
+             </div>
 
-            <!-- Actions -->
-            <div class="d-grid gap-2">
-              <button type="submit" class="btn btn-navy py-2 fw-semibold" id="submitBtn" disabled>
-                <i class="bi bi-file-earmark-plus me-2"></i>
-                Issue PTO
-              </button>
-              <a th:href="@{/ptos}" class="btn btn-light py-2">
-                <i class="bi bi-x me-1"></i>Cancel
-              </a>
-              <div class="text-muted small text-center" id="submitMessage">
-                Please upload the PTO Certificate to enable submission
-              </div>
-            </div>
+             <!-- Actions -->
+             <div class="d-grid gap-2">
+               <button type="submit" class="btn btn-navy py-2 fw-semibold" id="submitBtn" disabled>
+                 <i class="bi bi-file-earmark-plus me-2"></i>
+                 Issue PTO
+               </button>
+               <a th:href="@{/ptos}" class="btn btn-light py-2">
+                 <i class="bi bi-x me-1"></i>Cancel
+               </a>
+               <div class="text-muted small text-center" id="submitMessage">
+                 Please upload an ID / Passport copy to enable submission
+               </div>
+             </div>
 
           </div>
         </div>
@@ -507,7 +505,7 @@
 
   // ── File Upload Handling ──────────────────────────────────────────────
   const uploadArea = document.getElementById('uploadArea');
-  const fileInput = document.getElementById('ptoCertificate');
+  const fileInput = document.getElementById('idCopyDocument');
 
   // Click to upload
   uploadArea.addEventListener('click', function() {
@@ -546,9 +544,10 @@
     const file = fileInput.files[0];
     if (!file) return;
 
-    // Validate file type
-    if (file.type !== 'application/pdf') {
-      alert('Please upload a PDF file for the PTO Certificate.');
+    // Validate file type (PDF or image)
+    const allowedTypes = ['application/pdf', 'image/jpeg', 'image/png', 'image/jpg'];
+    if (!file.type || !allowedTypes.includes(file.type)) {
+      alert('Please upload a PDF, JPG, or PNG file for the ID / Passport copy.');
       fileInput.value = '';
       return;
     }
@@ -587,7 +586,7 @@
       uploadedDocument = {
         name: file.name,
         size: (file.size / 1024).toFixed(1) + ' KB',
-        type: 'PTO_CERT'
+        type: 'ID_COPY'
       };
 
       displayUploadedDocument(uploadedDocument);
@@ -606,7 +605,7 @@
     // In a real implementation, you would use:
     // const formData = new FormData();
     // formData.append('file', file);
-    // formData.append('documentType', 'PTO_CERT');
+    // formData.append('documentType', 'ID_COPY');
     // formData.append('entityType', 'PTO');
     // formData.append('entityId', '0'); // Will be updated after PTO creation
     //
@@ -680,7 +679,7 @@
       msg.innerHTML = '<span class="text-success"><i class="bi bi-check-circle me-1"></i>All requirements met! Ready to issue PTO.</span>';
     } else {
       const missing = [];
-      if (!hasDoc) missing.push('PTO Certificate');
+      if (!hasDoc) missing.push('ID / Passport');
       if (!hasParcel) missing.push('Parcel selection');
       if (!hasName) missing.push('Holder Name');
       if (!hasId) missing.push('Valid SA ID');
@@ -690,11 +689,11 @@
 
   // ── Update Summary ──────────────────────────────────────────────────
   function updateSummary() {
-    const docStatus = document.getElementById('summaryDocuments');
+    const idDocStatus = document.getElementById('summaryIdDoc');
     if (uploadedDocument) {
-      docStatus.innerHTML = '<span class="text-success"><i class="bi bi-check-circle me-1"></i>Uploaded</span>';
+      idDocStatus.innerHTML = '<span class="text-success"><i class="bi bi-check-circle me-1"></i>Uploaded</span>';
     } else {
-      docStatus.innerHTML = '<span class="text-danger">Pending</span>';
+      idDocStatus.innerHTML = '<span class="text-danger">Pending</span>';
     }
   }
 
@@ -745,7 +744,7 @@
   document.getElementById('ptoForm').addEventListener('submit', function(e) {
     if (!uploadedDocument) {
       e.preventDefault();
-      alert('Please upload the PTO Certificate before submitting.');
+      alert('Please upload an ID / Passport copy before submitting.');
       return false;
     }
 
@@ -761,7 +760,7 @@
     return true;
   });
 
-  console.log('PTO creation ready. Please upload the PTO Certificate to proceed.');
+  console.log('PTO creation ready. Please upload an ID / Passport copy to proceed.');
 </script>
 </body>
 </html>

@@ -56,7 +56,7 @@ public class DocumentServiceImpl implements DocumentService {
     // Required document types by entity
     private static final java.util.Map<EntityType, List<DocumentType>> REQUIRED_DOCUMENTS =
             java.util.Map.of(
-                    EntityType.PTO, List.of(DocumentType.PTO_CERT),
+                    EntityType.PTO, List.of(DocumentType.ID_COPY),
                     EntityType.RESIDENT, List.of(DocumentType.ID_COPY),
                     EntityType.BUSINESS, List.of(DocumentType.ID_COPY),
                     EntityType.HOUSEHOLD, List.of(DocumentType.ID_COPY)

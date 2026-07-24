@@ -10,7 +10,7 @@ public enum DocumentType {
     public String getDisplayName() {
         return switch (this) {
             case PTO_CERT -> "PTO Certificate";
-            case ID_COPY -> "ID Copy";
+            case ID_COPY -> "ID / Passport";
             case SURVEY -> "Survey Drawing";
             case PHOTO -> "Photo";
             case OTHER -> "Other";
