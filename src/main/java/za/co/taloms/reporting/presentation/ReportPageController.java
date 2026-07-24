@@ -89,8 +89,10 @@ public class ReportPageController {
             // Gender counts for charts
             long maleCount = residentService.countByGender(za.co.taloms.resident.domain.entity.Gender.MALE.name());
             long femaleCount = residentService.countByGender(za.co.taloms.resident.domain.entity.Gender.FEMALE.name());
+            long unknownGenderCount = residentService.countByGenderUnknown();
             model.addAttribute("maleResidents", maleCount);
             model.addAttribute("femaleResidents", femaleCount);
+            model.addAttribute("unknownGenderResidents", unknownGenderCount);
 
             model.addAttribute("pageTitle", "Reports");
             model.addAttribute("currentPage", "reports");

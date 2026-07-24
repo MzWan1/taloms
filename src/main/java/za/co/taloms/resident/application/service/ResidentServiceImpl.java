@@ -222,6 +222,11 @@ public class ResidentServiceImpl implements ResidentService {
         return residentRepository.countByGender(gender);
     }
 
+    @Override
+    public long countByGenderUnknown() {
+        return residentRepository.countByGenderUnknown();
+    }
+
     private ResidentResponse toResponse(Resident resident) {
         return ResidentResponse.builder()
                 .id(resident.getId())

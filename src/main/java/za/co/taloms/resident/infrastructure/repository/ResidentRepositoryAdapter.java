@@ -75,6 +75,11 @@ public class ResidentRepositoryAdapter implements ResidentRepositoryPort {
     }
 
     @Override
+    public long countByGenderUnknown() {
+        return jpaRepository.countByGenderUnknown();
+    }
+
+    @Override
     public long countAll() {
         return jpaRepository.count();
     }
