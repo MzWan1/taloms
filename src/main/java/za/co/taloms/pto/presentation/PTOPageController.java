@@ -151,6 +151,8 @@ public class PTOPageController {
 
             var request = PTORequest.builder()
                     .parcelId(parcelId)
+                    .standNumber(parcel.getStandNumber())
+                    .parcelNumber(parcel.getParcelNumber())
                     .ptoHolderName(ptoHolderName)
                     .idNumber(idNumber)
                     .contactPhone(contactPhone)
