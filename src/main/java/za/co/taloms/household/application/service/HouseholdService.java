@@ -17,6 +17,7 @@ public interface HouseholdService {
     HouseholdResponse deactivateHousehold(Long id, String deactivatedBy);
     HouseholdResponse activateHousehold(Long id, String activatedBy);
     long countAll();
+    long countByVillageId(Long villageId);
     long countActive();
     long countByParcel(Long parcelId);
     boolean hasActiveHousehold(Long parcelId);

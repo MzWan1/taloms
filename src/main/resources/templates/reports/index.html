@@ -467,38 +467,52 @@
             </h6>
         </div>
         <div class="card-body p-4">
-            <form id="reportFilterForm">
-                <div class="row g-3">
-                    <div class="col-12 col-md-3">
-                        <label class="form-label small">Authority</label>
-                        <select id="authorityId" class="form-select">
-                            <option value="">All Authorities</option>
-                            <option th:each="a : ${authorities}"
-                                    th:value="${a.id}"
-                                    th:text="${a.authorityName}">
-                            </option>
-                        </select>
-                    </div>
-                    <div class="col-12 col-md-3">
-                        <label class="form-label small">Village</label>
-                        <select id="villageId" class="form-select">
-                            <option value="">All Villages</option>
-                            <option th:each="v : ${villages}"
-                                    th:value="${v.id}"
-                                    th:text="${v.villageName}">
-                            </option>
-                        </select>
-                    </div>
-                    <div class="col-12 col-md-3">
-                        <label class="form-label small">Date From</label>
-                        <input type="date" id="dateFrom" class="form-control">
-                    </div>
-                    <div class="col-12 col-md-3">
-                        <label class="form-label small">Date To</label>
-                        <input type="date" id="dateTo" class="form-control">
-                    </div>
-                </div>
-            </form>
+<form id="reportFilterForm" action="/reports" method="get">
+                 <div class="row g-3">
+                     <div class="col-12 col-md-3">
+                         <label class="form-label small">Authority</label>
+                         <select id="authorityId" name="authorityId" class="form-select">
+                             <option value="">All Authorities</option>
+                             <option th:each="a : ${authorities}"
+                                     th:value="${a.id}"
+                                     th:text="${a.authorityName}"
+                                     th:selected="${authorityId != null and authorityId == a.id}">
+                             </option>
+                         </select>
+                     </div>
+                     <div class="col-12 col-md-3">
+                         <label class="form-label small">Village</label>
+                         <select id="villageId" name="villageId" class="form-select">
+                             <option value="">All Villages</option>
+                             <option th:each="v : ${villages}"
+                                     th:value="${v.id}"
+                                     th:text="${v.villageName}"
+                                     th:selected="${villageId != null and villageId == v.id}">
+                             </option>
+                         </select>
+                     </div>
+                     <div class="col-12 col-md-3">
+                         <label class="form-label small">Date From</label>
+                         <input type="date" id="dateFrom" name="dateFrom" class="form-control" th:value="${dateFrom}">
+                     </div>
+                     <div class="col-12 col-md-3">
+                         <label class="form-label small">Date To</label>
+                         <input type="date" id="dateTo" name="dateTo" class="form-control" th:value="${dateTo}">
+                     </div>
+                 </div>
+                 <div class="row g-3 mt-1">
+                     <div class="col-auto">
+                         <button type="submit" class="btn btn-primary btn-sm">
+                             <i class="bi bi-funnel me-1"></i>Apply Filters
+                         </button>
+                     </div>
+                     <div class="col-auto">
+                         <a th:href="@{/reports}" class="btn btn-outline-secondary btn-sm">
+                             <i class="bi bi-x-circle me-1"></i>Clear
+                         </a>
+                     </div>
+                 </div>
+             </form>
         </div>
     </div>
 </div>
@@ -517,6 +531,67 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script>
+     function generateReport(reportType, format) {
+         const authorityId = document.getElementById('authorityId').value;
+         const villageId = document.getElementById('villageId').value;
+         const dateFrom = document.getElementById('dateFrom').value;
+         const dateTo = document.getElementById('dateTo').value;
+
+         const request = {
+             reportType: reportType,
+             format: format,
+             authorityId: authorityId ? parseInt(authorityId) : null,
+             villageId: villageId ? parseInt(villageId) : null,
+             dateFrom: dateFrom || null,
+             dateTo: dateTo || null
+         };
+
+         const endpoints = {
+             'PTO_OCCUPANCY_REGISTER': '/api/reports/pto',
+             'LAND_PARCEL_UTILISATION': '/api/reports/parcel',
+             'STAND_ALLOCATION': '/api/reports/stand-allocation',
+             'VILLAGE_POPULATION': '/api/reports/village-population',
+             'HOUSEHOLD_REGISTER': '/api/reports/household-register',
+             'RESIDENT_DEMOGRAPHICS': '/api/reports/resident-demographics',
+             'BUSINESS_OCCUPANCY_REGISTER': '/api/reports/business-occupancy',
+             'ECONOMIC_ACTIVITY': '/api/reports/economic-activity',
+             'USER_ACTIVITY_AUDIT': '/api/reports/user-activity-audit',
+             'DOCUMENT_MANAGEMENT': '/api/reports/document-management',
+             'PERFORMANCE_DASHBOARD': '/api/reports/performance-dashboard',
+             'LAND_BOUNDARY': '/api/reports/land-boundary'
+         };
+
+         const endpoint = endpoints[reportType];
+         if (!endpoint) {
+             alert('Invalid report type');
+             return;
+         }
+
+         fetch(endpoint, {
+             method: 'POST',
+             headers: { 'Content-Type': 'application/json' },
+             body: JSON.stringify(request)
+         })
+             .then(response => {
+                 if (!response.ok) throw new Error('Failed to generate report');
+                 return response.blob();
+             })
+             .then(blob => {
+                 const url = window.URL.createObjectURL(blob);
+                 const a = document.createElement('a');
+                 a.href = url;
+                 a.download = '';
+                 document.body.appendChild(a);
+                 a.click();
+                 document.body.removeChild(a);
+                 window.URL.revokeObjectURL(url);
+             })
+             .catch(error => {
+                 console.error('Error:', error);
+                 alert('Error generating report: ' + error.message);
+             });
+     }
+
      function printReport(reportType) {
          const authorityId = document.getElementById('authorityId').value;
          const villageId = document.getElementById('villageId').value;
@@ -579,7 +654,6 @@
                  alert('Error generating report for printing: ' + error.message);
              });
      }
- }
  </script>
  </body>
  </html>

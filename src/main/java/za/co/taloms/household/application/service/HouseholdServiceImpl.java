@@ -242,6 +242,12 @@ public class HouseholdServiceImpl implements HouseholdService {
 
     @Override
     @Transactional(readOnly = true)
+    public long countByVillageId(Long villageId) {
+        return householdRepository.countByVillageId(villageId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public long countActive() {
         return householdRepository.countByActiveTrue();
     }

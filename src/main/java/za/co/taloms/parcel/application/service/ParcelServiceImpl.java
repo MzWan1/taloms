@@ -348,6 +348,12 @@ public class ParcelServiceImpl implements ParcelService {
 
     @Override
     @Transactional(readOnly = true)
+    public long countByStatusAndVillage(ParcelStatus status, Long villageId) {
+        return parcelRepository.countByStatusAndVillageId(status, villageId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public long countAll() {
         return parcelRepository.countAll();
     }

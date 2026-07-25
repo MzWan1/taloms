@@ -33,6 +33,9 @@ public interface ResidentJpaRepository extends JpaRepository<Resident, Long> {
     @Query(value = "SELECT COUNT(*) FROM residents WHERE gender IS NULL OR TRIM(gender) = ''", nativeQuery = true)
     long countByGenderUnknown();
 
+    @Query(value = "SELECT COUNT(*) FROM residents r JOIN households h ON r.household_id = h.id JOIN parcels p ON h.parcel_id = p.id WHERE p.village_id = :villageId", nativeQuery = true)
+    long countByVillageId(@Param("villageId") Long villageId);
+
     @Query("SELECT r FROM Resident r ORDER BY r.createdAt DESC")
     List<Resident> findAllOrderByCreatedAtDesc();
 }

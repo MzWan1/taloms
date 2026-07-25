@@ -24,6 +24,7 @@ public interface ParcelService {
     void deleteParcel(Long id, String deletedBy);
     long countByStatus(ParcelStatus status);
     long countByVillage(Long villageId);
+    long countByStatusAndVillage(ParcelStatus status, Long villageId);
     long countAll();
     boolean isStandNumberUnique(String standNumber, Long villageId);
     Double calculateArea(List<BoundaryPointDto> boundaries);

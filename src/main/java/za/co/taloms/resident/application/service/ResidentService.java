@@ -22,5 +22,6 @@ public interface ResidentService {
     long countByHousehold(Long householdId);
     long countByGender(String gender);
     long countByGenderUnknown();
+    long countByVillageId(Long villageId);
     boolean existsByIdNumber(String idNumber);
 }

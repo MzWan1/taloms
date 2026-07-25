@@ -23,5 +23,6 @@ public interface BusinessOccupancyService {
     BusinessOccupancyResponse deactivateOccupancy(Long id, String deactivatedBy);
     long countByStatus(BusinessStatus status);
     long countAll();
+    long countByVillageId(Long villageId);
     boolean existsByParcelId(Long parcelId);
 }

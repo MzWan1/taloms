@@ -286,6 +286,12 @@ public class BusinessOccupancyServiceImpl implements BusinessOccupancyService {
 
     @Override
     @Transactional(readOnly = true)
+    public long countByVillageId(Long villageId) {
+        return businessRepository.countByVillageId(villageId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public boolean existsByParcelId(Long parcelId) {
         return businessRepository.existsByParcelId(parcelId);
     }

@@ -21,5 +21,11 @@ public interface PTOService {
     PTOResponse reactivatePTO(Long id, String notes, String reactivatedBy);
     long countByStatus(PTOStatus status);
     long countAll();
+    long countByTraditionalAuthorityIdAndStatus(Long authorityId, PTOStatus status);
+    long countByVillageIdAndStatus(Long villageId, PTOStatus status);
+    long countByVillageId(Long villageId);
+    long countByAuthorityIdAndIssueDateBetween(Long authorityId, java.time.LocalDate dateFrom, java.time.LocalDate dateTo);
+    long countByVillageIdAndIssueDateBetween(Long villageId, java.time.LocalDate dateFrom, java.time.LocalDate dateTo);
+    long countByIssueDateBetween(java.time.LocalDate dateFrom, java.time.LocalDate dateTo);
     void reinstate(Long id, String reason);
 }

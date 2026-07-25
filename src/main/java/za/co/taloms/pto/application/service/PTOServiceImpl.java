@@ -440,6 +440,42 @@ public class PTOServiceImpl implements PTOService {
         return ptoRepository.countAll();
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public long countByTraditionalAuthorityIdAndStatus(Long authorityId, PTOStatus status) {
+        return ptoRepository.countByTraditionalAuthorityIdAndStatus(authorityId, status);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public long countByVillageIdAndStatus(Long villageId, PTOStatus status) {
+        return ptoRepository.countByVillageIdAndStatus(villageId, status);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public long countByVillageId(Long villageId) {
+        return ptoRepository.countByVillageId(villageId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public long countByAuthorityIdAndIssueDateBetween(Long authorityId, java.time.LocalDate dateFrom, java.time.LocalDate dateTo) {
+        return ptoRepository.countByAuthorityIdAndIssueDateBetween(authorityId, dateFrom, dateTo);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public long countByVillageIdAndIssueDateBetween(Long villageId, java.time.LocalDate dateFrom, java.time.LocalDate dateTo) {
+        return ptoRepository.countByVillageIdAndIssueDateBetween(villageId, dateFrom, dateTo);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public long countByIssueDateBetween(java.time.LocalDate dateFrom, java.time.LocalDate dateTo) {
+        return ptoRepository.countByIssueDateBetween(dateFrom, dateTo);
+    }
+
     private PTOResponse toResponse(PTO p) {
         return PTOResponse.builder()
                 .id(p.getId())

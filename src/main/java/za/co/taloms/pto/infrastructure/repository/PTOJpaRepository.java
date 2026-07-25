@@ -43,6 +43,21 @@ public interface PTOJpaRepository extends JpaRepository<PTO, Long> {
 
     long countByTraditionalAuthorityId(Long authorityId);
 
+    long countByTraditionalAuthorityIdAndStatus(Long authorityId, PTOStatus status);
+
+    long countByVillageIdAndStatus(Long villageId, PTOStatus status);
+
+    long countByVillageId(Long villageId);
+
+    @Query(value = "SELECT COUNT(*) FROM pto_records WHERE traditional_authority_id = :authorityId AND issue_date BETWEEN :dateFrom AND :dateTo", nativeQuery = true)
+    long countByAuthorityIdAndIssueDateBetween(@Param("authorityId") Long authorityId, @Param("dateFrom") java.time.LocalDate dateFrom, @Param("dateTo") java.time.LocalDate dateTo);
+
+    @Query(value = "SELECT COUNT(*) FROM pto_records WHERE village_id = :villageId AND issue_date BETWEEN :dateFrom AND :dateTo", nativeQuery = true)
+    long countByVillageIdAndIssueDateBetween(@Param("villageId") Long villageId, @Param("dateFrom") java.time.LocalDate dateFrom, @Param("dateTo") java.time.LocalDate dateTo);
+
+    @Query(value = "SELECT COUNT(*) FROM pto_records WHERE issue_date BETWEEN :dateFrom AND :dateTo", nativeQuery = true)
+    long countByIssueDateBetween(@Param("dateFrom") java.time.LocalDate dateFrom, @Param("dateTo") java.time.LocalDate dateTo);
+
     @Query("SELECT p FROM PTO p WHERE p.village.id = :villageId ORDER BY p.createdAt DESC")
     List<PTO> findByVillageId(@Param("villageId") Long villageId);
 

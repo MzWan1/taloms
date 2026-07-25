@@ -37,6 +37,8 @@ public interface BusinessOccupancyJpaRepository extends JpaRepository<BusinessOc
 
     long countByStatus(BusinessStatus status);
 
+    long countByVillageId(@Param("villageId") Long villageId);
+
     @Query("SELECT b FROM BusinessOccupancy b ORDER BY b.createdAt DESC")
     List<BusinessOccupancy> findAllOrderByCreatedAtDesc();
 }

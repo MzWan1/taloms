@@ -101,4 +101,6 @@ public interface ParcelJpaRepository extends JpaRepository<Parcel, Long> {
     long countByStatus(ParcelStatus status);
 
     long countByVillageId(Long villageId);
+
+    long countByStatusAndVillageId(ParcelStatus status, Long villageId);
 }

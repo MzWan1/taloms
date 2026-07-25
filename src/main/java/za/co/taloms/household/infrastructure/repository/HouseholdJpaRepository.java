@@ -71,6 +71,9 @@ public interface HouseholdJpaRepository extends JpaRepository<Household, Long> {
 
     long countByParcelId(Long parcelId);
 
+    @Query(value = "SELECT COUNT(*) FROM households h JOIN parcels p ON h.parcel_id = p.id WHERE p.village_id = :villageId", nativeQuery = true)
+    long countByVillageId(@Param("villageId") Long villageId);
+
     @Query("""
            SELECT h FROM Household h
            LEFT JOIN FETCH h.parcel p
