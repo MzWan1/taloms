@@ -37,6 +37,7 @@ public interface BusinessOccupancyJpaRepository extends JpaRepository<BusinessOc
 
     long countByStatus(BusinessStatus status);
 
+    @Query(value = "SELECT COUNT(*) FROM business_occupancies bo JOIN parcels p ON bo.parcel_id = p.id WHERE p.village_id = :villageId", nativeQuery = true)
     long countByVillageId(@Param("villageId") Long villageId);
 
     @Query("SELECT b FROM BusinessOccupancy b ORDER BY b.createdAt DESC")
