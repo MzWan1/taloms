@@ -21,6 +21,12 @@ public interface PTORepositoryPort {
     boolean existsByParcelIdAndStatus(Long parcelId, PTOStatus status);  // Check if parcel has PTO with specific status
     long countByStatus(PTOStatus status);
     long countByTraditionalAuthorityId(Long authorityId);
+    long countByTraditionalAuthorityIdAndStatus(Long authorityId, PTOStatus status);
+    long countByVillageIdAndStatus(Long villageId, PTOStatus status);
+    long countByVillageId(Long villageId);
+    long countByAuthorityIdAndIssueDateBetween(Long authorityId, java.time.LocalDate dateFrom, java.time.LocalDate dateTo);
+    long countByVillageIdAndIssueDateBetween(Long villageId, java.time.LocalDate dateFrom, java.time.LocalDate dateTo);
+    long countByIssueDateBetween(java.time.LocalDate dateFrom, java.time.LocalDate dateTo);
     long countAll();
     List<PTO> findByIdNumberAndStatus(String idNumber, PTOStatus status);
     boolean existsByIdNumberAndVillageIdAndStatus(String idNumber, Long villageId, PTOStatus status);

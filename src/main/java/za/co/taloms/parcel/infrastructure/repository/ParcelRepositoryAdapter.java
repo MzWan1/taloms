@@ -91,6 +91,11 @@ public class ParcelRepositoryAdapter implements ParcelRepositoryPort {
     }
 
     @Override
+    public long countByStatusAndVillageId(ParcelStatus status, Long villageId) {
+        return jpaRepository.countByStatusAndVillageId(status, villageId);
+    }
+
+    @Override
     public long countAll() {
         return jpaRepository.count();
     }

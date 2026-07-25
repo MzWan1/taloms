@@ -17,5 +17,6 @@ public interface HouseholdRepositoryPort {
     boolean existsActiveByParcelId(Long parcelId);
     long countByActiveTrue();
     long countByParcelId(Long parcelId);
+    long countByVillageId(Long villageId);
     long countAll();
 }

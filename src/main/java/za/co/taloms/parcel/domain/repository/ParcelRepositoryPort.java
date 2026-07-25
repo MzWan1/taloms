@@ -22,6 +22,7 @@ public interface ParcelRepositoryPort {
     boolean existsByParcelNumber(String parcelNumber);
     long countByStatus(ParcelStatus status);
     long countByVillageId(Long villageId);
+    long countByStatusAndVillageId(ParcelStatus status, Long villageId);
     long countAll();
     void deleteById(Long id);
 }

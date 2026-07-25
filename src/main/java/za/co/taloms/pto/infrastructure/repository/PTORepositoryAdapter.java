@@ -91,6 +91,36 @@ public class PTORepositoryAdapter implements PTORepositoryPort {
     }
 
     @Override
+    public long countByTraditionalAuthorityIdAndStatus(Long authorityId, PTOStatus status) {
+        return jpaRepository.countByTraditionalAuthorityIdAndStatus(authorityId, status);
+    }
+
+    @Override
+    public long countByVillageIdAndStatus(Long villageId, PTOStatus status) {
+        return jpaRepository.countByVillageIdAndStatus(villageId, status);
+    }
+
+    @Override
+    public long countByVillageId(Long villageId) {
+        return jpaRepository.countByVillageId(villageId);
+    }
+
+    @Override
+    public long countByAuthorityIdAndIssueDateBetween(Long authorityId, java.time.LocalDate dateFrom, java.time.LocalDate dateTo) {
+        return jpaRepository.countByAuthorityIdAndIssueDateBetween(authorityId, dateFrom, dateTo);
+    }
+
+    @Override
+    public long countByVillageIdAndIssueDateBetween(Long villageId, java.time.LocalDate dateFrom, java.time.LocalDate dateTo) {
+        return jpaRepository.countByVillageIdAndIssueDateBetween(villageId, dateFrom, dateTo);
+    }
+
+    @Override
+    public long countByIssueDateBetween(java.time.LocalDate dateFrom, java.time.LocalDate dateTo) {
+        return jpaRepository.countByIssueDateBetween(dateFrom, dateTo);
+    }
+
+    @Override
     public List<PTO> findByIdNumberAndStatus(String idNumber, PTOStatus status) {
         return jpaRepository.findByIdNumberAndStatus(idNumber, status);
     }

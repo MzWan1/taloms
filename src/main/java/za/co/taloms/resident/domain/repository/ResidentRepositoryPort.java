@@ -19,5 +19,6 @@ public interface ResidentRepositoryPort {
     long countByActiveTrue();
     long countByGender(String gender);
     long countByGenderUnknown();
+    long countByVillageId(Long villageId);
     long countAll();
 }

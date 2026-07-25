@@ -80,6 +80,11 @@ public class ResidentRepositoryAdapter implements ResidentRepositoryPort {
     }
 
     @Override
+    public long countByVillageId(Long villageId) {
+        return jpaRepository.countByVillageId(villageId);
+    }
+
+    @Override
     public long countAll() {
         return jpaRepository.count();
     }

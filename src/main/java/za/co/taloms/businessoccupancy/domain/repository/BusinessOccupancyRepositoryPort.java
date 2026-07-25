@@ -22,5 +22,6 @@ public interface BusinessOccupancyRepositoryPort {
     boolean existsByRegistrationNumber(String registrationNumber);
     Optional<BusinessOccupancy> findByRegistrationNumber(String registrationNumber);
     long countByStatus(BusinessStatus status);
+    long countByVillageId(Long villageId);
     long countAll();
 }

@@ -74,6 +74,11 @@ public class HouseholdRepositoryAdapter implements HouseholdRepositoryPort {
     }
 
     @Override
+    public long countByVillageId(Long villageId) {
+        return jpaRepository.countByVillageId(villageId);
+    }
+
+    @Override
     public long countAll() {
         return jpaRepository.count();
     }
