@@ -161,29 +161,6 @@
                                 <div class="form-text">Must be unique within the village</div>
                             </div>
 
-                            <!-- Parcel Type -->
-                            <div class="col-12">
-                                <label for="parcelType" class="form-label">
-                                    Parcel Type <span class="text-danger">*</span>
-                                </label>
-                                <div class="input-group">
-                                    <span class="input-group-text">
-                                        <i class="bi bi-tag"></i>
-                                    </span>
-                                    <select id="parcelType"
-                                            name="parcelType"
-                                            class="form-select"
-                                            required>
-                                        <option value="">— Select Type —</option>
-                                        <option th:each="t : ${types}"
-                                                th:value="${t.name()}"
-                                                th:text="${t.displayName}"
-                                                th:selected="${form.parcelType == t.name()}">
-                                        </option>
-                                    </select>
-                                </div>
-                            </div>
-
                             <!-- Traditional Authority -->
                             <div class="col-12">
                                 <label for="traditionalAuthorityId" class="form-label">

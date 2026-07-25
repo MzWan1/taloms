@@ -2,7 +2,6 @@ package za.co.taloms.parcel.domain.repository;
 
 import za.co.taloms.parcel.domain.entity.Parcel;
 import za.co.taloms.parcel.domain.entity.ParcelStatus;
-import za.co.taloms.parcel.domain.entity.ParcelType;
 import java.util.List;
 import java.util.Optional;
 
@@ -14,7 +13,6 @@ public interface ParcelRepositoryPort {
     List<Parcel> findAll();
     List<Parcel> findByVillageId(Long villageId);
     List<Parcel> findByStatus(ParcelStatus status);
-    List<Parcel> findByParcelType(ParcelType parcelType);
     List<Parcel> findByStatusAndVillageId(ParcelStatus status, Long villageId);
     List<Parcel> findAvailable(Long villageId);
     List<Parcel> findAllAvailable();  // NEW METHOD

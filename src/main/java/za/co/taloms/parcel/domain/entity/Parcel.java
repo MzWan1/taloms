@@ -27,9 +27,6 @@ public class Parcel {
     @Column(name = "stand_number", nullable = false, length = 20)
     private String standNumber;
 
-    @Enumerated(EnumType.STRING)
-    @Column(name = "parcel_type", nullable = false, length = 30)
-    private ParcelType parcelType;
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 30)

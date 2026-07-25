@@ -15,7 +15,6 @@ import za.co.taloms.household.application.service.HouseholdService;
 import za.co.taloms.parcel.application.dto.ParcelResponse;
 import za.co.taloms.parcel.application.service.ParcelService;
 import za.co.taloms.parcel.domain.entity.ParcelStatus;
-import za.co.taloms.parcel.domain.entity.ParcelType;
 import za.co.taloms.pto.application.dto.PTOResponse;
 import za.co.taloms.pto.application.service.PTOService;
 import za.co.taloms.pto.domain.entity.PTOStatus;
@@ -181,11 +180,6 @@ public class ReportDataServiceImpl implements ReportDataService {
         metrics.put("Allocated Area (m²)", String.format("%.2f", allocatedArea));
         metrics.put("Available Area (m²)", String.format("%.2f", availableArea));
 
-        Map<Enum<?>, Long> byType = parcels.stream()
-                .filter(p -> p.getParcelType() != null)
-                .collect(Collectors.groupingBy(ParcelResponse::getParcelType, TreeMap::new, Collectors.counting()));
-        byType.forEach((t, c) -> metrics.put(t.name(), String.valueOf(c)));
-
         long unallocated = parcels.stream().filter(p -> p.getPtoId() == null).count();
         metrics.put("Unallocated (No PTO)", String.valueOf(unallocated));
 
@@ -196,23 +190,21 @@ public class ReportDataServiceImpl implements ReportDataService {
 
         metrics.put("Disputed Count", String.valueOf(disputed));
 
-        List<String> disputedHeaders = Arrays.asList("Parcel #", "Stand #", "Type", "Village", "Area (m²)", "Status");
+        List<String> disputedHeaders = Arrays.asList("Parcel #", "Stand #", "Village", "Area (m²)", "Status");
         List<List<String>> disputedRows = parcels.stream()
                 .filter(p -> p.getStatus() == ParcelStatus.DISPUTED)
                 .map(p -> Arrays.asList(
                         p.getParcelNumber() != null ? p.getParcelNumber() : "",
                         p.getStandNumber() != null ? p.getStandNumber() : "",
-                        p.getParcelTypeDisplay() != null ? p.getParcelTypeDisplay() : "",
                         p.getVillageName() != null ? p.getVillageName() : "",
                         p.getAreaM2() != null ? p.getAreaM2().toString() : "",
                         p.getStatusDisplay() != null ? p.getStatusDisplay() : ""
                 )).collect(Collectors.toList());
 
-        List<String> allHeaders = Arrays.asList("Parcel #", "Stand #", "Type", "Status", "Village", "Area (m²)", "PTO Linked");
+        List<String> allHeaders = Arrays.asList("Parcel #", "Stand #", "Status", "Village", "Area (m²)", "PTO Linked");
         List<List<String>> allRows = parcels.stream().map(p -> Arrays.asList(
                 p.getParcelNumber() != null ? p.getParcelNumber() : "",
                 p.getStandNumber() != null ? p.getStandNumber() : "",
-                p.getParcelTypeDisplay() != null ? p.getParcelTypeDisplay() : "",
                 p.getStatusDisplay() != null ? p.getStatusDisplay() : "",
                 p.getVillageName() != null ? p.getVillageName() : "",
                 p.getAreaM2() != null ? p.getAreaM2().toString() : "",
@@ -284,13 +276,12 @@ public class ReportDataServiceImpl implements ReportDataService {
                 .collect(Collectors.groupingBy(ParcelResponse::getVillageName, TreeMap::new, Collectors.counting()));
         availableByVillage.forEach((v, c) -> metrics.put("Available - " + v, String.valueOf(c)));
 
-        List<String> headers = Arrays.asList("Parcel #", "Stand #", "Type", "Village", "Area (m²)", "Status");
+        List<String> headers = Arrays.asList("Parcel #", "Stand #", "Village", "Area (m²)", "Status");
         List<List<String>> rows = parcels.stream()
                 .filter(p -> p.getStatus() == ParcelStatus.AVAILABLE)
                 .map(p -> Arrays.asList(
                         p.getParcelNumber() != null ? p.getParcelNumber() : "",
                         p.getStandNumber() != null ? p.getStandNumber() : "",
-                        p.getParcelTypeDisplay() != null ? p.getParcelTypeDisplay() : "",
                         p.getVillageName() != null ? p.getVillageName() : "",
                         p.getAreaM2() != null ? p.getAreaM2().toString() : "",
                         p.getStatusDisplay() != null ? p.getStatusDisplay() : ""
@@ -638,22 +629,9 @@ public class ReportDataServiceImpl implements ReportDataService {
 
         Map<String, String> metrics = new LinkedHashMap<>();
 
-        double commercialArea = parcels.stream()
-                .filter(p -> p.getParcelType() == ParcelType.BUSINESS)
+        double totalArea = parcels.stream()
                 .mapToDouble(p -> p.getAreaM2() != null ? p.getAreaM2() : 0.0).sum();
-        double agriculturalArea = parcels.stream()
-                .filter(p -> p.getParcelType() == ParcelType.AGRICULTURAL)
-                .mapToDouble(p -> p.getAreaM2() != null ? p.getAreaM2() : 0.0).sum();
-        double residentialArea = parcels.stream()
-                .filter(p -> p.getParcelType() == ParcelType.RESIDENTIAL)
-                .mapToDouble(p -> p.getAreaM2() != null ? p.getAreaM2() : 0.0).sum();
-        metrics.put("Commercial Land Area (m²)", String.format("%.2f", commercialArea));
-        metrics.put("Agricultural Land Area (m²)", String.format("%.2f", agriculturalArea));
-        metrics.put("Residential Land Area (m²)", String.format("%.2f", residentialArea));
-
-        double residentialLand = residentialArea;
-        double businessToResidential = residentialLand > 0 ? (businesses.size() * 100.0 / residentialLand) : 0.0;
-        metrics.put("Business to Residential Ratio", String.format("%.2f", businessToResidential));
+        metrics.put("Total Land Area (m²)", String.format("%.2f", totalArea));
 
         double businessesPer100Households = households.isEmpty() ? 0.0 : (businesses.size() * 100.0 / households.size());
         metrics.put("Businesses per 100 Households", String.format("%.2f", businessesPer100Households));

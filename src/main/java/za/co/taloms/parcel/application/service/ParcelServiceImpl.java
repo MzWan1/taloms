@@ -14,7 +14,6 @@ import za.co.taloms.parcel.application.dto.ParcelResponse;
 import za.co.taloms.parcel.domain.entity.Parcel;
 import za.co.taloms.parcel.domain.entity.ParcelBoundary;
 import za.co.taloms.parcel.domain.entity.ParcelStatus;
-import za.co.taloms.parcel.domain.entity.ParcelType;
 import za.co.taloms.parcel.domain.repository.ParcelBoundaryRepositoryPort;
 import za.co.taloms.parcel.domain.repository.ParcelRepositoryPort;
 import za.co.taloms.pto.domain.entity.PTOStatus;
@@ -75,7 +74,6 @@ public class ParcelServiceImpl implements ParcelService {
         var parcel = Parcel.builder()
                 .parcelNumber(parcelNumber)
                 .standNumber(request.getStandNumber())
-                .parcelType(ParcelType.valueOf(request.getParcelType()))
                 .status(ParcelStatus.AVAILABLE)
                 .areaM2(areaM2)
                 .areaHectares(areaHectares)
@@ -154,7 +152,6 @@ public class ParcelServiceImpl implements ParcelService {
         Double[] centroid = areaCalculator.calculateCentroid(request.getBoundaries());
 
         parcel.setStandNumber(request.getStandNumber());
-        parcel.setParcelType(ParcelType.valueOf(request.getParcelType()));
         parcel.setAreaM2(areaM2);
         parcel.setAreaHectares(areaHectares);
         parcel.setCentroidLat(centroid[0]);
@@ -195,14 +192,6 @@ public class ParcelServiceImpl implements ParcelService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ParcelResponse> findByVillage(Long villageId) {
-        return parcelRepository.findByVillageId(villageId).stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    @Transactional(readOnly = true)
     public List<ParcelResponse> findByStatus(ParcelStatus status) {
         return parcelRepository.findByStatus(status).stream()
                 .map(this::toResponse)
@@ -211,8 +200,8 @@ public class ParcelServiceImpl implements ParcelService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ParcelResponse> findByParcelType(ParcelType parcelType) {
-        return parcelRepository.findByParcelType(parcelType).stream()
+    public List<ParcelResponse> findByVillage(Long villageId) {
+        return parcelRepository.findByVillageId(villageId).stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
@@ -399,9 +388,6 @@ public class ParcelServiceImpl implements ParcelService {
                 .id(parcel.getId())
                 .parcelNumber(parcel.getParcelNumber())
                 .standNumber(parcel.getStandNumber())
-                .parcelType(parcel.getParcelType())
-                .parcelTypeDisplay(parcel.getParcelType().getDisplayName())
-                .parcelTypeBadgeClass(parcel.getParcelType().getBadgeClass())
                 .status(parcel.getStatus())
                 .statusDisplay(parcel.getStatus().getDisplayName())
                 .statusBadgeClass(parcel.getStatus().getBadgeClass())

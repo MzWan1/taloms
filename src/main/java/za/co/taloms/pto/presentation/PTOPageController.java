@@ -147,6 +147,8 @@ public class PTOPageController {
                 return "redirect:/ptos/create";
             }
 
+            var village = villageService.findById(parcel.getVillageId());
+
             var request = PTORequest.builder()
                     .parcelId(parcelId)
                     .ptoHolderName(ptoHolderName)
@@ -158,10 +160,7 @@ public class PTOPageController {
                     .expiryDate(expiryDate != null && !expiryDate.isBlank() ? LocalDate.parse(expiryDate) : null)
                     .notes(notes)
                     .villageId(parcel.getVillageId())
-                    .traditionalAuthorityId(parcel.getVillageId() != null ?
-                            // We need to get the authority from the village
-                            // This is a simplified approach - you may need to fetch the authority ID differently
-                            parcel.getVillageId() : null)
+                    .traditionalAuthorityId(village != null ? village.getTraditionalAuthorityId() : null)
                     .build();
 
             var response = ptoService.createPTO(request, userDetails.getUsername());

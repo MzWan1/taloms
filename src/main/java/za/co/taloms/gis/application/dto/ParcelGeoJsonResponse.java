@@ -31,8 +31,6 @@ public class ParcelGeoJsonResponse {
         private Long id;
         private String parcelNumber;
         private String standNumber;
-        private String parcelType;
-        private String parcelTypeDisplay;
         private String status;
         private String statusDisplay;
         private String villageName;

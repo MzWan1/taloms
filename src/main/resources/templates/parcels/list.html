@@ -159,10 +159,6 @@
                         <td class="fw-semibold small" th:text="${parcel.standNumber}">Stand 1</td>
                         <td class="small" th:text="${parcel.villageName}">Village</td>
                         <td>
-                                <span th:class="${'badge ' + parcel.parcelTypeBadgeClass}"
-                                      th:text="${parcel.parcelTypeDisplay}">Type</span>
-                        </td>
-                        <td>
                                 <span th:class="${'badge ' + parcel.statusBadgeClass}"
                                       th:text="${parcel.statusDisplay}">Status</span>
                         </td>

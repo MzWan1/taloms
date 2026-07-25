@@ -13,7 +13,6 @@ import za.co.taloms.parcel.application.dto.ParcelRequest;
 import za.co.taloms.parcel.application.dto.ParcelResponse;
 import za.co.taloms.parcel.application.service.ParcelService;
 import za.co.taloms.parcel.domain.entity.ParcelStatus;
-import za.co.taloms.parcel.domain.entity.ParcelType;
 import java.util.List;
 
 @RestController
@@ -70,12 +69,6 @@ public class ParcelRestController {
     @GetMapping("/status/{status}")
     public ResponseEntity<ApiResponse<List<ParcelResponse>>> getByStatus(@PathVariable ParcelStatus status) {
         return ResponseEntity.ok(ApiResponse.success(parcelService.findByStatus(status),
-                "Parcels retrieved successfully"));
-    }
-
-    @GetMapping("/type/{parcelType}")
-    public ResponseEntity<ApiResponse<List<ParcelResponse>>> getByType(@PathVariable ParcelType parcelType) {
-        return ResponseEntity.ok(ApiResponse.success(parcelService.findByParcelType(parcelType),
                 "Parcels retrieved successfully"));
     }
 

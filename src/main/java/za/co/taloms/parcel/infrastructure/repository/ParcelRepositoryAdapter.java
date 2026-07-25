@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import za.co.taloms.parcel.domain.entity.Parcel;
 import za.co.taloms.parcel.domain.entity.ParcelStatus;
-import za.co.taloms.parcel.domain.entity.ParcelType;
 import za.co.taloms.parcel.domain.repository.ParcelRepositoryPort;
 import java.util.List;
 import java.util.Optional;
@@ -48,11 +47,6 @@ public class ParcelRepositoryAdapter implements ParcelRepositoryPort {
     @Override
     public List<Parcel> findByStatus(ParcelStatus status) {
         return jpaRepository.findByStatus(status);
-    }
-
-    @Override
-    public List<Parcel> findByParcelType(ParcelType parcelType) {
-        return jpaRepository.findByParcelType(parcelType);
     }
 
     @Override

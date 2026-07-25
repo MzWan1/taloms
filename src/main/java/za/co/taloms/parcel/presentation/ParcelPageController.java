@@ -16,7 +16,6 @@ import za.co.taloms.parcel.application.dto.ParcelRequest;
 import za.co.taloms.parcel.application.dto.ParcelResponse;
 import za.co.taloms.parcel.application.service.ParcelService;
 import za.co.taloms.parcel.domain.entity.ParcelStatus;
-import za.co.taloms.parcel.domain.entity.ParcelType;
 import za.co.taloms.traditionalauthority.application.service.TraditionalAuthorityService;
 import za.co.taloms.traditionalauthority.application.service.VillageService;
 
@@ -41,7 +40,6 @@ public class ParcelPageController {
             var parcels = parcelService.findAll();
             model.addAttribute("parcels", parcels);
             model.addAttribute("statuses", ParcelStatus.values());
-            model.addAttribute("types", ParcelType.values());
             model.addAttribute("totalCount", parcelService.countAll());
             model.addAttribute("availableCount", parcelService.countByStatus(ParcelStatus.AVAILABLE));
             model.addAttribute("allocatedCount", parcelService.countByStatus(ParcelStatus.ALLOCATED));
@@ -54,7 +52,6 @@ public class ParcelPageController {
             model.addAttribute("errorMessage", "Error loading parcels: " + e.getMessage());
             model.addAttribute("parcels", Collections.emptyList());
             model.addAttribute("statuses", ParcelStatus.values());
-            model.addAttribute("types", ParcelType.values());
             model.addAttribute("totalCount", 0L);
             model.addAttribute("availableCount", 0L);
             model.addAttribute("allocatedCount", 0L);
@@ -76,7 +73,6 @@ public class ParcelPageController {
             }
 
             model.addAttribute("authorities", authorities);
-            model.addAttribute("types", ParcelType.values());
             model.addAttribute("statuses", ParcelStatus.values());
             model.addAttribute("pageTitle", "Create Parcel");
             model.addAttribute("currentPage", "parcels");
@@ -85,7 +81,6 @@ public class ParcelPageController {
             log.error("Error loading create parcel form: {}", e.getMessage(), e);
             model.addAttribute("errorMessage", "Error loading form: " + e.getMessage());
             model.addAttribute("authorities", Collections.emptyList());
-            model.addAttribute("types", ParcelType.values());
             model.addAttribute("statuses", ParcelStatus.values());
             model.addAttribute("pageTitle", "Create Parcel");
             model.addAttribute("currentPage", "parcels");
@@ -100,8 +95,8 @@ public class ParcelPageController {
             @AuthenticationPrincipal UserDetails userDetails,
             RedirectAttributes ra) {
 
-        log.info("Creating parcel - Stand: {}, Type: {}, Village: {}, Boundaries JSON length: {}",
-                request.getStandNumber(), request.getParcelType(), request.getVillageId(),
+        log.info("Creating parcel - Stand: {}, Village: {}, Boundaries JSON length: {}",
+                request.getStandNumber(), request.getVillageId(),
                 boundariesJson != null ? boundariesJson.length() : 0);
 
         try {
@@ -163,7 +158,6 @@ public class ParcelPageController {
 
             var form = ParcelRequest.builder()
                     .standNumber(parcel.getStandNumber())
-                    .parcelType(parcel.getParcelType().name())
                     .villageId(parcel.getVillageId())
                     .notes(parcel.getNotes())
                     .boundaries(parcel.getBoundaries())
@@ -176,7 +170,6 @@ public class ParcelPageController {
             model.addAttribute("form", form);
             model.addAttribute("authorities", authorities);
             model.addAttribute("villages", villages);
-            model.addAttribute("types", ParcelType.values());
             model.addAttribute("statuses", ParcelStatus.values());
             model.addAttribute("pageTitle", "Edit Parcel " + parcel.getParcelNumber());
             model.addAttribute("currentPage", "parcels");

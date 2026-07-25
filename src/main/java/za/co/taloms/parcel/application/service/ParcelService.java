@@ -4,7 +4,6 @@ import za.co.taloms.parcel.application.dto.BoundaryPointDto;
 import za.co.taloms.parcel.application.dto.ParcelRequest;
 import za.co.taloms.parcel.application.dto.ParcelResponse;
 import za.co.taloms.parcel.domain.entity.ParcelStatus;
-import za.co.taloms.parcel.domain.entity.ParcelType;
 import java.util.List;
 
 public interface ParcelService {
@@ -15,7 +14,6 @@ public interface ParcelService {
     List<ParcelResponse> findAll();
     List<ParcelResponse> findByVillage(Long villageId);
     List<ParcelResponse> findByStatus(ParcelStatus status);
-    List<ParcelResponse> findByParcelType(ParcelType parcelType);
     List<ParcelResponse> findAvailable(Long villageId);
     List<ParcelResponse> findAllAvailable();  // NEW METHOD
     List<ParcelResponse> search(String query);

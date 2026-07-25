@@ -5,7 +5,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import za.co.taloms.parcel.domain.entity.Parcel;
 import za.co.taloms.parcel.domain.entity.ParcelStatus;
-import za.co.taloms.parcel.domain.entity.ParcelType;
 import java.util.List;
 import java.util.Optional;
 
@@ -50,16 +49,6 @@ public interface ParcelJpaRepository extends JpaRepository<Parcel, Long> {
            WHERE p.status = :status
            """)
     List<Parcel> findByStatus(@Param("status") ParcelStatus status);
-
-    @Query("""
-           SELECT DISTINCT p FROM Parcel p
-           LEFT JOIN FETCH p.boundaries b
-           LEFT JOIN FETCH p.village v
-           LEFT JOIN FETCH v.traditionalAuthority ta
-           LEFT JOIN FETCH p.pto
-           WHERE p.parcelType = :parcelType
-           """)
-    List<Parcel> findByParcelType(@Param("parcelType") ParcelType parcelType);
 
     @Query("""
            SELECT DISTINCT p FROM Parcel p

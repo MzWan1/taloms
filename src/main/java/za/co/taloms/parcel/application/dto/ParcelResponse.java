@@ -2,7 +2,6 @@ package za.co.taloms.parcel.application.dto;
 
 import lombok.*;
 import za.co.taloms.parcel.domain.entity.ParcelStatus;
-import za.co.taloms.parcel.domain.entity.ParcelType;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -15,9 +14,6 @@ public class ParcelResponse {
     private Long id;
     private String parcelNumber;
     private String standNumber;
-    private ParcelType parcelType;
-    private String parcelTypeDisplay;
-    private String parcelTypeBadgeClass;
     private ParcelStatus status;
     private String statusDisplay;
     private String statusBadgeClass;

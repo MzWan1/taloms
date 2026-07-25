@@ -16,8 +16,6 @@ public class ParcelRequest {
     @Size(max = 20, message = "Stand number must not exceed 20 characters")
     private String standNumber;
 
-    @NotNull(message = "Parcel type is required")
-    private String parcelType;
 
     @NotNull(message = "Village is required")
     private Long villageId;

@@ -118,7 +118,6 @@ public class GisServiceImpl implements GisService {
         properties.put("id", parcel.getId());
         properties.put("parcelNumber", parcel.getParcelNumber());
         properties.put("standNumber", parcel.getStandNumber());
-        properties.put("parcelType", parcel.getParcelTypeDisplay());
         properties.put("status", parcel.getStatusDisplay());
         properties.put("areaM2", parcel.getAreaM2());
         properties.put("villageName", parcel.getVillageName());
@@ -203,8 +202,6 @@ public class GisServiceImpl implements GisService {
                             .id(parcel.getId())
                             .parcelNumber(parcel.getParcelNumber())
                             .standNumber(parcel.getStandNumber())
-                            .parcelType(parcel.getParcelType().name())
-                            .parcelTypeDisplay(parcel.getParcelTypeDisplay())
                             .status(parcel.getStatus().name())
                             .statusDisplay(parcel.getStatusDisplay())
                             .villageName(parcel.getVillageName())
@@ -290,7 +287,6 @@ public class GisServiceImpl implements GisService {
             properties.put("id", parcel.getId());
             properties.put("parcelNumber", parcel.getParcelNumber());
             properties.put("standNumber", parcel.getStandNumber());
-            properties.put("parcelType", parcel.getParcelTypeDisplay());
             properties.put("status", parcel.getStatus().name());
             properties.put("statusDisplay", parcel.getStatus().getDisplayName());
             properties.put("villageName", parcel.getVillageName());
