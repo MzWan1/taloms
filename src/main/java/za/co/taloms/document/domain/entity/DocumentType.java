@@ -5,7 +5,10 @@ public enum DocumentType {
     ID_COPY,
     SURVEY,
     PHOTO,
-    OTHER;
+    OTHER,
+    TA_ALLOCATION_LETTER,
+    SITE_SKETCH,
+    COMMUNITY_RESOLUTION;
 
     public String getDisplayName() {
         return switch (this) {
@@ -14,6 +17,9 @@ public enum DocumentType {
             case SURVEY -> "Survey Drawing";
             case PHOTO -> "Photo";
             case OTHER -> "Other";
+            case TA_ALLOCATION_LETTER -> "Traditional Authority Allocation Letter";
+            case SITE_SKETCH -> "Site Sketch / Plan";
+            case COMMUNITY_RESOLUTION -> "Community Resolution";
         };
     }
 
@@ -24,6 +30,9 @@ public enum DocumentType {
             case SURVEY -> "bg-primary text-white";
             case PHOTO -> "bg-warning text-dark";
             case OTHER -> "bg-secondary text-white";
+            case TA_ALLOCATION_LETTER -> "bg-navy text-white";
+            case SITE_SKETCH -> "bg-purple text-white";
+            case COMMUNITY_RESOLUTION -> "bg-dark text-white";
         };
     }
 
@@ -34,6 +43,9 @@ public enum DocumentType {
             case SURVEY -> "bi-map";
             case PHOTO -> "bi-image";
             case OTHER -> "bi-file-earmark";
+            case TA_ALLOCATION_LETTER -> "bi-envelope-letter";
+            case SITE_SKETCH -> "bi-pencil-square";
+            case COMMUNITY_RESOLUTION -> "bi-people";
         };
     }
 }

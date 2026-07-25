@@ -98,4 +98,9 @@ public class ParcelRepositoryAdapter implements ParcelRepositoryPort {
     public void deleteById(Long id) {
         jpaRepository.deleteById(id);
     }
+
+    @Override
+    public List<Parcel> findOverlappingParcels(Long parcelId, Double minLat, Double minLng, Double maxLat, Double maxLng) {
+        return jpaRepository.findOverlappingParcels(parcelId, minLat, minLng, maxLat, maxLng);
+    }
 }

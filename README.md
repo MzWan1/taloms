@@ -58,6 +58,7 @@ The system serves Traditional Councils, Chiefs, Headmen, Land Officers, and admi
 |---|---|
 | **Traditional Authority Management** | Register and manage Chiefs, Headmen, and tribal jurisdictions |
 | **Permission to Occupy (PTO)** | Full PTO lifecycle — creation, approval, revocation, expiry |
+| **PTO Legal Compliance** | Enforces SA PTO legislation: TA allocation letter, site sketch, ID verification |
 | **Land Parcel Management** | Stand demarcation, GPS boundaries, automatic area calculation |
 | **GIS Mapping** | Interactive Leaflet map with OpenStreetMap and PostGIS spatial queries |
 | **Household Management** | Household records linked to parcels and PTOs |
@@ -699,6 +700,191 @@ TALOMS handles personal information as defined by the **Protection of Personal I
 - JWT tokens expire after 8 hours
 - Account lockout activates after 5 consecutive failed login attempts
 - Data retention policies are enforced via Flyway archival scripts
+
+---
+
+## PTO Module — Legal Compliance & Digital Workflow
+
+### Overview
+
+The PTO module digitises the traditional Permission to Occupy issuance process used by Traditional Authorities in South Africa. It enforces legal and administrative requirements derived from:
+
+- The **Constitution of South Africa** (Ss 211–212: recognition of traditional leadership)
+- The **Traditional Leadership and Governance Framework Act 41 of 2003** (TLGFA)
+- The **Traditional and Khoisan Leadership Act 3 of 2019** (TKLA)
+- The **Spatial Planning and Land Use Management Act 16 of 2013** (SPLUMA)
+- **KwaZulu-Natal Land Affairs (Permission to Occupy) Regulations 1994**
+- **Interim Protection of Informal Land Rights Act 31 of 1996** (IPILRA)
+- Relevant High Court judgments (e.g. *Ingonyama Trust / CASAC 2021*; *Ngwasheng v Kgomo 2023*)
+
+### Digital Transformation Objectives
+
+| Paper-Based Process | TALOMS Digital Equivalent | Benefit |
+|---|---|---|
+| Manual PTO register book | Centralised digital PTO records with search | Instant retrieval, audit trail |
+| Hand-written TA allocation letters | Scanned/uploaded TA Allocation Letter with checksum | Tamper-evident, versioned storage |
+| Paper site sketches | Digital Site Sketch / Plan uploads | Geospatially linked, retrievable |
+| Delayed approval queues | Real-time status dashboard | Immediate visibility of pending/active PTOs |
+| Duplicate stand allocations | Automated duplicate detection by parcel & ID | Prevents boundary disputes |
+| Disconnected municipal/TA records | Integrated Traditional Authority → Village → Parcel hierarchy | Single source of truth |
+| Manual POPIA compliance | Role-based access, document download logs, immutable audit trail | Automated compliance reporting |
+
+### PTO Creation Workflow (Digitised)
+
+```
+┌─────────────────┐    ┌──────────────────┐    ┌──────────────────┐
+│  1. Select      │───▶│  2. Enter Holder │───▶│  3. TA Allocation│
+│     Parcel      │    │     Details      │    │     Metadata     │
+│  (AVAILABLE)    │    │  (ID, contact)   │    │ (Allocated by,   │
+│                 │    │                  │    │  date, area, ref)│
+└─────────────────┘    └──────────────────┘    └──────────────────┘
+                                                        │
+                                                        ▼
+┌─────────────────┐    ┌──────────────────┐    ┌──────────────────┐
+│  6. Household   │◀───│  5. Approval     │◀───│  4. Upload        │
+│     Creation    │    │  (TA Admin)      │    │  Documents        │
+│  (after ACTIVE) │    │  Gates on docs   │    │  (TA Letter,      │
+│                 │    │  present)        │    │   Site Sketch)    │
+└─────────────────┘    └──────────────────┘    └──────────────────┘
+```
+
+### Supporting Document Requirements
+
+A PTO **cannot be approved** unless the following documents are uploaded and active:
+
+| Document | Type | Required For | Description |
+|---|---|---|---|
+| **ID / Passport Copy** | `ID_COPY` | All PTOs | SA ID or passport for identity verification |
+| **TA Allocation Letter** | `TA_ALLOCATION_LETTER` | All PTOs | Traditional Authority recommendation confirming land allocation |
+| **Site Sketch / Plan** | `SITE_SKETCH` | All PTOs | Stand boundaries, dimensions, north point, adjacent stands |
+| **Community Resolution** | `COMMUNITY_RESOLUTION` | Agricultural & Business PTOs | Community meeting minutes/resolution (SPLUMA / IPILRA compliance) |
+
+### PTO Status Lifecycle
+
+```
+ PENDING ──[APPROVE]──▶ ACTIVE ──[SUSPEND]──▶ SUSPENDED
+    ▲                      │                      │
+    │                      │                      │
+    │               [REVOKE]│               [REACTIVATE]
+    │                      │                      │
+    └────[REINSTATE]───────┘                      │
+                                                    │
+                                              [REVOKE]──▶ REVOKED
+```
+
+- **PENDING**: Created by Land Officer / Data Capturer; awaiting TA Administrator approval.
+- **ACTIVE**: Occupancy rights conferred; parcel status set to `ALLOCATED`.
+- **SUSPENDED**: Temporarily paused; occupancy rights suspended.
+- **REVOKED**: Permanently withdrawn; parcel returned to `AVAILABLE`.
+- **EXPIRED**: Term reached; no longer valid.
+- **REINSTATED**: REVOKED status overturned by TA Administrator; restores ACTIVE.
+
+### Role-Based Access Control
+
+| Role | PTO Permissions |
+|---|---|
+| `ROLE_LAND_OFFICER` | Create parcels, create PTOs, upload documents |
+| `ROLE_DATA_CAPTURER` | Create PTOs, upload documents, edit PENDING PTOs |
+| `ROLE_TA_ADMINISTRATOR` | Approve, suspend, reactivate, revoke, reinstate PTOs |
+| `ROLE_SYSTEM_ADMIN` | Full access to all PTO operations |
+| `ROLE_REPORT_VIEWER` | Read-only search and report access |
+
+### Database Schema Changes
+
+Migration `V24__extend_pto_with_allocation_and_survey_fields.sql` adds:
+
+| Column | Type | Purpose |
+|---|---|---|
+| `allocated_by` | VARCHAR(150) | Headman / Chief who allocated the stand |
+| `allocation_date` | DATE | Date of TA allocation (distinct from issue date) |
+| `stand_area` | DOUBLE PRECISION | Stand extent in m² |
+| `survey_reference` | VARCHAR(100) | Surveyor General diagram / general plan reference |
+| `boundary_description` | TEXT | Beacons, fences, natural features |
+| `allocation_fee_receipt` | VARCHAR(100) | Proof of TA allocation fee payment |
+| `ta_recommendation_ref` | VARCHAR(100) | TA letter / recommendation reference |
+| `community_resolution_required` | BOOLEAN | Set TRUE for AGRICULTURAL / BUSINESS PTOs |
+
+### API Endpoints
+
+#### PTO REST API (JSON)
+
+```http
+POST /api/ptos
+GET /api/ptos
+GET /api/ptos/{id}
+GET /api/ptos/number/{ptoNumber}
+PATCH /api/ptos/{id}/approve
+PATCH /api/ptos/{id}/suspend
+PATCH /api/ptos/{id}/reactivate
+PATCH /api/ptos/{id}/revoke
+PATCH /api/ptos/{id}/reinstate
+```
+
+#### Document Upload (Multipart)
+
+```http
+POST /api/documents/upload
+Content-Type: multipart/form-data
+
+file: <binary>
+request: {"documentType":"TA_ALLOCATION_LETTER","entityType":"PTO","entityId":123}
+```
+
+### Legal Compliance Checklist
+
+- [x] PTO records linked to Traditional Authority and Village
+- [x] ID validation via Luhn algorithm (13-digit SA ID)
+- [x] TA Allocation Letter required before approval
+- [x] Site Sketch required before approval
+- [x] Community Resolution tracking for commercial/agricultural allocations
+- [x] Immutable audit trail for all status changes (created_by, approved_by, etc.)
+- [x] Document upload logged with checksum (SHA-256) and access logs
+- [x] Duplicate PTO prevention per parcel and per ID number
+- [x] Parcel-stand number consistency validation
+- [x] POWI (Proof of Work Information) for all land allocations
+
+### Additional Digital Transformation Features
+
+#### 1. Spatial Validation with PostGIS
+
+PostGIS is enabled on the `parcels` table. A database trigger (`V26`) auto-updates the `geometry` column from boundary points. On parcel creation or update, `ParcelServiceImpl` checks for overlapping parcels using `ST_Intersects` and rejects the operation if a boundary dispute is detected.
+
+- **Migration**: `V26__create_parcel_geometry_trigger.sql`
+- **Validation**: `ParcelServiceImpl.checkForOverlaps()`
+- **Benefit**: Prevents boundary disputes at the time of land allocation
+
+#### 2. E-Signature for PTO Approvals
+
+PTO approvals now support digital signatures. The `PTOApprovalRequest` DTO includes `signatureData`, `signatureImagePath`, `ipAddress`, and `userAgent`. When a PTO is approved, the signature is persisted to `pto_approval_signatures` for audit and legal admissibility.
+
+- **Entity**: `pto_approval_signatures` table (Migration `V25`)
+- **Workflow**: Signature captured during approval → persisted with metadata
+- **Benefit**: Legally binding digital approval trail for TA administrators
+
+#### 3. Automated PTO Expiry
+
+A scheduled job (`@Scheduled`) runs daily at 01:00 to scan for ACTIVE PTOs whose `expiryDate` has passed and transitions them to `EXPIRED`. The job publishes `PTOExpiredEvent` for downstream notifications.
+
+- **Scheduler**: `PTOExpiryScheduler`
+- **Cron**: `0 0 1 * * *` (daily at 01:00)
+- **Benefit**: Eliminates manual status tracking; ensures expired PTOs are flagged automatically
+
+#### 4. Notification Service
+
+A new `notification` module provides email, SMS, and in-app notification capabilities. Event listeners (`PTONotificationListener`) subscribe to PTO lifecycle events and dispatch notifications automatically.
+
+- **Module**: `za.co.taloms.notification`
+- **Channels**: `EMAIL`, `SMS`, `IN_APP`
+- **Events**: `PTOCreatedEvent`, `PTOApprovedEvent`, `PTORevokedEvent`, `PTOSuspendedEvent`, `PTOReinstatedEvent`, `PTOExpiredEvent`
+- **Benefit**: Real-time stakeholder communication; audit-ready notification log
+
+#### 5. PDF Certificate Generation
+
+Approved PTOs can be downloaded as official PDF certificates via `GET /api/ptos/{id}/certificate`. The `PTOCertificatePdfGenerator` uses Apache PDFBox to produce a formatted A4 certificate containing all PTO details, allocation metadata, and issue/expiry dates.
+
+- **Generator**: `PTOCertificatePdfGenerator`
+- **Endpoint**: `GET /api/ptos/{id}/certificate`
+- **Benefit**: Instant printable proof of occupancy rights for holders and authorities
 
 ---
 

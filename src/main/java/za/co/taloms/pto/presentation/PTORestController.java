@@ -12,6 +12,7 @@ import za.co.taloms.common.ApiResponse;
 import za.co.taloms.pto.application.dto.*;
 import za.co.taloms.pto.application.service.PTOService;
 import za.co.taloms.pto.domain.entity.PTOStatus;
+import za.co.taloms.reporting.application.service.PTOCertificatePdfGenerator;
 import java.util.List;
 
 @RestController
@@ -20,6 +21,7 @@ import java.util.List;
 public class PTORestController {
 
     private final PTOService ptoService;
+    private final PTOCertificatePdfGenerator ptoCertificatePdfGenerator;
 
     @PostMapping
     @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER','ROLE_DATA_CAPTURER')")
@@ -140,5 +142,15 @@ public class PTORestController {
         // Return the updated PTO
         var response = ptoService.findById(id);
         return ResponseEntity.ok(ApiResponse.success(response, "PTO reinstated successfully"));
+    }
+
+    @GetMapping("/{id}/certificate")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_REPORT_VIEWER')")
+    public ResponseEntity<byte[]> downloadCertificate(@PathVariable Long id) {
+        byte[] pdf = ptoCertificatePdfGenerator.generateCertificate(id);
+        return ResponseEntity.ok()
+                .header("Content-Type", "application/pdf")
+                .header("Content-Disposition", "attachment; filename=\"PTO_" + id + "_Certificate.pdf\"")
+                .body(pdf);
     }
 }

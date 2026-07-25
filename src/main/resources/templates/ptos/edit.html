@@ -171,6 +171,58 @@
                               class="form-control" rows="3"
                               placeholder="Additional notes...">${form.notes}</textarea>
                   </div>
+
+                  <!-- Allocation Metadata -->
+                  <div class="col-12 mt-3">
+                    <h6 class="fw-bold text-navy mb-2">
+                      <i class="bi bi-diagram-3 me-2"></i>Allocation Metadata
+                    </h6>
+                  </div>
+                  <div class="col-12">
+                    <label for="allocatedBy" class="form-label">Allocated By (Headman / Chief)</label>
+                    <input type="text" id="allocatedBy" name="allocatedBy"
+                           class="form-control" th:value="${form.allocatedBy}">
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <label for="allocationDate" class="form-label">Allocation Date</label>
+                    <input type="date" id="allocationDate" name="allocationDate"
+                           class="form-control" th:value="${form.allocationDate}">
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <label for="standArea" class="form-label">Stand Area (m²)</label>
+                    <input type="number" id="standArea" name="standArea"
+                           class="form-control" th:value="${form.standArea}" step="0.01" min="0">
+                  </div>
+                  <div class="col-12">
+                    <label for="surveyReference" class="form-label">Surveyor General Reference</label>
+                    <input type="text" id="surveyReference" name="surveyReference"
+                           class="form-control" th:value="${form.surveyReference}">
+                  </div>
+                  <div class="col-12">
+                    <label for="boundaryDescription" class="form-label">Boundary Description</label>
+                    <textarea id="boundaryDescription" name="boundaryDescription"
+                              class="form-control" rows="2">${form.boundaryDescription}</textarea>
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <label for="allocationFeeReceipt" class="form-label">Allocation Fee Receipt Ref</label>
+                    <input type="text" id="allocationFeeReceipt" name="allocationFeeReceipt"
+                           class="form-control" th:value="${form.allocationFeeReceipt}">
+                  </div>
+                  <div class="col-12 col-md-6">
+                    <label for="taRecommendationRef" class="form-label">TA Recommendation Ref</label>
+                    <input type="text" id="taRecommendationRef" name="taRecommendationRef"
+                           class="form-control" th:value="${form.taRecommendationRef}">
+                  </div>
+                  <div class="col-12">
+                    <div class="form-check">
+                      <input class="form-check-input" type="checkbox" id="communityResolutionRequired"
+                             name="communityResolutionRequired" value="true"
+                             th:checked="${form.communityResolutionRequired}">
+                      <label class="form-check-label" for="communityResolutionRequired">
+                        Community resolution required
+                      </label>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

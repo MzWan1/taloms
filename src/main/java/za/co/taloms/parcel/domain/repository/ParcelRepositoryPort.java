@@ -23,4 +23,5 @@ public interface ParcelRepositoryPort {
     long countByStatusAndVillageId(ParcelStatus status, Long villageId);
     long countAll();
     void deleteById(Long id);
+    List<Parcel> findOverlappingParcels(Long parcelId, Double minLat, Double minLng, Double maxLat, Double maxLng);
 }

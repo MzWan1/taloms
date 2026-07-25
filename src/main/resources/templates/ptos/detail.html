@@ -244,6 +244,80 @@
                                      th:text="${pto.notes}">Notes</div>
                             </div>
                         </li>
+                        <li th:if="${pto.allocatedBy != null}" class="list-group-item px-4 py-3">
+                            <div class="row">
+                                <div class="col-5 col-md-4 text-muted small fw-semibold">Allocated By</div>
+                                <div class="col-7 col-md-8 fw-semibold" th:text="${pto.allocatedBy}">Allocated By</div>
+                            </div>
+                        </li>
+                        <li th:if="${pto.allocationDate != null}" class="list-group-item px-4 py-3">
+                            <div class="row">
+                                <div class="col-5 col-md-4 text-muted small fw-semibold">Allocation Date</div>
+                                <div class="col-7 col-md-8" th:text="${pto.allocationDate != null ? #temporals.format(pto.allocationDate,'dd MMMM yyyy') : '—'}">Date</div>
+                            </div>
+                        </li>
+                        <li th:if="${pto.standArea != null}" class="list-group-item px-4 py-3">
+                            <div class="row">
+                                <div class="col-5 col-md-4 text-muted small fw-semibold">Stand Area</div>
+                                <div class="col-7 col-md-8" th:text="${pto.standArea + ' m²'}">Area</div>
+                            </div>
+                        </li>
+                        <li th:if="${pto.surveyReference != null}" class="list-group-item px-4 py-3">
+                            <div class="row">
+                                <div class="col-5 col-md-4 text-muted small fw-semibold">Survey Reference</div>
+                                <div class="col-7 col-md-8" th:text="${pto.surveyReference}">Survey</div>
+                            </div>
+                        </li>
+                        <li th:if="${pto.boundaryDescription != null}" class="list-group-item px-4 py-3">
+                            <div class="row">
+                                <div class="col-5 col-md-4 text-muted small fw-semibold">Boundary Description</div>
+                                <div class="col-7 col-md-8 small" th:text="${pto.boundaryDescription}">Boundary</div>
+                            </div>
+                        </li>
+                        <li th:if="${pto.allocationFeeReceipt != null}" class="list-group-item px-4 py-3">
+                            <div class="row">
+                                <div class="col-5 col-md-4 text-muted small fw-semibold">Fee Receipt Ref</div>
+                                <div class="col-7 col-md-8" th:text="${pto.allocationFeeReceipt}">Receipt</div>
+                            </div>
+                        </li>
+                        <li th:if="${pto.taRecommendationRef != null}" class="list-group-item px-4 py-3">
+                            <div class="row">
+                                <div class="col-5 col-md-4 text-muted small fw-semibold">TA Recommendation Ref</div>
+                                <div class="col-7 col-md-8" th:text="${pto.taRecommendationRef}">TA Ref</div>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Supporting Documents -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="fw-bold text-navy mb-0">
+                        <i class="bi bi-folder2-open me-2"></i>Supporting Documents
+                    </h6>
+                    <a th:href="@{/api/documents/entity/PTO/{id}(id=${pto.id})}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-download me-1"></i>View All
+                    </a>
+                </div>
+                <div class="card-body p-0">
+                    <ul class="list-group list-group-flush">
+                        <li class="list-group-item px-4 py-3 text-muted small"
+                            th:if="${documents == null or documents.isEmpty()}">
+                            No supporting documents linked to this PTO yet.
+                        </li>
+                        <li th:each="doc : ${documents}" class="list-group-item px-4 py-3 d-flex align-items-center justify-content-between">
+                            <div class="d-flex align-items-center gap-3">
+                                <i class="bi bi-file-earmark fs-4 text-navy"></i>
+                                <div>
+                                    <div class="fw-semibold small" th:text="${doc.documentTypeDisplay}">Document</div>
+                                    <div class="text-muted" style="font-size:0.78rem" th:text="${doc.originalFilename}">filename.pdf</div>
+                                </div>
+                            </div>
+                            <a th:href="@{/api/documents/{id}/download(id=${doc.id})}" class="btn btn-outline-info btn-sm">
+                                <i class="bi bi-download"></i>
+                            </a>
+                        </li>
                     </ul>
                 </div>
             </div>

@@ -27,4 +27,5 @@ public interface DocumentService {
     long countAll();
     boolean hasRequiredDocuments(EntityType entityType, Long entityId);
     List<DocumentResponse> getRequiredDocumentsForEntity(EntityType entityType, Long entityId);
+    List<DocumentType> getMissingRequiredDocumentTypes(EntityType entityType, Long entityId);
 }

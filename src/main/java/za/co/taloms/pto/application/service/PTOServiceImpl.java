@@ -7,7 +7,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import za.co.taloms.common.BusinessValidationException;
 import za.co.taloms.common.ResourceNotFoundException;
+import za.co.taloms.document.application.service.DocumentService;
+import za.co.taloms.document.domain.entity.DocumentType;
+import za.co.taloms.document.domain.entity.EntityType;
 import za.co.taloms.parcel.domain.repository.ParcelRepositoryPort;
+import za.co.taloms.pto.domain.repository.PTOApprovalSignatureRepositoryPort;
 import za.co.taloms.pto.application.dto.*;
 import za.co.taloms.pto.domain.entity.PTO;
 import za.co.taloms.pto.domain.entity.PTOPurpose;
@@ -32,6 +36,8 @@ public class PTOServiceImpl implements PTOService {
     private final TraditionalAuthorityRepositoryPort authorityRepository;
     private final VillageRepositoryPort villageRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final DocumentService documentService;
+    private final PTOApprovalSignatureRepositoryPort signatureRepository;
 
     @Override
     public PTOResponse createPTO(PTORequest request, String createdBy) {
@@ -108,6 +114,13 @@ public class PTOServiceImpl implements PTOService {
                             parcel.getStatus().getDisplayName());
         }
 
+        // ===== VALIDATION 10: Community resolution required for AGRICULTURAL / BUSINESS =====
+        boolean resolutionRequired = request.getCommunityResolutionRequired() != null
+                && request.getCommunityResolutionRequired()
+                && (request.getPurpose() != null
+                && (request.getPurpose().equalsIgnoreCase("AGRICULTURAL")
+                || request.getPurpose().equalsIgnoreCase("BUSINESS")));
+
         // Generate unique PTO number
         String ptoNumber = numberGenerator.generate();
         while (ptoRepository.existsByPtoNumber(ptoNumber)) {
@@ -129,6 +142,14 @@ public class PTOServiceImpl implements PTOService {
                 .village(village)
                 .traditionalAuthority(authority)
                 .parcel(parcel)
+                .allocatedBy(request.getAllocatedBy())
+                .allocationDate(request.getAllocationDate())
+                .standArea(request.getStandArea())
+                .surveyReference(request.getSurveyReference())
+                .boundaryDescription(request.getBoundaryDescription())
+                .allocationFeeReceipt(request.getAllocationFeeReceipt())
+                .taRecommendationRef(request.getTaRecommendationRef())
+                .communityResolutionRequired(resolutionRequired)
                 .createdBy(createdBy)
                 .build();
 
@@ -156,6 +177,13 @@ public class PTOServiceImpl implements PTOService {
             throw new BusinessValidationException("PTO cannot be approved in status: " + pto.getStatus().getDisplayName());
         }
 
+        var missingDocs = documentService.getMissingRequiredDocumentTypes(EntityType.PTO, id);
+        if (!missingDocs.isEmpty()) {
+            throw new BusinessValidationException(
+                    "Cannot approve PTO: required documents missing. Missing: " +
+                            missingDocs.stream().map(DocumentType::getDisplayName).collect(Collectors.joining(", ")));
+        }
+
         // Check if the parcel is still available (no other active PTOs)
         if (pto.getParcel() != null && ptoRepository.existsByParcelIdAndStatus(pto.getParcel().getId(), PTOStatus.ACTIVE)) {
             throw new BusinessValidationException(
@@ -170,6 +198,19 @@ public class PTOServiceImpl implements PTOService {
         }
 
         var saved = ptoRepository.save(pto);
+
+        // Save e-signature if provided
+        if (request.getSignatureData() != null || request.getSignatureImagePath() != null) {
+            var signature = za.co.taloms.pto.domain.entity.PTOApprovalSignature.builder()
+                    .ptoId(saved.getId())
+                    .signedBy(approvedBy)
+                    .signatureData(request.getSignatureData())
+                    .signatureImagePath(request.getSignatureImagePath())
+                    .ipAddress(request.getIpAddress())
+                    .userAgent(request.getUserAgent())
+                    .build();
+            signatureRepository.save(signature);
+        }
 
         // Update parcel status to ALLOCATED
         if (saved.getParcel() != null) {
@@ -234,10 +275,12 @@ public class PTOServiceImpl implements PTOService {
         // Update parcel status to RESERVED or keep as ALLOCATED but mark suspended
         if (saved.getParcel() != null) {
             var parcel = saved.getParcel();
-            // Keep as ALLOCATED but note that it's suspended
-            // The parcel should NOT be available for new PTOs
             parcelRepository.save(parcel);
         }
+
+        eventPublisher.publishEvent(new PTOSuspendedEvent(
+                this, saved.getId(), saved.getPtoNumber(),
+                saved.getPtoHolderName(), suspendedBy, reason, saved.getSuspendedAt()));
 
         log.info("PTO {} suspended by {} — reason: {}", saved.getPtoNumber(), suspendedBy, reason);
         return toResponse(saved);
@@ -260,6 +303,12 @@ public class PTOServiceImpl implements PTOService {
 
         pto.reactivate(notes);
         var saved = ptoRepository.save(pto);
+
+        eventPublisher.publishEvent(new za.co.taloms.pto.domain.event.PTOStatusChangedEvent(
+                this, saved.getId(), saved.getPtoNumber(),
+                za.co.taloms.pto.domain.entity.PTOStatus.SUSPENDED,
+                za.co.taloms.pto.domain.entity.PTOStatus.ACTIVE,
+                reactivatedBy, java.time.LocalDateTime.now()));
 
         log.info("PTO {} reactivated by {}", saved.getPtoNumber(), reactivatedBy);
         return toResponse(saved);
@@ -428,6 +477,16 @@ public class PTOServiceImpl implements PTOService {
         pto.setVillage(village);
         pto.setTraditionalAuthority(authority);
         pto.setParcel(parcel);
+        pto.setAllocatedBy(request.getAllocatedBy());
+        pto.setAllocationDate(request.getAllocationDate());
+        pto.setStandArea(request.getStandArea());
+        pto.setSurveyReference(request.getSurveyReference());
+        pto.setBoundaryDescription(request.getBoundaryDescription());
+        pto.setAllocationFeeReceipt(request.getAllocationFeeReceipt());
+        pto.setTaRecommendationRef(request.getTaRecommendationRef());
+        if (request.getCommunityResolutionRequired() != null) {
+            pto.setCommunityResolutionRequired(request.getCommunityResolutionRequired());
+        }
 
         var saved = ptoRepository.save(pto);
         log.info("PTO {} updated by {}", saved.getPtoNumber(), updatedBy);
@@ -509,6 +568,14 @@ public class PTOServiceImpl implements PTOService {
                 .revokedBy(p.getRevokedBy())
                 .revokedAt(p.getRevokedAt())
                 .revokeReason(p.getRevokeReason())
+                .allocatedBy(p.getAllocatedBy())
+                .allocationDate(p.getAllocationDate())
+                .standArea(p.getStandArea())
+                .surveyReference(p.getSurveyReference())
+                .boundaryDescription(p.getBoundaryDescription())
+                .allocationFeeReceipt(p.getAllocationFeeReceipt())
+                .taRecommendationRef(p.getTaRecommendationRef())
+                .communityResolutionRequired(p.getCommunityResolutionRequired())
                 .createdBy(p.getCreatedBy())
                 .createdAt(p.getCreatedAt())
                 .updatedAt(p.getUpdatedAt())

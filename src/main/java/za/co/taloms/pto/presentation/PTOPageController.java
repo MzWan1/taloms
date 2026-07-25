@@ -7,7 +7,11 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import za.co.taloms.document.application.dto.DocumentResponse;
+import za.co.taloms.document.application.service.DocumentService;
+import za.co.taloms.document.domain.entity.EntityType;
 import za.co.taloms.parcel.application.service.ParcelService;
 import za.co.taloms.parcel.domain.entity.ParcelStatus;
 import za.co.taloms.pto.application.dto.*;
@@ -31,6 +35,7 @@ public class PTOPageController {
     private final ParcelService parcelService;
     private final TraditionalAuthorityService authorityService;
     private final VillageService villageService;
+    private final DocumentService documentService;
 
     @GetMapping
     public String list(Model model,
@@ -133,6 +138,16 @@ public class PTOPageController {
             @RequestParam String issueDate,
             @RequestParam(required = false) String expiryDate,
             @RequestParam(required = false) String notes,
+            @RequestParam(required = false) String allocatedBy,
+            @RequestParam(required = false) String allocationDate,
+            @RequestParam(required = false) Double standArea,
+            @RequestParam(required = false) String surveyReference,
+            @RequestParam(required = false) String boundaryDescription,
+            @RequestParam(required = false) String allocationFeeReceipt,
+            @RequestParam(required = false) String taRecommendationRef,
+            @RequestParam(required = false) Boolean communityResolutionRequired,
+            @RequestParam(required = false) MultipartFile taAllocationLetter,
+            @RequestParam(required = false) MultipartFile siteSketch,
             @AuthenticationPrincipal UserDetails userDetails,
             RedirectAttributes ra) {
 
@@ -163,13 +178,45 @@ public class PTOPageController {
                     .notes(notes)
                     .villageId(parcel.getVillageId())
                     .traditionalAuthorityId(village != null ? village.getTraditionalAuthorityId() : null)
+                    .allocatedBy(allocatedBy)
+                    .allocationDate(allocationDate != null && !allocationDate.isBlank() ? LocalDate.parse(allocationDate) : null)
+                    .standArea(standArea)
+                    .surveyReference(surveyReference)
+                    .boundaryDescription(boundaryDescription)
+                    .allocationFeeReceipt(allocationFeeReceipt)
+                    .taRecommendationRef(taRecommendationRef)
+                    .communityResolutionRequired(communityResolutionRequired)
                     .build();
 
             var response = ptoService.createPTO(request, userDetails.getUsername());
+            Long ptoId = response.getId();
+
+            // Upload supporting documents
+            if (taAllocationLetter != null && !taAllocationLetter.isEmpty()) {
+                documentService.uploadDocument(taAllocationLetter,
+                        new za.co.taloms.document.application.dto.DocumentUploadRequest(
+                                za.co.taloms.document.domain.entity.DocumentType.TA_ALLOCATION_LETTER.name(),
+                                za.co.taloms.document.domain.entity.EntityType.PTO.name(),
+                                ptoId,
+                                "Traditional Authority Allocation Letter — " + response.getPtoNumber(),
+                                "Uploaded during PTO creation"),
+                        userDetails.getUsername(), "127.0.0.1", "Web UI");
+            }
+            if (siteSketch != null && !siteSketch.isEmpty()) {
+                documentService.uploadDocument(siteSketch,
+                        new za.co.taloms.document.application.dto.DocumentUploadRequest(
+                                za.co.taloms.document.domain.entity.DocumentType.SITE_SKETCH.name(),
+                                za.co.taloms.document.domain.entity.EntityType.PTO.name(),
+                                ptoId,
+                                "Site Sketch — Stand " + parcel.getStandNumber(),
+                                "Uploaded during PTO creation"),
+                        userDetails.getUsername(), "127.0.0.1", "Web UI");
+            }
+
             ra.addFlashAttribute("successMessage",
                     "✅ PTO " + response.getPtoNumber() + " created successfully for " + response.getPtoHolderName() +
-                            " on " + parcel.getStandNumber() + ".");
-            return "redirect:/ptos";
+                            " on " + parcel.getStandNumber() + ". Supporting documents uploaded.");
+            return "redirect:/ptos/" + ptoId;
 
         } catch (Exception e) {
             log.error("Error creating PTO: {}", e.getMessage(), e);
@@ -182,7 +229,9 @@ public class PTOPageController {
     public String detail(@PathVariable Long id, Model model) {
         try {
             var pto = ptoService.findById(id);
+            var documents = documentService.findByRelatedEntity(EntityType.PTO, id);
             model.addAttribute("pto", pto);
+            model.addAttribute("documents", documents);
             model.addAttribute("pageTitle", "PTO " + pto.getPtoNumber());
             model.addAttribute("currentPage", "ptos");
             return "ptos/detail";
@@ -317,6 +366,14 @@ public class PTOPageController {
                     .notes(pto.getNotes())
                     .villageId(pto.getVillageId())
                     .traditionalAuthorityId(pto.getTraditionalAuthorityId())
+                    .allocatedBy(pto.getAllocatedBy())
+                    .allocationDate(pto.getAllocationDate())
+                    .standArea(pto.getStandArea())
+                    .surveyReference(pto.getSurveyReference())
+                    .boundaryDescription(pto.getBoundaryDescription())
+                    .allocationFeeReceipt(pto.getAllocationFeeReceipt())
+                    .taRecommendationRef(pto.getTaRecommendationRef())
+                    .communityResolutionRequired(pto.getCommunityResolutionRequired())
                     .build();
 
             var authorities = authorityService.findAllActive();
@@ -349,6 +406,14 @@ public class PTOPageController {
             @RequestParam(required = false) String notes,
             @RequestParam Long villageId,
             @RequestParam Long traditionalAuthorityId,
+            @RequestParam(required = false) String allocatedBy,
+            @RequestParam(required = false) String allocationDate,
+            @RequestParam(required = false) Double standArea,
+            @RequestParam(required = false) String surveyReference,
+            @RequestParam(required = false) String boundaryDescription,
+            @RequestParam(required = false) String allocationFeeReceipt,
+            @RequestParam(required = false) String taRecommendationRef,
+            @RequestParam(required = false) Boolean communityResolutionRequired,
             @AuthenticationPrincipal UserDetails userDetails,
             RedirectAttributes ra) {
 
@@ -364,6 +429,14 @@ public class PTOPageController {
                     .notes(notes)
                     .villageId(villageId)
                     .traditionalAuthorityId(traditionalAuthorityId)
+                    .allocatedBy(allocatedBy)
+                    .allocationDate(allocationDate != null && !allocationDate.isBlank() ? LocalDate.parse(allocationDate) : null)
+                    .standArea(standArea)
+                    .surveyReference(surveyReference)
+                    .boundaryDescription(boundaryDescription)
+                    .allocationFeeReceipt(allocationFeeReceipt)
+                    .taRecommendationRef(taRecommendationRef)
+                    .communityResolutionRequired(communityResolutionRequired)
                     .build();
 
             var response = ptoService.updatePTO(id, request, userDetails.getUsername());

@@ -112,6 +112,31 @@ public class PTO {
     @Column(name = "revoke_reason", columnDefinition = "TEXT")
     private String revokeReason;
 
+    @Column(name = "allocated_by", length = 150)
+    private String allocatedBy;
+
+    @Column(name = "allocation_date")
+    private LocalDate allocationDate;
+
+    @Column(name = "stand_area")
+    private Double standArea;
+
+    @Column(name = "survey_reference", length = 100)
+    private String surveyReference;
+
+    @Column(name = "boundary_description", columnDefinition = "TEXT")
+    private String boundaryDescription;
+
+    @Column(name = "allocation_fee_receipt", length = 100)
+    private String allocationFeeReceipt;
+
+    @Column(name = "ta_recommendation_ref", length = 100)
+    private String taRecommendationRef;
+
+    @Column(name = "community_resolution_required")
+    @Builder.Default
+    private Boolean communityResolutionRequired = false;
+
     @Column(name = "created_by", length = 50)
     private String createdBy;
 

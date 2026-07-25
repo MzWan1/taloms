@@ -92,4 +92,19 @@ public interface ParcelJpaRepository extends JpaRepository<Parcel, Long> {
     long countByVillageId(Long villageId);
 
     long countByStatusAndVillageId(ParcelStatus status, Long villageId);
+
+    @Query(value = """
+            SELECT p.* FROM parcels p
+            WHERE p.id != :parcelId
+              AND p.geometry IS NOT NULL
+              AND ST_Intersects(
+                  p.geometry,
+                  ST_MakeEnvelope(:minLng, :minLat, :maxLng, :maxLat, 4326)
+              )
+            """, nativeQuery = true)
+    List<Parcel> findOverlappingParcels(@Param("parcelId") Long parcelId,
+                                        @Param("minLat") Double minLat,
+                                        @Param("minLng") Double minLng,
+                                        @Param("maxLat") Double maxLat,
+                                        @Param("maxLng") Double maxLng);
 }

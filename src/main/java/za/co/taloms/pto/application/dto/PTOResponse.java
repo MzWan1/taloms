@@ -54,6 +54,16 @@ public class PTOResponse {
     private LocalDateTime revokedAt;
     private String revokeReason;
 
+    // Allocation metadata fields
+    private String allocatedBy;
+    private LocalDate allocationDate;
+    private Double standArea;
+    private String surveyReference;
+    private String boundaryDescription;
+    private String allocationFeeReceipt;
+    private String taRecommendationRef;
+    private Boolean communityResolutionRequired;
+
     // Audit fields
     private String createdBy;
     private LocalDateTime createdAt;

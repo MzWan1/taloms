@@ -56,4 +56,25 @@ public class PTORequest {
     @NotNull(message = "Parcel Number is required")
     @Size(max = 50, message = "Parcel number must not exceed 50 characters")
     private String parcelNumber;
+
+    @Size(max = 150, message = "Allocated by must not exceed 150 characters")
+    private String allocatedBy;
+
+    private LocalDate allocationDate;
+
+    @DecimalMin(value = "0.0", inclusive = false)
+    private Double standArea;
+
+    @Size(max = 100, message = "Survey reference must not exceed 100 characters")
+    private String surveyReference;
+
+    private String boundaryDescription;
+
+    @Size(max = 100, message = "Receipt reference must not exceed 100 characters")
+    private String allocationFeeReceipt;
+
+    @Size(max = 100, message = "TA recommendation reference must not exceed 100 characters")
+    private String taRecommendationRef;
+
+    private Boolean communityResolutionRequired;
 }

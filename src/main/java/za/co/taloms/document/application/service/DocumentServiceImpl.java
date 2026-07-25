@@ -56,7 +56,7 @@ public class DocumentServiceImpl implements DocumentService {
     // Required document types by entity
     private static final java.util.Map<EntityType, List<DocumentType>> REQUIRED_DOCUMENTS =
             java.util.Map.of(
-                    EntityType.PTO, List.of(DocumentType.ID_COPY),
+                    EntityType.PTO, List.of(DocumentType.ID_COPY, DocumentType.TA_ALLOCATION_LETTER, DocumentType.SITE_SKETCH),
                     EntityType.RESIDENT, List.of(DocumentType.ID_COPY),
                     EntityType.BUSINESS, List.of(DocumentType.ID_COPY),
                     EntityType.HOUSEHOLD, List.of(DocumentType.ID_COPY)
@@ -316,6 +316,20 @@ public class DocumentServiceImpl implements DocumentService {
         return documents.stream()
                 .filter(d -> required.contains(d.getDocumentType()))
                 .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<DocumentType> getMissingRequiredDocumentTypes(EntityType entityType, Long entityId) {
+        var required = REQUIRED_DOCUMENTS.getOrDefault(entityType, List.of());
+        var documents = documentRepository.findByRelatedEntity(entityType, entityId);
+        var presentTypes = documents.stream()
+                .map(Document::getDocumentType)
+                .collect(Collectors.toSet());
+
+        return required.stream()
+                .filter(type -> !presentTypes.contains(type))
                 .collect(Collectors.toList());
     }
 
