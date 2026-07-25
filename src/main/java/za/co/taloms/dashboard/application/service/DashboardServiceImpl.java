@@ -8,19 +8,19 @@ import za.co.taloms.audit.application.service.AuditService;
 import za.co.taloms.businessoccupancy.application.service.BusinessOccupancyService;
 import za.co.taloms.businessoccupancy.domain.entity.BusinessStatus;
 import za.co.taloms.dashboard.application.dto.DashboardSummaryDto;
+import za.co.taloms.dashboard.application.dto.PendingPtoSummaryDto;
 import za.co.taloms.dashboard.application.dto.RecentActivityDto;
+import za.co.taloms.document.application.service.DocumentService;
 import za.co.taloms.household.application.service.HouseholdService;
 import za.co.taloms.parcel.application.service.ParcelService;
 import za.co.taloms.parcel.domain.entity.ParcelStatus;
+import za.co.taloms.pto.application.dto.PTOResponse;
 import za.co.taloms.pto.application.service.PTOService;
 import za.co.taloms.pto.domain.entity.PTOStatus;
 import za.co.taloms.resident.application.service.ResidentService;
 import za.co.taloms.security.application.service.UserService;
-import za.co.taloms.document.application.service.DocumentService;
 
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
 @Slf4j
@@ -103,6 +103,7 @@ public class DashboardServiceImpl implements DashboardService {
                     .totalUsers(totalUsers)
                     .activeUsers(activeUsers)
                     .totalAuditLogs(totalAuditLogs)
+                    .pendingPtoSummaries(buildPendingPtoSummaries())
                     .recentActivity(recentActivity)
                     .build();
 
@@ -131,6 +132,7 @@ public class DashboardServiceImpl implements DashboardService {
                     .totalUsers(0L)
                     .activeUsers(0L)
                     .totalAuditLogs(0L)
+                    .pendingPtoSummaries(new ArrayList<>())
                     .recentActivity(new ArrayList<>())
                     .build();
         }
@@ -194,6 +196,26 @@ public class DashboardServiceImpl implements DashboardService {
         } catch (Exception e) {
             log.warn("Error getting count: {}", e.getMessage());
             return 0L;
+        }
+    }
+
+    private List<PendingPtoSummaryDto> buildPendingPtoSummaries() {
+        try {
+            return ptoService.findByStatus(PTOStatus.PENDING).stream()
+                    .limit(5)
+                    .map(pto -> new PendingPtoSummaryDto(
+                            pto.getId(),
+                            pto.getPtoNumber() != null ? pto.getPtoNumber() : "",
+                            pto.getPtoHolderName() != null ? pto.getPtoHolderName() : "",
+                            pto.getIdNumber() != null ? pto.getIdNumber() : "",
+                            pto.getVillageName() != null ? pto.getVillageName() : "",
+                            pto.getAuthorityName() != null ? pto.getAuthorityName() : "",
+                            pto.getIssueDate()
+                    ))
+                    .collect(java.util.stream.Collectors.toList());
+        } catch (Exception e) {
+            log.warn("Error building pending PTO summaries: {}", e.getMessage());
+            return new ArrayList<>();
         }
     }
 }

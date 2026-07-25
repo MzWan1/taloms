@@ -37,6 +37,12 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
     border-radius: 6px;
     font-weight: 600;
 }
+.navbar .dropdown-menu {
+    border-radius: 10px;
+}
+.navbar .dropdown-item:active {
+    background-color: var(--light-blue);
+}
 
 /* ── Avatar ───────────────────────────────────────────────────────────── */
 .avatar-sm {
@@ -49,6 +55,39 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
 /* ── Welcome Banner ───────────────────────────────────────────────────── */
 .welcome-banner {
     background: linear-gradient(135deg, var(--navy) 0%, var(--mid-blue) 100%);
+}
+
+/* ── Quick Actions ────────────────────────────────────────────────────── */
+.quick-action-card {
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    cursor: pointer;
+}
+.quick-action-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12) !important;
+}
+.quick-action-primary:hover {
+    border-left: 4px solid var(--navy);
+}
+.quick-action-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+}
+.quick-action-icon-primary {
+    background: #D6E4F0;
+    color: var(--navy);
+}
+.quick-action-icon-secondary {
+    background: #e9ecef;
+    color: #6b7280;
+}
+.quick-action-card .card-body {
+    padding: 1.25rem;
 }
 
 /* ── KPI Cards ────────────────────────────────────────────────────────── */

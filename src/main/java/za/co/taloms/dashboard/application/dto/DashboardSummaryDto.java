@@ -45,6 +45,9 @@ public class DashboardSummaryDto {
     // Audit KPIs
     private Long totalAuditLogs;
 
+    // Approval Queue
+    private List<PendingPtoSummaryDto> pendingPtoSummaries;
+
     // Recent Activity
     private List<RecentActivityDto> recentActivity;
 }

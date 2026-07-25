@@ -139,11 +139,48 @@
             <!-- Right side -->
             <ul class="navbar-nav ms-auto align-items-center gap-1">
 
-                <!-- Notifications -->
-                <li class="nav-item">
-                    <a class="nav-link px-2 position-relative" href="#" title="Notifications">
-                        <i class="bi bi-bell fs-5"></i>
+                <!-- Notifications / Approval Queue -->
+                <li class="nav-item dropdown"
+                    sec:authorize="hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER','ROLE_DATA_CAPTURER')">
+                    <a class="nav-link px-2 position-relative"
+                       href="#" data-bs-toggle="dropdown"
+                       th:title="'Pending PTOs: ' + ${pendingPtos != null ? pendingPtos : 0}">
+                        <i class="bi bi-stamp fs-5"></i>
+                        <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-warning text-dark"
+                              th:if="${pendingPtos != null and pendingPtos > 0}"
+                              th:text="${pendingPtos}">0</span>
                     </a>
+                    <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2"
+                        style="min-width:260px">
+                        <li class="px-3 py-2 border-bottom">
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="fw-semibold small text-navy">Pending Approvals</span>
+                                <span class="badge bg-warning text-dark"
+                                      th:text="${pendingPtos != null ? pendingPtos : 0}">0</span>
+                            </div>
+                        </li>
+                        <li>
+                            <a class="dropdown-item py-2"
+                               th:href="@{/ptos(status='PENDING')}">
+                                <i class="bi bi-file-earmark-text me-2 text-muted"></i>Review Pending PTOs
+                            </a>
+                        </li>
+                        <li th:if="${pendingBusinesses != null and pendingBusinesses > 0}">
+                            <a class="dropdown-item py-2"
+                               th:href="@{/business-occupancies}">
+                                <i class="bi bi-shop me-2 text-muted"></i>Pending Businesses
+                                <span class="badge bg-warning text-dark ms-auto"
+                                      th:text="${pendingBusinesses}">0</span>
+                            </a>
+                        </li>
+                        <li><hr class="dropdown-divider my-1"></li>
+                        <li>
+                            <a class="dropdown-item py-2 text-muted"
+                               th:href="@{/ptos}">
+                                <i class="bi bi-list-ul me-2"></i>All PTO Records
+                            </a>
+                        </li>
+                    </ul>
                 </li>
 
                 <!-- User dropdown -->
