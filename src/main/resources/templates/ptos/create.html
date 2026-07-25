@@ -401,32 +401,44 @@
                   Upload the Traditional Authority allocation letter and a site sketch. These documents are required before the PTO can be approved.
                 </p>
 
-                <div class="row g-3">
-                  <div class="col-12">
-                    <label class="form-label fw-semibold">
-                      TA Allocation Letter <span class="text-danger">*</span>
-                    </label>
-                    <input type="file"
-                           id="taAllocationLetter"
-                           name="taAllocationLetter"
-                           class="form-control"
-                           accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                           required>
-                    <div class="form-text">PDF, JPG, PNG, DOC or DOCX. Max 20 MB.</div>
-                  </div>
-                  <div class="col-12">
-                    <label class="form-label fw-semibold">
-                      Site Sketch / Plan <span class="text-danger">*</span>
-                    </label>
-                    <input type="file"
-                           id="siteSketch"
-                           name="siteSketch"
-                           class="form-control"
-                           accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-                           required>
-                    <div class="form-text">Stand boundaries, dimensions, north point. PDF, JPG, PNG or DOCX.</div>
-                  </div>
-                </div>
+                 <div class="row g-3">
+                   <div class="col-12">
+                     <label class="form-label fw-semibold">
+                       ID / Passport Copy <span class="text-danger">*</span>
+                     </label>
+                     <input type="file"
+                            id="idCopy"
+                            name="idCopy"
+                            class="form-control"
+                            accept=".pdf,.jpg,.jpeg,.png"
+                            required>
+                     <div class="form-text">South African ID or passport copy. PDF, JPG or PNG. Max 20 MB.</div>
+                   </div>
+                   <div class="col-12">
+                     <label class="form-label fw-semibold">
+                       TA Allocation Letter <span class="text-danger">*</span>
+                     </label>
+                     <input type="file"
+                            id="taAllocationLetter"
+                            name="taAllocationLetter"
+                            class="form-control"
+                            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                            required>
+                     <div class="form-text">PDF, JPG, PNG, DOC or DOCX. Max 20 MB.</div>
+                   </div>
+                   <div class="col-12">
+                     <label class="form-label fw-semibold">
+                       Site Sketch / Plan <span class="text-danger">*</span>
+                     </label>
+                     <input type="file"
+                            id="siteSketch"
+                            name="siteSketch"
+                            class="form-control"
+                            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+                            required>
+                     <div class="form-text">Stand boundaries, dimensions, north point. PDF, JPG, PNG or DOCX.</div>
+                   </div>
+                 </div>
               </div>
             </div>
 
@@ -445,14 +457,18 @@
                    <div class="col-7 fw-semibold" id="summaryHolder">—</div>
                    <div class="col-5 text-muted">Allocated By:</div>
                    <div class="col-7 fw-semibold" id="summaryAllocatedBy">—</div>
-                   <div class="col-5 text-muted">TA Letter:</div>
-                   <div class="col-7" id="summaryTaLetter">
-                     <span class="text-danger">Pending</span>
-                   </div>
-                   <div class="col-5 text-muted">Site Sketch:</div>
-                   <div class="col-7" id="summarySiteSketch">
-                     <span class="text-danger">Pending</span>
-                   </div>
+                    <div class="col-5 text-muted">ID / Passport:</div>
+                    <div class="col-7" id="summaryIdCopy">
+                      <span class="text-danger">Pending</span>
+                    </div>
+                    <div class="col-5 text-muted">TA Letter:</div>
+                    <div class="col-7" id="summaryTaLetter">
+                      <span class="text-danger">Pending</span>
+                    </div>
+                    <div class="col-5 text-muted">Site Sketch:</div>
+                    <div class="col-7" id="summarySiteSketch">
+                      <span class="text-danger">Pending</span>
+                    </div>
                    <div class="col-5 text-muted">Status:</div>
                    <div class="col-7"><span class="badge bg-warning text-dark">Pending Approval</span></div>
                  </div>
@@ -570,6 +586,15 @@
     }
 
     // File change tracking
+    document.getElementById('idCopy').addEventListener('change', function() {
+      const el = document.getElementById('summaryIdCopy');
+      if (this.files.length > 0) {
+        el.innerHTML = '<span class="text-success"><i class="bi bi-check-circle me-1"></i>' + this.files[0].name + '</span>';
+      } else {
+        el.innerHTML = '<span class="text-danger">Pending</span>';
+      }
+    });
+
     document.getElementById('taAllocationLetter').addEventListener('change', function() {
       const el = document.getElementById('summaryTaLetter');
       if (this.files.length > 0) {

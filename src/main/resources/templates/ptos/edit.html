@@ -62,7 +62,7 @@
 
   <div class="row justify-content-center">
     <div class="col-12 col-lg-10 col-xl-9">
-      <form th:action="@{/ptos/{id}/edit(id=${pto.id})}" method="post">
+      <form th:action="@{/ptos/{id}/edit(id=${pto.id})}" method="post" enctype="multipart/form-data">
 
         <div class="row g-4">
 
@@ -307,8 +307,48 @@
               </div>
             </div>
 
-            <!-- Actions -->
-            <div class="d-grid gap-2">
+             <!-- Additional Documents -->
+             <div class="card border-0 shadow-sm mb-4">
+               <div class="card-header bg-white border-bottom py-3">
+                 <h6 class="fw-bold text-navy mb-0">
+                   <i class="bi bi-folder2-open me-2"></i>Add Supporting Documents
+                 </h6>
+               </div>
+               <div class="card-body p-4">
+                 <div class="row g-3">
+                   <div class="col-12">
+                     <label class="form-label fw-semibold">ID / Passport Copy</label>
+                     <input type="file"
+                            id="idCopy"
+                            name="idCopy"
+                            class="form-control"
+                            accept=".pdf,.jpg,.jpeg,.png">
+                     <div class="form-text">Upload ID or passport copy if not already present</div>
+                   </div>
+                   <div class="col-12">
+                     <label class="form-label fw-semibold">TA Allocation Letter</label>
+                     <input type="file"
+                            id="taAllocationLetter"
+                            name="taAllocationLetter"
+                            class="form-control"
+                            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+                     <div class="form-text">PDF, JPG, PNG, DOC or DOCX</div>
+                   </div>
+                   <div class="col-12">
+                     <label class="form-label fw-semibold">Site Sketch / Plan</label>
+                     <input type="file"
+                            id="siteSketch"
+                            name="siteSketch"
+                            class="form-control"
+                            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx">
+                     <div class="form-text">Stand boundaries, dimensions, north point</div>
+                   </div>
+                 </div>
+               </div>
+             </div>
+
+             <!-- Actions -->
+             <div class="d-grid gap-2">
               <button type="submit" class="btn btn-navy py-2 fw-semibold">
                 <i class="bi bi-save me-2"></i>Save Changes
               </button>

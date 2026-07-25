@@ -148,6 +148,7 @@ public class PTOPageController {
             @RequestParam(required = false) Boolean communityResolutionRequired,
             @RequestParam(required = false) MultipartFile taAllocationLetter,
             @RequestParam(required = false) MultipartFile siteSketch,
+            @RequestParam(required = false) MultipartFile idCopy,
             @AuthenticationPrincipal UserDetails userDetails,
             RedirectAttributes ra) {
 
@@ -192,30 +193,52 @@ public class PTOPageController {
             Long ptoId = response.getId();
 
             // Upload supporting documents
+            if (idCopy != null && !idCopy.isEmpty()) {
+                try {
+                    documentService.uploadDocument(idCopy,
+                            new za.co.taloms.document.application.dto.DocumentUploadRequest(
+                                    za.co.taloms.document.domain.entity.DocumentType.ID_COPY.name(),
+                                    za.co.taloms.document.domain.entity.EntityType.PTO.name(),
+                                    ptoId,
+                                    "ID / Passport Copy — " + response.getPtoHolderName(),
+                                    "Uploaded during PTO creation"),
+                            userDetails.getUsername(), "127.0.0.1", "Web UI");
+                } catch (Exception e) {
+                    log.warn("ID copy upload failed for PTO {}: {}", ptoId, e.getMessage());
+                }
+            }
             if (taAllocationLetter != null && !taAllocationLetter.isEmpty()) {
-                documentService.uploadDocument(taAllocationLetter,
-                        new za.co.taloms.document.application.dto.DocumentUploadRequest(
-                                za.co.taloms.document.domain.entity.DocumentType.TA_ALLOCATION_LETTER.name(),
-                                za.co.taloms.document.domain.entity.EntityType.PTO.name(),
-                                ptoId,
-                                "Traditional Authority Allocation Letter — " + response.getPtoNumber(),
-                                "Uploaded during PTO creation"),
-                        userDetails.getUsername(), "127.0.0.1", "Web UI");
+                try {
+                    documentService.uploadDocument(taAllocationLetter,
+                            new za.co.taloms.document.application.dto.DocumentUploadRequest(
+                                    za.co.taloms.document.domain.entity.DocumentType.TA_ALLOCATION_LETTER.name(),
+                                    za.co.taloms.document.domain.entity.EntityType.PTO.name(),
+                                    ptoId,
+                                    "Traditional Authority Allocation Letter — " + response.getPtoNumber(),
+                                    "Uploaded during PTO creation"),
+                            userDetails.getUsername(), "127.0.0.1", "Web UI");
+                } catch (Exception e) {
+                    log.warn("TA allocation letter upload failed for PTO {}: {}", ptoId, e.getMessage());
+                }
             }
             if (siteSketch != null && !siteSketch.isEmpty()) {
-                documentService.uploadDocument(siteSketch,
-                        new za.co.taloms.document.application.dto.DocumentUploadRequest(
-                                za.co.taloms.document.domain.entity.DocumentType.SITE_SKETCH.name(),
-                                za.co.taloms.document.domain.entity.EntityType.PTO.name(),
-                                ptoId,
-                                "Site Sketch — Stand " + parcel.getStandNumber(),
-                                "Uploaded during PTO creation"),
-                        userDetails.getUsername(), "127.0.0.1", "Web UI");
+                try {
+                    documentService.uploadDocument(siteSketch,
+                            new za.co.taloms.document.application.dto.DocumentUploadRequest(
+                                    za.co.taloms.document.domain.entity.DocumentType.SITE_SKETCH.name(),
+                                    za.co.taloms.document.domain.entity.EntityType.PTO.name(),
+                                    ptoId,
+                                    "Site Sketch — Stand " + parcel.getStandNumber(),
+                                    "Uploaded during PTO creation"),
+                            userDetails.getUsername(), "127.0.0.1", "Web UI");
+                } catch (Exception e) {
+                    log.warn("Site sketch upload failed for PTO {}: {}", ptoId, e.getMessage());
+                }
             }
 
             ra.addFlashAttribute("successMessage",
                     "✅ PTO " + response.getPtoNumber() + " created successfully for " + response.getPtoHolderName() +
-                            " on " + parcel.getStandNumber() + ". Supporting documents uploaded.");
+                            ". Documents uploaded: ID Copy, TA Letter, Site Sketch.");
             return "redirect:/ptos/" + ptoId;
 
         } catch (Exception e) {
@@ -414,6 +437,9 @@ public class PTOPageController {
             @RequestParam(required = false) String allocationFeeReceipt,
             @RequestParam(required = false) String taRecommendationRef,
             @RequestParam(required = false) Boolean communityResolutionRequired,
+            @RequestParam(required = false) MultipartFile idCopy,
+            @RequestParam(required = false) MultipartFile taAllocationLetter,
+            @RequestParam(required = false) MultipartFile siteSketch,
             @AuthenticationPrincipal UserDetails userDetails,
             RedirectAttributes ra) {
 
@@ -440,6 +466,51 @@ public class PTOPageController {
                     .build();
 
             var response = ptoService.updatePTO(id, request, userDetails.getUsername());
+
+            // Upload additional documents if provided
+            if (idCopy != null && !idCopy.isEmpty()) {
+                try {
+                    documentService.uploadDocument(idCopy,
+                            new za.co.taloms.document.application.dto.DocumentUploadRequest(
+                                    za.co.taloms.document.domain.entity.DocumentType.ID_COPY.name(),
+                                    za.co.taloms.document.domain.entity.EntityType.PTO.name(),
+                                    id,
+                                    "ID / Passport Copy — " + response.getPtoHolderName(),
+                                    "Uploaded during PTO edit"),
+                            userDetails.getUsername(), "127.0.0.1", "Web UI");
+                } catch (Exception e) {
+                    log.warn("ID copy upload failed for PTO {}: {}", id, e.getMessage());
+                }
+            }
+            if (taAllocationLetter != null && !taAllocationLetter.isEmpty()) {
+                try {
+                    documentService.uploadDocument(taAllocationLetter,
+                            new za.co.taloms.document.application.dto.DocumentUploadRequest(
+                                    za.co.taloms.document.domain.entity.DocumentType.TA_ALLOCATION_LETTER.name(),
+                                    za.co.taloms.document.domain.entity.EntityType.PTO.name(),
+                                    id,
+                                    "TA Allocation Letter — " + response.getPtoNumber(),
+                                    "Uploaded during PTO edit"),
+                            userDetails.getUsername(), "127.0.0.1", "Web UI");
+                } catch (Exception e) {
+                    log.warn("TA allocation letter upload failed for PTO {}: {}", id, e.getMessage());
+                }
+            }
+            if (siteSketch != null && !siteSketch.isEmpty()) {
+                try {
+                    documentService.uploadDocument(siteSketch,
+                            new za.co.taloms.document.application.dto.DocumentUploadRequest(
+                                    za.co.taloms.document.domain.entity.DocumentType.SITE_SKETCH.name(),
+                                    za.co.taloms.document.domain.entity.EntityType.PTO.name(),
+                                    id,
+                                    "Site Sketch — PTO " + response.getPtoNumber(),
+                                    "Uploaded during PTO edit"),
+                            userDetails.getUsername(), "127.0.0.1", "Web UI");
+                } catch (Exception e) {
+                    log.warn("Site sketch upload failed for PTO {}: {}", id, e.getMessage());
+                }
+            }
+
             ra.addFlashAttribute("successMessage", "✅ PTO updated successfully.");
             return "redirect:/ptos/" + id;
         } catch (Exception e) {
