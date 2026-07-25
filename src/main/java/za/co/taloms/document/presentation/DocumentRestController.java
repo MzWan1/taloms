@@ -35,9 +35,28 @@ public class DocumentRestController {
     @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_DATA_CAPTURER','ROLE_LAND_OFFICER')")
     public ResponseEntity<ApiResponse<DocumentResponse>> upload(
             @RequestParam("file") MultipartFile file,
-            @Valid @RequestPart("request") DocumentUploadRequest request,
+            @RequestPart(value = "request", required = false) DocumentUploadRequest requestPart,
+            @RequestParam(value = "documentType", required = false) String documentType,
+            @RequestParam(value = "entityType", required = false) String entityType,
+            @RequestParam(value = "entityId", required = false) Long entityId,
+            @RequestParam(value = "description", required = false) String description,
+            @RequestParam(value = "notes", required = false) String notes,
             @AuthenticationPrincipal UserDetails userDetails,
             HttpServletRequest httpRequest) {
+
+        DocumentUploadRequest request = requestPart;
+        if (request == null) {
+            if (documentType == null || entityType == null || entityId == null) {
+                return ResponseEntity.badRequest().body(ApiResponse.error("Document type, entity type, and entity ID are required"));
+            }
+            request = DocumentUploadRequest.builder()
+                    .documentType(documentType)
+                    .entityType(entityType)
+                    .entityId(entityId)
+                    .description(description)
+                    .notes(notes)
+                    .build();
+        }
 
         String clientIp = httpRequest.getRemoteAddr();
         String userAgent = httpRequest.getHeader("User-Agent");

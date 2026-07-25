@@ -53,6 +53,14 @@ public class DocumentServiceImpl implements DocumentService {
             "application/msword"
     );
 
+    private Path resolveUploadPath() {
+        Path path = Paths.get(uploadPath);
+        if (path.isAbsolute()) {
+            return path;
+        }
+        return Paths.get(System.getProperty("user.dir")).resolve(uploadPath).normalize();
+    }
+
     // Required document types by entity
     private static final java.util.Map<EntityType, List<DocumentType>> REQUIRED_DOCUMENTS =
             java.util.Map.of(
@@ -78,29 +86,30 @@ public class DocumentServiceImpl implements DocumentService {
         String storedFilename = UUID.randomUUID().toString() + "." + extension;
 
         // Create upload directory if it doesn't exist
-        Path uploadPath = Paths.get(this.uploadPath);
+        Path uploadDir = resolveUploadPath();
         try {
-            if (!Files.exists(uploadPath)) {
-                Files.createDirectories(uploadPath);
+            if (!Files.exists(uploadDir)) {
+                Files.createDirectories(uploadDir);
+                log.info("Created upload directory: {}", uploadDir.toAbsolutePath());
             }
         } catch (IOException e) {
             log.error("Failed to create upload directory: {}", e.getMessage(), e);
             throw new BusinessValidationException("Failed to create upload directory");
         }
 
-        // Save file to disk
-        Path filePath = uploadPath.resolve(storedFilename);
+        // Save file to disk FIRST, then create DB record
+        Path filePath = uploadDir.resolve(storedFilename);
         try {
             file.transferTo(filePath.toFile());
         } catch (IOException e) {
-            log.error("Failed to save file: {}", e.getMessage(), e);
-            throw new BusinessValidationException("Failed to save file");
+            log.error("Failed to save file to disk at {}: {}", filePath.toAbsolutePath(), e.getMessage(), e);
+            throw new BusinessValidationException("Failed to save file to disk");
         }
 
-        // Calculate checksum
+        // Calculate checksum from the saved file
         String checksum = calculateChecksum(filePath);
 
-        // Create document entity
+        // Create document entity AFTER file is persisted
         var document = Document.builder()
                 .originalFilename(originalFilename)
                 .storedFilename(storedFilename)
@@ -225,7 +234,7 @@ public class DocumentServiceImpl implements DocumentService {
                 .orElseThrow(() -> new ResourceNotFoundException("Document", id));
 
         // Delete file from disk
-        Path filePath = Paths.get(uploadPath, document.getStoredFilename());
+        Path filePath = resolveUploadPath().resolve(document.getStoredFilename());
         try {
             Files.deleteIfExists(filePath);
         } catch (IOException e) {
@@ -257,14 +266,14 @@ public class DocumentServiceImpl implements DocumentService {
         accessLogRepository.save(accessLog);
 
         // Read file
-        Path filePath = Paths.get(uploadPath, document.getStoredFilename());
+        Path filePath = resolveUploadPath().resolve(document.getStoredFilename());
         try {
             byte[] content = Files.readAllBytes(filePath);
             log.info("Document {} downloaded by {}", document.getId(), accessedBy);
             return content;
         } catch (IOException e) {
-            log.error("Failed to read file: {}", e.getMessage(), e);
-            throw new BusinessValidationException("Failed to read file");
+            log.error("Failed to read file at {}: {}", filePath.toAbsolutePath(), e.getMessage(), e);
+            throw new BusinessValidationException("Failed to read file. File may be missing or path is incorrect: " + filePath.toAbsolutePath());
         }
     }
 
