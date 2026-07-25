@@ -20,7 +20,6 @@ import za.co.taloms.security.application.service.UserService;
 import za.co.taloms.traditionalauthority.application.service.TraditionalAuthorityService;
 import za.co.taloms.traditionalauthority.application.service.VillageService;
 import java.time.LocalDate;
-import java.time.LocalDate;
 
 @Slf4j
 @Controller
@@ -70,9 +69,9 @@ public class ReportPageController {
                     model.addAttribute("totalHouseholds", householdService.countByVillageId(villageId));
                     model.addAttribute("totalBusinesses", businessOccupancyService.countByVillageId(villageId));
                     model.addAttribute("activePTOs", ptoService.countByVillageIdAndStatus(villageId, za.co.taloms.pto.domain.entity.PTOStatus.ACTIVE));
-                    model.addAttribute("availableParcels", parcelService.countByStatusAndVillage(za.co.taloms.parcel.domain.entity.ParcelStatus.AVAILABLE, villageId));
-                    model.addAttribute("allocatedParcels", parcelService.countByStatusAndVillage(za.co.taloms.parcel.domain.entity.ParcelStatus.ALLOCATED, villageId));
-                    model.addAttribute("disputedParcels", parcelService.countByStatusAndVillage(za.co.taloms.parcel.domain.entity.ParcelStatus.DISPUTED, villageId));
+                    model.addAttribute("parcelAvailable", parcelService.countByStatusAndVillage(za.co.taloms.parcel.domain.entity.ParcelStatus.AVAILABLE, villageId));
+                    model.addAttribute("parcelAllocated", parcelService.countByStatusAndVillage(za.co.taloms.parcel.domain.entity.ParcelStatus.ALLOCATED, villageId));
+                    model.addAttribute("parcelDisputed", parcelService.countByStatusAndVillage(za.co.taloms.parcel.domain.entity.ParcelStatus.DISPUTED, villageId));
                     model.addAttribute("parcelReserved", parcelService.countByStatusAndVillage(za.co.taloms.parcel.domain.entity.ParcelStatus.RESERVED, villageId));
                     model.addAttribute("parcelInactive", parcelService.countByStatusAndVillage(za.co.taloms.parcel.domain.entity.ParcelStatus.INACTIVE, villageId));
                     model.addAttribute("activeResidents", residentService.countByVillageId(villageId));
