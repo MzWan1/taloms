@@ -91,6 +91,11 @@ public class BusinessOccupancyRepositoryAdapter implements BusinessOccupancyRepo
     }
 
     @Override
+    public long countByVillageId(Long villageId) {
+        return jpaRepository.countByVillageId(villageId);
+    }
+
+    @Override
     public long countAll() {
         return jpaRepository.count();
     }
