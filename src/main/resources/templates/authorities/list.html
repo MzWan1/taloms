@@ -62,7 +62,7 @@
       </a>
       <a th:href="@{/authorities/create}"
          class="btn btn-navy px-4 fw-semibold"
-         sec:authorize="hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')">
+         sec:authorize="hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR')">
         <i class="bi bi-plus-circle me-2"></i>Add Authority
       </a>
     </div>
@@ -259,7 +259,7 @@
                 <a th:href="@{/authorities/{id}/edit(id=${auth.id})}"
                    class="btn btn-outline-primary"
                    title="Edit"
-                   sec:authorize="hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')">
+                   sec:authorize="hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR')">
                   <i class="bi bi-pencil"></i>
                 </a>
                 <!-- Deactivate -->
@@ -267,7 +267,7 @@
                       th:action="@{/authorities/{id}/deactivate(id=${auth.id})}"
                       method="post"
                       class="d-inline"
-                      sec:authorize="hasAuthority('SYSTEM_ADMIN')">
+                      sec:authorize="hasRole('SYSTEM_ADMIN')">
                   <button type="button"
                           class="btn btn-outline-danger"
                           title="Deactivate"
@@ -281,7 +281,7 @@
                       th:action="@{/authorities/{id}/activate(id=${auth.id})}"
                       method="post"
                       class="d-inline"
-                      sec:authorize="hasAuthority('SYSTEM_ADMIN')">
+                      sec:authorize="hasRole('SYSTEM_ADMIN')">
                   <button type="submit"
                           class="btn btn-outline-success"
                           title="Activate">
@@ -400,3 +400,4 @@
 </script>
 </body>
 </html>
+

@@ -193,15 +193,15 @@
                         <td>
                                 <span th:each="role : ${user.roles}">
                                     <span th:switch="${role}">
-                                        <span th:case="'ROLE_SYSTEM_ADMIN'"
+                                        <span th:case="'SYSTEM_ADMIN'"
                                               class="badge bg-navy">System Admin</span>
-                                        <span th:case="'ROLE_TA_ADMINISTRATOR'"
+                                        <span th:case="'TA_ADMINISTRATOR'"
                                               class="badge badge-ta">TA Admin</span>
-                                        <span th:case="'ROLE_LAND_OFFICER'"
+                                        <span th:case="'LAND_OFFICER'"
                                               class="badge bg-success">Land Officer</span>
-                                        <span th:case="'ROLE_DATA_CAPTURER'"
+                                        <span th:case="'DATA_CAPTURER'"
                                               class="badge badge-capturer">Data Capturer</span>
-                                        <span th:case="'ROLE_REPORT_VIEWER'"
+                                        <span th:case="'REPORT_VIEWER'"
                                               class="badge bg-secondary">Viewer</span>
                                         <span th:case="*"
                                               class="badge bg-secondary"
