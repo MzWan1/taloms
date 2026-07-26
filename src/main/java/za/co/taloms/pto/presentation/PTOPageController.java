@@ -193,6 +193,7 @@ public class PTOPageController {
             Long ptoId = response.getId();
 
             // Upload supporting documents
+            java.util.List<String> uploadErrors = new java.util.ArrayList<>();
             if (idCopy != null && !idCopy.isEmpty()) {
                 try {
                     documentService.uploadDocument(idCopy,
@@ -204,7 +205,9 @@ public class PTOPageController {
                                     "Uploaded during PTO creation"),
                             userDetails.getUsername(), "127.0.0.1", "Web UI");
                 } catch (Exception e) {
-                    log.warn("ID copy upload failed for PTO {}: {}", ptoId, e.getMessage());
+                    String msg = "ID copy upload failed: " + e.getMessage();
+                    log.warn("{} for PTO {}", msg, ptoId, e);
+                    uploadErrors.add(msg);
                 }
             }
             if (taAllocationLetter != null && !taAllocationLetter.isEmpty()) {
@@ -218,7 +221,9 @@ public class PTOPageController {
                                     "Uploaded during PTO creation"),
                             userDetails.getUsername(), "127.0.0.1", "Web UI");
                 } catch (Exception e) {
-                    log.warn("TA allocation letter upload failed for PTO {}: {}", ptoId, e.getMessage());
+                    String msg = "TA allocation letter upload failed: " + e.getMessage();
+                    log.warn("{} for PTO {}", msg, ptoId, e);
+                    uploadErrors.add(msg);
                 }
             }
             if (siteSketch != null && !siteSketch.isEmpty()) {
@@ -232,13 +237,21 @@ public class PTOPageController {
                                     "Uploaded during PTO creation"),
                             userDetails.getUsername(), "127.0.0.1", "Web UI");
                 } catch (Exception e) {
-                    log.warn("Site sketch upload failed for PTO {}: {}", ptoId, e.getMessage());
+                    String msg = "Site sketch upload failed: " + e.getMessage();
+                    log.warn("{} for PTO {}", msg, ptoId, e);
+                    uploadErrors.add(msg);
                 }
             }
 
-            ra.addFlashAttribute("successMessage",
-                    "✅ PTO " + response.getPtoNumber() + " created successfully for " + response.getPtoHolderName() +
-                            ". Documents uploaded: ID Copy, TA Letter, Site Sketch.");
+            if (!uploadErrors.isEmpty()) {
+                ra.addFlashAttribute("successMessage",
+                        "✅ PTO " + response.getPtoNumber() + " created, but document uploads encountered issues:");
+                ra.addFlashAttribute("errorMessage", String.join("; ", uploadErrors));
+            } else {
+                ra.addFlashAttribute("successMessage",
+                        "✅ PTO " + response.getPtoNumber() + " created successfully for " + response.getPtoHolderName() +
+                                ". Documents uploaded: ID Copy, TA Letter, Site Sketch.");
+            }
             return "redirect:/ptos/" + ptoId;
 
         } catch (Exception e) {
