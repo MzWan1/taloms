@@ -52,7 +52,7 @@
             </a>
             <a th:href="@{/residents/create}"
                class="btn btn-navy px-4 fw-semibold"
-               sec:authorize="hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_DATA_CAPTURER')">
+               sec:authorize="hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_DATA_CAPTURER')">
                 <i class="bi bi-plus-circle me-2"></i>New Resident
             </a>
         </div>
@@ -167,7 +167,7 @@
                                 </a>
                                 <a th:href="@{/residents/{id}/edit(id=${resident.id})}"
                                    class="btn btn-outline-primary" title="Edit"
-                                   sec:authorize="hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_DATA_CAPTURER')">
+                                   sec:authorize="hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_DATA_CAPTURER')">
                                     <i class="bi bi-pencil"></i>
                                 </a>
                             </div>

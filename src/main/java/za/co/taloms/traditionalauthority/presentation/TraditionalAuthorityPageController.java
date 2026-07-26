@@ -28,7 +28,7 @@ public class TraditionalAuthorityPageController {
     }
 
     @GetMapping("/create")
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
     public String createForm(Model model) {
         model.addAttribute("form",        new TraditionalAuthorityRequest());
         model.addAttribute("pageTitle",   "Create Authority");
@@ -37,7 +37,7 @@ public class TraditionalAuthorityPageController {
     }
 
     @PostMapping("/create")
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
     public String create(
             @ModelAttribute("form") TraditionalAuthorityRequest request,
             @AuthenticationPrincipal UserDetails userDetails,
@@ -55,7 +55,7 @@ public class TraditionalAuthorityPageController {
     }
 
     @GetMapping("/{id}/edit")
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
     public String editForm(@PathVariable Long id, Model model) {
         var authority = authorityService.findById(id);
         var form = TraditionalAuthorityRequest.builder()
@@ -77,7 +77,7 @@ public class TraditionalAuthorityPageController {
     }
 
     @PostMapping("/{id}/edit")
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
     public String edit(
             @PathVariable Long id,
             @ModelAttribute("form") TraditionalAuthorityRequest request,
@@ -130,7 +130,7 @@ public class TraditionalAuthorityPageController {
     }
 
     @PostMapping("/{id}/deactivate")
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasAuthority('SYSTEM_ADMIN')")
     public String deactivate(
             @PathVariable Long id, RedirectAttributes ra) {
         try {
@@ -144,7 +144,7 @@ public class TraditionalAuthorityPageController {
     }
 
     @PostMapping("/{id}/activate")
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasAuthority('SYSTEM_ADMIN')")
     public String activate(
             @PathVariable Long id, RedirectAttributes ra) {
         try {
@@ -160,7 +160,7 @@ public class TraditionalAuthorityPageController {
     // ── Village sub-routes ────────────────────────────────────────────
 
     @GetMapping("/{authorityId}/villages/create")
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
     public String createVillageForm(
             @PathVariable Long authorityId, Model model) {
         model.addAttribute("form",
@@ -177,7 +177,7 @@ public class TraditionalAuthorityPageController {
     }
 
     @PostMapping("/{authorityId}/villages/create")
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
     public String createVillage(
             @PathVariable Long authorityId,
             @ModelAttribute("form") VillageRequest request,
@@ -195,7 +195,7 @@ public class TraditionalAuthorityPageController {
     }
 
     @PostMapping("/villages/{id}/deactivate")
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
     public String deactivateVillage(
             @PathVariable Long id, RedirectAttributes ra) {
         var village = villageService.findById(id);
@@ -207,7 +207,7 @@ public class TraditionalAuthorityPageController {
     }
 
     @PostMapping("/villages/{id}/activate")
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
     public String activateVillage(
             @PathVariable Long id, RedirectAttributes ra) {
         var village = villageService.findById(id);

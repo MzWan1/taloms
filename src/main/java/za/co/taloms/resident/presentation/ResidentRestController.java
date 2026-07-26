@@ -23,7 +23,7 @@ public class ResidentRestController {
     private final ResidentService residentService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_DATA_CAPTURER')")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_DATA_CAPTURER')")
     public ResponseEntity<ApiResponse<ResidentResponse>> create(
             @Valid @RequestBody ResidentRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -34,7 +34,7 @@ public class ResidentRestController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_DATA_CAPTURER')")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_DATA_CAPTURER')")
     public ResponseEntity<ApiResponse<ResidentResponse>> update(
             @PathVariable Long id,
             @Valid @RequestBody ResidentRequest request,
@@ -86,7 +86,7 @@ public class ResidentRestController {
     }
 
     @PatchMapping("/{id}/deactivate")
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
     public ResponseEntity<ApiResponse<ResidentResponse>> deactivate(
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -96,7 +96,7 @@ public class ResidentRestController {
     }
 
     @PatchMapping("/{id}/activate")
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
     public ResponseEntity<ApiResponse<ResidentResponse>> activate(
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {

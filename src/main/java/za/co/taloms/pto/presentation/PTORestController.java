@@ -24,7 +24,7 @@ public class PTORestController {
     private final PTOCertificatePdfGenerator ptoCertificatePdfGenerator;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER','ROLE_DATA_CAPTURER')")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER','ROLE_DATA_CAPTURER')")
     public ResponseEntity<ApiResponse<PTOResponse>> create(
             @Valid @RequestBody PTORequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -70,7 +70,7 @@ public class PTORestController {
     }
 
     @PatchMapping("/{id}/approve")
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
     public ResponseEntity<ApiResponse<PTOResponse>> approve(
             @PathVariable Long id,
             @RequestBody(required = false) PTOApprovalRequest request,
@@ -83,7 +83,7 @@ public class PTORestController {
     }
 
     @PatchMapping("/{id}/suspend")
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
     public ResponseEntity<ApiResponse<PTOResponse>> suspend(
             @PathVariable Long id,
             @RequestBody(required = false) PTORevokeRequest request,
@@ -99,7 +99,7 @@ public class PTORestController {
     }
 
     @PatchMapping("/{id}/reactivate")
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
     public ResponseEntity<ApiResponse<PTOResponse>> reactivate(
             @PathVariable Long id,
             @RequestBody(required = false) PTOApprovalRequest request,
@@ -115,7 +115,7 @@ public class PTORestController {
     }
 
     @PatchMapping("/{id}/revoke")
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
     public ResponseEntity<ApiResponse<PTOResponse>> revoke(
             @PathVariable Long id,
             @Valid @RequestBody PTORevokeRequest request,
@@ -127,7 +127,7 @@ public class PTORestController {
     }
 
     @PatchMapping("/{id}/reinstate")
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
     public ResponseEntity<ApiResponse<PTOResponse>> reinstate(
             @PathVariable Long id,
             @RequestBody PTORevokeRequest request,
@@ -145,7 +145,7 @@ public class PTORestController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
     public ResponseEntity<ApiResponse<Void>> delete(
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -155,13 +155,13 @@ public class PTORestController {
     }
 
     @GetMapping("/deleted")
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_REPORT_VIEWER')")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_REPORT_VIEWER')")
     public ResponseEntity<ApiResponse<List<PTOResponse>>> getDeleted() {
         return ResponseEntity.ok(ApiResponse.success(ptoService.findDeleted(), "Deleted PTOs retrieved successfully"));
     }
 
     @GetMapping("/{id}/certificate")
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_REPORT_VIEWER')")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_REPORT_VIEWER')")
     public ResponseEntity<byte[]> downloadCertificate(@PathVariable Long id) {
         byte[] pdf = ptoCertificatePdfGenerator.generateCertificate(id);
         return ResponseEntity.ok()

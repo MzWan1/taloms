@@ -22,21 +22,21 @@ public class AuditRestController {
     private final AuditService auditService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
     public ResponseEntity<ApiResponse<List<AuditLogResponse>>> getAll() {
         return ResponseEntity.ok(ApiResponse.success(auditService.findAll(),
                 "Audit logs retrieved successfully"));
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
     public ResponseEntity<ApiResponse<AuditLogResponse>> getById(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(auditService.findById(id),
                 "Audit log retrieved successfully"));
     }
 
     @GetMapping("/entity/{entityType}/{entityId}")
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
     public ResponseEntity<ApiResponse<List<AuditLogResponse>>> getByEntity(
             @PathVariable String entityType,
             @PathVariable Long entityId) {
@@ -47,7 +47,7 @@ public class AuditRestController {
     }
 
     @GetMapping("/user/{performedBy}")
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
     public ResponseEntity<ApiResponse<List<AuditLogResponse>>> getByUser(
             @PathVariable String performedBy) {
 
@@ -57,7 +57,7 @@ public class AuditRestController {
     }
 
     @GetMapping("/action/{action}")
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
     public ResponseEntity<ApiResponse<List<AuditLogResponse>>> getByAction(
             @PathVariable AuditAction action) {
 
@@ -67,7 +67,7 @@ public class AuditRestController {
     }
 
     @PostMapping("/search")
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
     public ResponseEntity<ApiResponse<List<AuditLogResponse>>> search(
             @RequestBody AuditSearchCriteria criteria) {
 
@@ -77,7 +77,7 @@ public class AuditRestController {
     }
 
     @GetMapping("/count")
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
     public ResponseEntity<ApiResponse<AuditCountDto>> getCounts() {
         var counts = AuditCountDto.builder()
                 .total(auditService.countAll())

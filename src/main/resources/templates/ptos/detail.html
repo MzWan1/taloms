@@ -53,7 +53,7 @@
             </a>
             <a th:href="@{/ptos/{id}/edit(id=${pto.id})}"
                class="btn btn-outline-primary px-3"
-               sec:authorize="hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')">
+               sec:authorize="hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')">
                 <i class="bi bi-pencil me-1"></i>Edit
             </a>
         </div>
@@ -88,7 +88,7 @@
 
                 <!-- Action Buttons -->
                 <div class="d-flex gap-2 flex-wrap"
-                     sec:authorize="hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')">
+                     sec:authorize="hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')">
 
                     <!-- Approve button — PENDING only -->
                     <button th:if="${pto.status.name() == 'PENDING'}"
@@ -624,7 +624,7 @@
 
             <!-- Quick Actions -->
             <div class="card border-0 shadow-sm"
-                 sec:authorize="hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')">
+                 sec:authorize="hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')">
                 <div class="card-header bg-white border-bottom py-3">
                     <h6 class="fw-bold text-navy mb-0">
                         <i class="bi bi-lightning me-2"></i>Actions

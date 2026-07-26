@@ -28,7 +28,7 @@
 
                 <!-- Users — Admin only -->
                 <li class="nav-item"
-                    sec:authorize="hasRole('SYSTEM_ADMIN')">
+                    sec:authorize="hasAuthority('SYSTEM_ADMIN')">
                     <a class="nav-link rounded-2 px-3"
                        th:classappend="${currentPage == 'users'} ? 'active bg-white bg-opacity-10' : ''"
                        th:href="@{/users}">
@@ -38,7 +38,7 @@
 
                 <!-- Authorities -->
                 <li class="nav-item"
-                    sec:authorize="hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER','ROLE_DATA_CAPTURER')">
+                    sec:authorize="hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER','ROLE_DATA_CAPTURER')">
                     <a class="nav-link rounded-2 px-3"
                        th:classappend="${currentPage == 'authorities'} ? 'active bg-white bg-opacity-10' : ''"
                        th:href="@{/authorities}">
@@ -48,7 +48,7 @@
 
                 <!-- PTOs -->
                 <li class="nav-item"
-                    sec:authorize="hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER','ROLE_DATA_CAPTURER')">
+                    sec:authorize="hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER','ROLE_DATA_CAPTURER')">
                     <a class="nav-link rounded-2 px-3"
                        th:classappend="${currentPage == 'ptos'} ? 'active bg-white bg-opacity-10' : ''"
                        th:href="@{/ptos}">
@@ -58,7 +58,7 @@
 
                 <!-- Parcels -->
                 <li class="nav-item"
-                    sec:authorize="hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER')">
+                    sec:authorize="hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER')">
                     <a class="nav-link rounded-2 px-3"
                        th:classappend="${currentPage == 'parcels'} ? 'active bg-white bg-opacity-10' : ''"
                        th:href="@{/parcels}">
@@ -68,7 +68,7 @@
 
                 <!-- Households -->
                 <li class="nav-item"
-                    sec:authorize="hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER')">
+                    sec:authorize="hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER')">
                     <a class="nav-link rounded-2 px-3"
                        th:classappend="${currentPage == 'households'} ? 'active bg-white bg-opacity-10' : ''"
                        th:href="@{/households}">
@@ -78,7 +78,7 @@
 
                 <!-- Residents -->
                 <li class="nav-item"
-                    sec:authorize="hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_DATA_CAPTURER','ROLE_REPORT_VIEWER')">
+                    sec:authorize="hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_DATA_CAPTURER','ROLE_REPORT_VIEWER')">
                     <a class="nav-link rounded-2 px-3"
                        th:classappend="${currentPage == 'residents'} ? 'active bg-white bg-opacity-10' : ''"
                        th:href="@{/residents}">
@@ -97,7 +97,7 @@
 
                 <!-- Business Occupancies -->
                 <li class="nav-item"
-                    sec:authorize="hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_DATA_CAPTURER','ROLE_REPORT_VIEWER')">
+                    sec:authorize="hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_DATA_CAPTURER','ROLE_REPORT_VIEWER')">
                     <a class="nav-link rounded-2 px-3"
                        th:classappend="${currentPage == 'business-occupancies'} ? 'active bg-white bg-opacity-10' : ''"
                        th:href="@{/business-occupancies}">
@@ -107,7 +107,7 @@
 
                 <!-- Documents -->
                 <li class="nav-item"
-                    sec:authorize="hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_DATA_CAPTURER','ROLE_LAND_OFFICER','ROLE_REPORT_VIEWER')">
+                    sec:authorize="hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_DATA_CAPTURER','ROLE_LAND_OFFICER','ROLE_REPORT_VIEWER')">
                     <a class="nav-link rounded-2 px-3"
                        th:classappend="${currentPage == 'documents'} ? 'active bg-white bg-opacity-10' : ''"
                        th:href="@{/documents}">
@@ -117,7 +117,7 @@
 
                 <!-- Audit -->
                 <li class="nav-item"
-                    sec:authorize="hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')">
+                    sec:authorize="hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')">
                     <a class="nav-link rounded-2 px-3"
                        th:classappend="${currentPage == 'audit'} ? 'active bg-white bg-opacity-10' : ''"
                        th:href="@{/audit}">
@@ -127,7 +127,7 @@
 
                 <!-- GIS -->
                 <li class="nav-item"
-                    sec:authorize="hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER','ROLE_REPORT_VIEWER')">
+                    sec:authorize="hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER','ROLE_REPORT_VIEWER')">
                     <a class="nav-link rounded-2 px-3"
                        th:classappend="${currentPage == 'gis'} ? 'active bg-white bg-opacity-10' : ''"
                        th:href="@{/gis}">
@@ -141,7 +141,7 @@
 
                 <!-- Notifications / Approval Queue -->
                 <li class="nav-item dropdown"
-                    sec:authorize="hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER','ROLE_DATA_CAPTURER')">
+                    sec:authorize="hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER','ROLE_DATA_CAPTURER')">
                     <a class="nav-link px-2 position-relative"
                        href="#" data-bs-toggle="dropdown"
                        th:title="'Pending PTOs: ' + ${pendingPtos != null ? pendingPtos : 0}">
@@ -203,15 +203,15 @@
                             <div class="fw-bold text-navy small"
                                  sec:authentication="name">admin</div>
                             <div class="mt-1">
-                                <span sec:authorize="hasRole('SYSTEM_ADMIN')"
+                                <span sec:authorize="hasAuthority('SYSTEM_ADMIN')"
                                       class="badge bg-navy">System Admin</span>
-                                <span sec:authorize="hasRole('ROLE_TA_ADMINISTRATOR')"
+                                <span sec:authorize="hasAuthority('ROLE_TA_ADMINISTRATOR')"
                                       class="badge badge-ta">TA Admin</span>
-                                <span sec:authorize="hasRole('ROLE_LAND_OFFICER')"
+                                <span sec:authorize="hasAuthority('ROLE_LAND_OFFICER')"
                                       class="badge bg-success">Land Officer</span>
-                                <span sec:authorize="hasRole('ROLE_DATA_CAPTURER')"
+                                <span sec:authorize="hasAuthority('ROLE_DATA_CAPTURER')"
                                       class="badge badge-capturer">Data Capturer</span>
-                                <span sec:authorize="hasRole('ROLE_REPORT_VIEWER')"
+                                <span sec:authorize="hasAuthority('ROLE_REPORT_VIEWER')"
                                       class="badge bg-secondary">Viewer</span>
                             </div>
                         </li>
@@ -221,7 +221,7 @@
                                 <i class="bi bi-key me-2 text-muted"></i>Change Password
                             </a>
                         </li>
-                        <li sec:authorize="hasRole('SYSTEM_ADMIN')">
+                        <li sec:authorize="hasAuthority('SYSTEM_ADMIN')">
                             <a class="dropdown-item py-2" th:href="@{/users}">
                                 <i class="bi bi-people me-2 text-muted"></i>Manage Users
                             </a>

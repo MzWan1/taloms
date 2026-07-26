@@ -54,7 +54,7 @@
       </a>
       <a th:href="@{/households/{id}/edit(id=${household.id})}"
          class="btn btn-outline-primary px-3"
-         sec:authorize="hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_DATA_CAPTURER')">
+         sec:authorize="hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_DATA_CAPTURER')">
         <i class="bi bi-pencil me-1"></i>Edit
       </a>
     </div>
@@ -211,7 +211,7 @@
     <!-- RIGHT - Actions -->
     <div class="col-12 col-lg-5">
       <div class="card border-0 shadow-sm"
-           sec:authorize="hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')">
+           sec:authorize="hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')">
         <div class="card-header bg-white border-bottom py-3">
           <h6 class="fw-bold text-navy mb-0">
             <i class="bi bi-lightning me-2"></i>Actions
@@ -237,7 +237,7 @@
 
           <a th:href="@{/households/{id}/edit(id=${household.id})}"
              class="btn btn-outline-primary text-start"
-             sec:authorize="hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_DATA_CAPTURER')">
+             sec:authorize="hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_DATA_CAPTURER')">
             <i class="bi bi-pencil me-2"></i>Edit Household
           </a>
 

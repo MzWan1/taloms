@@ -19,7 +19,7 @@ public class VillageRestController {
     private final VillageService villageService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
     public ResponseEntity<ApiResponse<VillageResponse>> create(
             @Valid @RequestBody VillageRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -61,7 +61,7 @@ public class VillageRestController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
     public ResponseEntity<ApiResponse<VillageResponse>> update(
             @PathVariable Long id,
             @Valid @RequestBody VillageRequest request) {
@@ -72,7 +72,7 @@ public class VillageRestController {
     }
 
     @PatchMapping("/{id}/deactivate")
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
     public ResponseEntity<ApiResponse<Void>> deactivate(
             @PathVariable Long id) {
         villageService.deactivate(id);
@@ -82,7 +82,7 @@ public class VillageRestController {
     }
 
     @PatchMapping("/{id}/activate")
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
     public ResponseEntity<ApiResponse<Void>> activate(
             @PathVariable Long id) {
         villageService.activate(id);

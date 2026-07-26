@@ -23,7 +23,7 @@ public class ParcelRestController {
     private final ParcelService parcelService;
 
     @PostMapping
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER')")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER')")
     public ResponseEntity<ApiResponse<ParcelResponse>> create(
             @Valid @RequestBody ParcelRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -34,7 +34,7 @@ public class ParcelRestController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER')")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER')")
     public ResponseEntity<ApiResponse<ParcelResponse>> update(
             @PathVariable Long id,
             @Valid @RequestBody ParcelRequest request,
@@ -84,7 +84,7 @@ public class ParcelRestController {
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
     public ResponseEntity<ApiResponse<ParcelResponse>> updateStatus(
             @PathVariable Long id,
             @RequestParam ParcelStatus status,
@@ -95,7 +95,7 @@ public class ParcelRestController {
     }
 
     @PatchMapping("/{id}/allocate")
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER')")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER')")
     public ResponseEntity<ApiResponse<ParcelResponse>> allocate(
             @PathVariable Long id,
             @RequestParam Long ptoId,
@@ -106,7 +106,7 @@ public class ParcelRestController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasAuthority('SYSTEM_ADMIN')")
     public ResponseEntity<ApiResponse<Void>> delete(
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {

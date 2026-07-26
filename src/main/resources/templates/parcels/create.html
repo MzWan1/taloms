@@ -695,7 +695,8 @@
     function updateDisplay() {
         document.getElementById('capturedCount').textContent = `${gpsPoints.length} points captured`;
         document.getElementById('mapPointCount').textContent = gpsPoints.length;
-        document.getElementById('boundariesJson').value = JSON.stringify(gpsPoints);
+        const sortedForSubmit = [...gpsPoints].sort((a, b) => a.sequence - b.sequence);
+        document.getElementById('boundariesJson').value = JSON.stringify(sortedForSubmit);
         updateMap();
 
         if (gpsPoints.length >= 3) {
@@ -844,6 +845,9 @@
     });
 
     console.log('Parcel creation ready. Use GPS walk-trace or manual tap to capture boundary.');
+</script>
+<script>
+    document.addEventListener('DOMContentLoaded', updateCaptureMode);
 </script>
 </body>
 </html>

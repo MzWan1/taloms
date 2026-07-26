@@ -52,7 +52,7 @@
             </a>
             <a th:href="@{/parcels/create}"
                class="btn btn-navy px-4 fw-semibold"
-               sec:authorize="hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER')">
+               sec:authorize="hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER')">
                 <i class="bi bi-plus-circle me-2"></i>New Parcel
             </a>
         </div>
@@ -171,7 +171,7 @@
                                 </a>
                                 <a th:href="@{/parcels/{id}/edit(id=${parcel.id})}"
                                    class="btn btn-outline-primary" title="Edit"
-                                   sec:authorize="hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER')">
+                                   sec:authorize="hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER')">
                                     <i class="bi bi-pencil"></i>
                                 </a>
                             </div>

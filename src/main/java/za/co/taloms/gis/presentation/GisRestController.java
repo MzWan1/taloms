@@ -20,49 +20,49 @@ public class GisRestController {
     private final GisService gisService;
 
     @GetMapping("/parcels/village/{villageId}")
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER','ROLE_REPORT_VIEWER')")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER','ROLE_REPORT_VIEWER')")
     public ResponseEntity<ApiResponse<ParcelGeoJsonResponse>> getParcelsByVillage(@PathVariable Long villageId) {
         var response = gisService.getParcelGeoJson(villageId);
         return ResponseEntity.ok(ApiResponse.success(response, "Parcel GeoJSON retrieved successfully"));
     }
 
     @GetMapping("/parcels/authority/{authorityId}")
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER','ROLE_REPORT_VIEWER')")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER','ROLE_REPORT_VIEWER')")
     public ResponseEntity<ApiResponse<ParcelGeoJsonResponse>> getParcelsByAuthority(@PathVariable Long authorityId) {
         var response = gisService.getParcelGeoJsonByAuthority(authorityId);
         return ResponseEntity.ok(ApiResponse.success(response, "Parcel GeoJSON retrieved successfully"));
     }
 
     @GetMapping("/parcels/status/{status}")
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER','ROLE_REPORT_VIEWER')")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER','ROLE_REPORT_VIEWER')")
     public ResponseEntity<ApiResponse<ParcelGeoJsonResponse>> getParcelsByStatus(@PathVariable String status) {
         var response = gisService.getParcelGeoJsonByStatus(status);
         return ResponseEntity.ok(ApiResponse.success(response, "Parcel GeoJSON retrieved successfully"));
     }
 
     @GetMapping("/parcels/{parcelId}")
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER','ROLE_REPORT_VIEWER')")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER','ROLE_REPORT_VIEWER')")
     public ResponseEntity<ApiResponse<ParcelGeoJsonResponse>> getParcelById(@PathVariable Long parcelId) {
         var response = gisService.getParcelGeoJsonById(parcelId);
         return ResponseEntity.ok(ApiResponse.success(response, "Parcel GeoJSON retrieved successfully"));
     }
 
     @GetMapping("/geojson/village/{villageId}")
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER','ROLE_REPORT_VIEWER')")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER','ROLE_REPORT_VIEWER')")
     public ResponseEntity<ApiResponse<GeoJsonResponse>> getGeoJsonByVillage(@PathVariable Long villageId) {
         var response = gisService.getGeoJsonForVillage(villageId);
         return ResponseEntity.ok(ApiResponse.success(response, "GeoJSON retrieved successfully"));
     }
 
     @GetMapping("/geojson/authority/{authorityId}")
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER','ROLE_REPORT_VIEWER')")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER','ROLE_REPORT_VIEWER')")
     public ResponseEntity<ApiResponse<GeoJsonResponse>> getGeoJsonByAuthority(@PathVariable Long authorityId) {
         var response = gisService.getGeoJsonForAuthority(authorityId);
         return ResponseEntity.ok(ApiResponse.success(response, "GeoJSON retrieved successfully"));
     }
 
     @GetMapping("/parcel/{parcelId}/geometry")
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER','ROLE_REPORT_VIEWER')")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER','ROLE_REPORT_VIEWER')")
     public ResponseEntity<ApiResponse<Object>> getParcelGeometry(@PathVariable Long parcelId) {
         var response = gisService.getParcelGeometry(parcelId);
         return ResponseEntity.ok(ApiResponse.success(response, "Parcel geometry retrieved successfully"));
@@ -77,14 +77,14 @@ public class GisRestController {
     }
 
     @GetMapping("/community/village/{villageId}")
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER','ROLE_REPORT_VIEWER')")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER','ROLE_REPORT_VIEWER')")
     public ResponseEntity<ApiResponse<GeoJsonResponse>> getCommunityLayout(@PathVariable Long villageId) {
         var response = gisService.getCommunityLayout(villageId);
         return ResponseEntity.ok(ApiResponse.success(response, "Community layout retrieved successfully"));
     }
 
     @GetMapping("/community/authority/{authorityId}")
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER','ROLE_REPORT_VIEWER')")
+    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER','ROLE_REPORT_VIEWER')")
     public ResponseEntity<ApiResponse<GeoJsonResponse>> getCommunityLayoutByAuthority(@PathVariable Long authorityId) {
         var response = gisService.getCommunityLayoutByAuthority(authorityId);
         return ResponseEntity.ok(ApiResponse.success(response, "Community layout retrieved successfully"));

@@ -25,6 +25,7 @@ import za.co.taloms.pto.domain.repository.PTORepositoryPort;
 import za.co.taloms.traditionalauthority.domain.repository.VillageRepositoryPort;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -62,8 +63,12 @@ public class ParcelServiceImpl implements ParcelService {
             throw new BusinessValidationException("A parcel must have at least 3 boundary points");
         }
 
+        List<BoundaryPointDto> orderedBoundaries = request.getBoundaries().stream()
+                .sorted(Comparator.comparingInt(BoundaryPointDto::getSequence))
+                .collect(Collectors.toList());
+
         // Douglas-Peucker simplification — reduces walk-trace noise to meaningful vertices
-        List<BoundaryPointDto> simplified = BoundarySimplifier.simplify(request.getBoundaries(), 0.5);
+        List<BoundaryPointDto> simplified = BoundarySimplifier.simplify(orderedBoundaries, 0.5);
         if (simplified.size() < 3) {
             throw new BusinessValidationException(
                     "Boundary too simple after simplification. Please capture more points.");
@@ -148,7 +153,10 @@ public class ParcelServiceImpl implements ParcelService {
                 .orElseThrow(() -> new ResourceNotFoundException("Village", request.getVillageId()));
 
         // Douglas-Peucker simplification
-        List<BoundaryPointDto> simplified = BoundarySimplifier.simplify(request.getBoundaries(), 0.5);
+        List<BoundaryPointDto> orderedBoundaries = request.getBoundaries().stream()
+                .sorted(Comparator.comparingInt(BoundaryPointDto::getSequence))
+                .collect(Collectors.toList());
+        List<BoundaryPointDto> simplified = BoundarySimplifier.simplify(orderedBoundaries, 0.5);
         if (simplified.size() < 3) {
             throw new BusinessValidationException(
                     "Boundary too simple after simplification. Please capture more points.");
