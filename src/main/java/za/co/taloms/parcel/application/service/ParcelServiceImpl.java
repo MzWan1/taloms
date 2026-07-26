@@ -11,7 +11,11 @@ import za.co.taloms.common.ResourceNotFoundException;
 import za.co.taloms.parcel.application.dto.BoundaryPointDto;
 import za.co.taloms.parcel.application.dto.ParcelRequest;
 import za.co.taloms.parcel.application.dto.ParcelResponse;
+import za.co.taloms.parcel.application.service.BoundarySimplifier;
+import za.co.taloms.parcel.application.service.BoundaryValidationService;
+import za.co.taloms.parcel.application.service.ParcelAreaCalculator;
 import za.co.taloms.parcel.domain.entity.Parcel;
+import za.co.taloms.parcel.domain.entity.CaptureMode;
 import za.co.taloms.parcel.domain.entity.ParcelBoundary;
 import za.co.taloms.parcel.domain.entity.ParcelStatus;
 import za.co.taloms.parcel.domain.repository.ParcelBoundaryRepositoryPort;
@@ -36,6 +40,7 @@ public class ParcelServiceImpl implements ParcelService {
     private final PTORepositoryPort ptoRepository;
     private final ParcelAreaCalculator areaCalculator;
     private final ApplicationEventPublisher eventPublisher;
+    private final BoundaryValidationService boundaryValidationService;
 
     private static final String PARCEL_NUMBER_PREFIX = "PRC";
 
@@ -52,33 +57,38 @@ public class ParcelServiceImpl implements ParcelService {
                             "' already exists in this village");
         }
 
-        // Validate boundary points
+        // Validate boundary points count
         if (request.getBoundaries() == null || request.getBoundaries().size() < 3) {
             throw new BusinessValidationException("A parcel must have at least 3 boundary points");
         }
 
-        // Validate coordinates are within South Africa
-        for (BoundaryPointDto point : request.getBoundaries()) {
-            validateSouthAfricanCoordinates(point.getLatitude(), point.getLongitude());
+        // Douglas-Peucker simplification — reduces walk-trace noise to meaningful vertices
+        List<BoundaryPointDto> simplified = BoundarySimplifier.simplify(request.getBoundaries(), 0.5);
+        if (simplified.size() < 3) {
+            throw new BusinessValidationException(
+                    "Boundary too simple after simplification. Please capture more points.");
         }
 
-        // Generate parcel number
-        String parcelNumber = generateParcelNumber();
+        // Validate spatial integrity
+        boundaryValidationService.validateCoordinatesInSouthAfrica(simplified);
+        boundaryValidationService.validateClosedLoop(simplified);
+        boundaryValidationService.validateMinimumArea(simplified, null);
 
-        // Calculate area and centroid
-        Double areaM2 = areaCalculator.calculateAreaM2(request.getBoundaries());
-        Double areaHectares = areaCalculator.calculateAreaHectares(request.getBoundaries());
-        Double[] centroid = areaCalculator.calculateCentroid(request.getBoundaries());
+        // Calculate area and centroid using UTM Zone 35S projection
+        Double areaM2 = areaCalculator.calculateAreaM2(simplified);
+        Double areaHectares = areaCalculator.calculateAreaHectares(simplified);
+        Double[] centroid = areaCalculator.calculateCentroid(simplified);
 
         // Create parcel entity
         var parcel = Parcel.builder()
-                .parcelNumber(parcelNumber)
+                .parcelNumber(generateParcelNumber())
                 .standNumber(request.getStandNumber())
                 .status(ParcelStatus.AVAILABLE)
                 .areaM2(areaM2)
                 .areaHectares(areaHectares)
                 .centroidLat(centroid[0])
                 .centroidLng(centroid[1])
+                .captureMode(request.getCaptureMode() != null ? request.getCaptureMode() : CaptureMode.MANUAL_TAP)
                 .village(village)
                 .notes(request.getNotes())
                 .createdBy(createdBy)
@@ -87,10 +97,10 @@ public class ParcelServiceImpl implements ParcelService {
         // Save parcel
         var saved = parcelRepository.save(parcel);
 
-        // Save boundaries
+        // Save simplified boundaries
         List<ParcelBoundary> boundaries = new ArrayList<>();
-        for (int i = 0; i < request.getBoundaries().size(); i++) {
-            BoundaryPointDto point = request.getBoundaries().get(i);
+        for (int i = 0; i < simplified.size(); i++) {
+            BoundaryPointDto point = simplified.get(i);
             var boundary = ParcelBoundary.builder()
                     .parcel(saved)
                     .sequence(i + 1)
@@ -102,11 +112,12 @@ public class ParcelServiceImpl implements ParcelService {
         boundaryRepository.saveAll(boundaries);
         saved.setBoundaries(boundaries);
 
-        // Update PostGIS geometry from boundaries
-        updateParcelGeometry(saved);
+        // PostGIS geometry is auto-updated via V30 trigger on parcel_boundaries
 
-        // Check for overlapping parcels
-        checkForOverlaps(saved);
+        // Check for self-intersecting polygon
+        if (parcelRepository.hasSelfIntersection(saved.getId())) {
+            log.warn("Parcel {} has self-intersecting geometry — ST_IsValid returned false", saved.getId());
+        }
 
         log.info("Created parcel: {} ({}) in village: {} by {}",
                 saved.getParcelNumber(), saved.getStandNumber(), village.getVillageName(), createdBy);
@@ -136,12 +147,28 @@ public class ParcelServiceImpl implements ParcelService {
         var village = villageRepository.findById(request.getVillageId())
                 .orElseThrow(() -> new ResourceNotFoundException("Village", request.getVillageId()));
 
-        // Update boundaries
+        // Douglas-Peucker simplification
+        List<BoundaryPointDto> simplified = BoundarySimplifier.simplify(request.getBoundaries(), 0.5);
+        if (simplified.size() < 3) {
+            throw new BusinessValidationException(
+                    "Boundary too simple after simplification. Please capture more points.");
+        }
+
+        // Validate spatial integrity
+        boundaryValidationService.validateCoordinatesInSouthAfrica(simplified);
+        boundaryValidationService.validateClosedLoop(simplified);
+
+        // Recalculate area and centroid using UTM Zone 35S
+        Double areaM2 = areaCalculator.calculateAreaM2(simplified);
+        Double areaHectares = areaCalculator.calculateAreaHectares(simplified);
+        Double[] centroid = areaCalculator.calculateCentroid(simplified);
+
+        // Replace boundaries
         boundaryRepository.deleteByParcelId(parcel.getId());
 
         List<ParcelBoundary> boundaries = new ArrayList<>();
-        for (int i = 0; i < request.getBoundaries().size(); i++) {
-            BoundaryPointDto point = request.getBoundaries().get(i);
+        for (int i = 0; i < simplified.size(); i++) {
+            BoundaryPointDto point = simplified.get(i);
             var boundary = ParcelBoundary.builder()
                     .parcel(parcel)
                     .sequence(i + 1)
@@ -152,27 +179,24 @@ public class ParcelServiceImpl implements ParcelService {
         }
         boundaryRepository.saveAll(boundaries);
 
-        // Recalculate area and centroid
-        Double areaM2 = areaCalculator.calculateAreaM2(request.getBoundaries());
-        Double areaHectares = areaCalculator.calculateAreaHectares(request.getBoundaries());
-        Double[] centroid = areaCalculator.calculateCentroid(request.getBoundaries());
-
         parcel.setStandNumber(request.getStandNumber());
         parcel.setAreaM2(areaM2);
         parcel.setAreaHectares(areaHectares);
         parcel.setCentroidLat(centroid[0]);
         parcel.setCentroidLng(centroid[1]);
+        parcel.setCaptureMode(request.getCaptureMode() != null ? request.getCaptureMode() : CaptureMode.MANUAL_TAP);
         parcel.setVillage(village);
         parcel.setNotes(request.getNotes());
         parcel.setBoundaries(boundaries);
 
         var saved = parcelRepository.save(parcel);
 
-        // Update PostGIS geometry from boundaries
-        updateParcelGeometry(saved);
+        // PostGIS geometry auto-updated via V30 trigger
 
-        // Check for overlapping parcels
-        checkForOverlaps(saved);
+        // Check for self-intersecting polygon
+        if (parcelRepository.hasSelfIntersection(saved.getId())) {
+            log.warn("Parcel {} has self-intersecting geometry after update", saved.getId());
+        }
 
         log.info("Updated parcel: {} by {}", saved.getParcelNumber(), updatedBy);
 
@@ -377,59 +401,16 @@ public class ParcelServiceImpl implements ParcelService {
         return String.format("%s-%s-%05d", PARCEL_NUMBER_PREFIX, year, count);
     }
 
-    private void validateSouthAfricanCoordinates(double latitude, double longitude) {
-        if (latitude < -35 || latitude > -22) {
-            throw new BusinessValidationException(
-                    "Latitude " + latitude + " is outside South African bounds (-35 to -22)");
-        }
-        if (longitude < 16 || longitude > 33) {
-            throw new BusinessValidationException(
-                    "Longitude " + longitude + " is outside South African bounds (16 to 33)");
-        }
-    }
-
-    private void updateParcelGeometry(Parcel parcel) {
-        if (parcel.getBoundaries() == null || parcel.getBoundaries().isEmpty()) {
-            return;
-        }
-
-        List<String> ringCoords = parcel.getBoundaries().stream()
-                .sorted((a, b) -> Integer.compare(a.getSequence(), b.getSequence()))
-                .map(b -> b.getLongitude() + " " + b.getLatitude())
-                .collect(Collectors.toList());
-
-        if (ringCoords.size() < 3) {
-            return;
-        }
-
-        ringCoords.add(ringCoords.get(0));
-        String wkt = "POLYGON((" + String.join(", ", ringCoords) + "))";
-
-        // The geometry column is auto-updated via DB trigger in production.
-        // For development environments without the trigger, we log the WKT for debugging.
-        log.debug("Parcel {} geometry WKT: {}", parcel.getId(), wkt);
-    }
-
     private void checkForOverlaps(Parcel parcel) {
         if (parcel.getBoundaries() == null || parcel.getBoundaries().isEmpty()) {
             return;
         }
 
-        double minLat = parcel.getBoundaries().stream()
-                .mapToDouble(ParcelBoundary::getLatitude).min().orElse(0);
-        double maxLat = parcel.getBoundaries().stream()
-                .mapToDouble(ParcelBoundary::getLatitude).max().orElse(0);
-        double minLng = parcel.getBoundaries().stream()
-                .mapToDouble(ParcelBoundary::getLongitude).min().orElse(0);
-        double maxLng = parcel.getBoundaries().stream()
-                .mapToDouble(ParcelBoundary::getLongitude).max().orElse(0);
+        List<Object[]> overlaps = parcelRepository.findOverlappingParcelsWithGeometry(parcel.getId());
 
-        List<Parcel> overlapping = parcelRepository.findOverlappingParcels(
-                parcel.getId(), minLat, minLng, maxLat, maxLng);
-
-        if (overlapping != null && !overlapping.isEmpty()) {
-            String names = overlapping.stream()
-                    .map(p -> p.getStandNumber() + " (" + p.getParcelNumber() + ")")
+        if (overlaps != null && !overlaps.isEmpty()) {
+            String names = overlaps.stream()
+                    .map(row -> row[1] + " (" + row[2] + ")")
                     .collect(Collectors.joining(", "));
             throw new BusinessValidationException(
                     "Parcel boundary overlaps with existing parcel(s): " + names +
@@ -470,6 +451,7 @@ public class ParcelServiceImpl implements ParcelService {
                 .updatedAt(parcel.getUpdatedAt())
                 .boundaries(boundaryPoints)
                 .boundaryCount(boundaryPoints.size())
+                .captureMode(parcel.getCaptureMode())
                 .build();
     }
 }

@@ -15,4 +15,6 @@ public interface GisService {
     Map<String, Object> getParcelGeometry(Long parcelId);
     boolean validateCoordinates(double lat, double lng);
     boolean validatePolygon(List<Map<String, Double>> coordinates);
+    GeoJsonResponse getCommunityLayout(Long villageId);
+    GeoJsonResponse getCommunityLayoutByAuthority(Long authorityId);
 }

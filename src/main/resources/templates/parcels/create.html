@@ -115,7 +115,7 @@
             <h4 class="fw-bold text-navy mb-0">
                 <i class="bi bi-map me-2"></i>Create New Land Parcel
             </h4>
-            <p class="text-muted small mb-0">Capture 6 GPS points to define the parcel boundary</p>
+            <p class="text-muted small mb-0">Capture the parcel boundary using GPS walk-trace or manual tap</p>
         </div>
         <a th:href="@{/parcels}" class="btn btn-outline-secondary px-3">
             <i class="bi bi-arrow-left me-1"></i>Back
@@ -233,117 +233,63 @@
                     </div>
                 </div>
 
-                <!-- GPS Points Cards -->
+                <!-- Capture Mode -->
                 <div class="card border-0 shadow-sm mb-3">
                     <div class="card-header bg-white border-bottom py-3">
                         <h6 class="fw-bold text-navy mb-0">
-                            <i class="bi bi-geo-alt me-2"></i>GPS Boundary Points
-                            <span class="badge bg-navy ms-2" id="capturedCount">0/6 captured</span>
+                            <i class="bi bi-geo-alt me-2"></i>Boundary Capture Mode
                         </h6>
                     </div>
                     <div class="card-body p-3">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label for="captureMode" class="form-label">Capture Method</label>
+                                <select id="captureMode" name="captureMode" class="form-select" onchange="updateCaptureMode()">
+                                    <option th:each="m : ${captureModes}"
+                                            th:value="${m.name()}"
+                                            th:text="${m.displayName + ' — ' + m.description}"
+                                            th:selected="${form.captureMode == m}">
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="col-12" id="autoWalkControls" style="display:none;">
+                                <div class="alert alert-warning mb-0">
+                                    <i class="bi bi-exclamation-triangle me-2"></i>
+                                    <strong>Auto-Walk Mode:</strong> Stand at the starting corner, then walk the perimeter.
+                                    GPS will capture points automatically every 2-3 seconds.
+                                    Return to the start to close the loop.
+                                    <div class="mt-2">
+                                        <button type="button" id="startAutoWalk" class="btn btn-success btn-sm" onclick="startAutoWalk()">
+                                            <i class="bi bi-play-circle me-1"></i>Start Walk
+                                        </button>
+                                        <button type="button" id="stopAutoWalk" class="btn btn-danger btn-sm" style="display:none;" onclick="stopAutoWalk()">
+                                            <i class="bi bi-pause-circle me-1"></i>Stop Walk
+                                        </button>
+                                        <span id="autoWalkStatus" class="ms-2 small text-muted"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- GPS Points Cards -->
+                <div class="card border-0 shadow-sm mb-3" id="manualPointCards">
+                    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="fw-bold text-navy mb-0">
+                            <i class="bi bi-geo-alt me-2"></i>GPS Boundary Points
+                            <span class="badge bg-navy ms-2" id="capturedCount">0 points</span>
+                        </h6>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addManualPoint()">
+                            <i class="bi bi-plus-circle me-1"></i>Add Point
+                        </button>
+                    </div>
+                    <div class="card-body p-3">
                         <div class="row g-2" id="gpsPointsContainer">
-                            <!-- Point 1 -->
-                            <div class="col-12 col-md-6" id="pointCard1">
-                                <div class="card gps-point-card active">
-                                    <div class="card-body p-2">
-                                        <div class="d-flex align-items-center gap-2">
-                                            <div class="gps-badge gps-badge-active">1</div>
-                                            <div class="flex-grow-1">
-                                                <div class="fw-semibold small">Point 1</div>
-                                                <div class="coordinate-preview small" id="coord1">—</div>
-                                            </div>
-                                            <button type="button" class="btn btn-sm btn-success" onclick="captureGPS(1)">
-                                                <i class="bi bi-satellite"></i> Capture
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- Point 2 -->
-                            <div class="col-12 col-md-6" id="pointCard2">
-                                <div class="card gps-point-card">
-                                    <div class="card-body p-2">
-                                        <div class="d-flex align-items-center gap-2">
-                                            <div class="gps-badge gps-badge-pending">2</div>
-                                            <div class="flex-grow-1">
-                                                <div class="fw-semibold small">Point 2</div>
-                                                <div class="coordinate-preview small" id="coord2">—</div>
-                                            </div>
-                                            <button type="button" class="btn btn-sm btn-secondary" onclick="captureGPS(2)" disabled>
-                                                <i class="bi bi-satellite"></i> Capture
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- Point 3 -->
-                            <div class="col-12 col-md-6" id="pointCard3">
-                                <div class="card gps-point-card">
-                                    <div class="card-body p-2">
-                                        <div class="d-flex align-items-center gap-2">
-                                            <div class="gps-badge gps-badge-pending">3</div>
-                                            <div class="flex-grow-1">
-                                                <div class="fw-semibold small">Point 3</div>
-                                                <div class="coordinate-preview small" id="coord3">—</div>
-                                            </div>
-                                            <button type="button" class="btn btn-sm btn-secondary" onclick="captureGPS(3)" disabled>
-                                                <i class="bi bi-satellite"></i> Capture
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- Point 4 -->
-                            <div class="col-12 col-md-6" id="pointCard4">
-                                <div class="card gps-point-card">
-                                    <div class="card-body p-2">
-                                        <div class="d-flex align-items-center gap-2">
-                                            <div class="gps-badge gps-badge-pending">4</div>
-                                            <div class="flex-grow-1">
-                                                <div class="fw-semibold small">Point 4</div>
-                                                <div class="coordinate-preview small" id="coord4">—</div>
-                                            </div>
-                                            <button type="button" class="btn btn-sm btn-secondary" onclick="captureGPS(4)" disabled>
-                                                <i class="bi bi-satellite"></i> Capture
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- Point 5 -->
-                            <div class="col-12 col-md-6" id="pointCard5">
-                                <div class="card gps-point-card">
-                                    <div class="card-body p-2">
-                                        <div class="d-flex align-items-center gap-2">
-                                            <div class="gps-badge gps-badge-pending">5</div>
-                                            <div class="flex-grow-1">
-                                                <div class="fw-semibold small">Point 5</div>
-                                                <div class="coordinate-preview small" id="coord5">—</div>
-                                            </div>
-                                            <button type="button" class="btn btn-sm btn-secondary" onclick="captureGPS(5)" disabled>
-                                                <i class="bi bi-satellite"></i> Capture
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <!-- Point 6 -->
-                            <div class="col-12 col-md-6" id="pointCard6">
-                                <div class="card gps-point-card">
-                                    <div class="card-body p-2">
-                                        <div class="d-flex align-items-center gap-2">
-                                            <div class="gps-badge gps-badge-pending">6</div>
-                                            <div class="flex-grow-1">
-                                                <div class="fw-semibold small">Point 6</div>
-                                                <div class="coordinate-preview small" id="coord6">—</div>
-                                            </div>
-                                            <button type="button" class="btn btn-sm btn-secondary" onclick="captureGPS(6)" disabled>
-                                                <i class="bi bi-satellite"></i> Capture
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
+                            <div class="col-12 text-center text-muted py-4" id="noPointsMessage">
+                                <i class="bi bi-map display-5 d-block mb-2 opacity-25"></i>
+                                <span class="fw-semibold">No points captured yet</span><br>
+                                <small>Use auto-walk mode or tap "Add Point" to capture GPS coordinates</small>
                             </div>
                         </div>
                     </div>
@@ -359,7 +305,7 @@
                     <div class="card-body p-2">
                         <div id="map"></div>
                         <div class="d-flex justify-content-between mt-2 text-muted small">
-                            <span>Points: <span id="mapPointCount">0</span>/6</span>
+                            <span>Points: <span id="mapPointCount">0</span></span>
                             <span id="areaPreview">Area: —</span>
                         </div>
                     </div>
@@ -378,7 +324,7 @@
                     </button>
                 </div>
                 <div class="text-muted small mt-2 text-end">
-                    <span id="validationMessage" class="text-danger">Please capture all 6 GPS points</span>
+                    <span id="validationMessage" class="text-danger">Please capture at least 3 GPS points</span>
                 </div>
             </div>
         </div>
@@ -478,7 +424,7 @@
                 }
 
                 // Add point to array with sequence number
-                gpsPoints.push({ latitude: lat, longitude: lng, sequence: pointNumber });
+                gpsPoints.push({ latitude: lat, longitude: lng, sequence: pointNumber, accuracy: accuracy });
 
                 // Update UI
                 const coordDisplay = document.getElementById(`coord${pointNumber}`);
@@ -503,24 +449,7 @@
                 btn.innerHTML = '<i class="bi bi-check-circle"></i> Captured';
                 btn.className = 'btn btn-sm btn-success';
 
-                // Enable next point
-                if (pointNumber < MAX_POINTS) {
-                    const nextBtn = document.querySelector(`#pointCard${pointNumber + 1} button`);
-                    nextBtn.disabled = false;
-                    nextBtn.className = 'btn btn-sm btn-primary';
-                    document.getElementById(`pointCard${pointNumber + 1}`).querySelector('.card').className = 'card gps-point-card active';
-                    document.getElementById(`pointCard${pointNumber + 1}`).querySelector('.gps-badge').className = 'gps-badge gps-badge-active';
-                }
-
                 updateDisplay();
-
-                // Enable submit when all points are captured
-                if (gpsPoints.length === MAX_POINTS) {
-                    document.getElementById('submitBtn').disabled = false;
-                    const msg = document.getElementById('validationMessage');
-                    msg.textContent = '✅ All 6 points captured! Ready to create parcel.';
-                    msg.className = 'text-success';
-                }
             },
             function(error) {
                 console.error('GPS Error:', error);
@@ -551,9 +480,153 @@
         );
     }
 
+    // ── Auto-Walk Capture ────────────────────────────────────────────────
+    let watchId = null;
+    let lastAutoCapture = null;
+    const AUTO_CAPTURE_INTERVAL_MS = 3000;
+    const AUTO_CAPTURE_MIN_DISTANCE_M = 2.0;
+
+    function startAutoWalk() {
+        if (!navigator.geolocation) {
+            alert('GPS is not supported by your browser.');
+            return;
+        }
+
+        document.getElementById('autoWalkStatus').innerHTML = '<span class="text-success"><i class="bi bi-play-circle me-1"></i>Recording... Walk the perimeter now.</span>';
+        document.getElementById('stopAutoWalk').style.display = 'inline-block';
+        document.getElementById('startAutoWalk').style.display = 'none';
+
+        lastAutoCapture = null;
+        let seqCounter = gpsPoints.length + 1;
+
+        watchId = navigator.geolocation.watchPosition(
+            function(position) {
+                const lat = position.coords.latitude;
+                const lng = position.coords.longitude;
+
+                if (lat < -35 || lat > -22 || lng < 16 || lng > 33) {
+                    return;
+                }
+
+                if (lastAutoCapture) {
+                    const dist = haversineDistanceM(lat, lng, lastAutoCapture.latitude, lastAutoCapture.longitude);
+                    if (dist < AUTO_CAPTURE_MIN_DISTANCE_M) {
+                        return;
+                    }
+                }
+
+                gpsPoints.push({
+                    latitude: lat,
+                    longitude: lng,
+                    sequence: seqCounter++,
+                    accuracy: position.coords.accuracy,
+                    autoCaptured: true
+                });
+
+                lastAutoCapture = { latitude: lat, longitude: lng };
+                updateDisplay();
+            },
+            function(error) {
+                console.error('Auto-watch GPS Error:', error);
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 10000,
+                maximumAge: 0,
+                distanceFilter: AUTO_CAPTURE_MIN_DISTANCE_M
+            }
+        );
+    }
+
+    function stopAutoWalk() {
+        if (watchId !== null) {
+            navigator.geolocation.clearWatch(watchId);
+            watchId = null;
+        }
+        document.getElementById('autoWalkStatus').innerHTML = '<span class="text-muted"><i class="bi bi-pause-circle me-1"></i>Paused — ' + gpsPoints.length + ' points captured</span>';
+        document.getElementById('stopAutoWalk').style.display = 'none';
+        document.getElementById('startAutoWalk').style.display = 'inline-block';
+        document.getElementById('startAutoWalk').innerHTML = '<i class="bi bi-play-circle me-1"></i>Resume Walk';
+        updateDisplay();
+    }
+
+    function haversineDistanceM(lat1, lon1, lat2, lon2) {
+        const R = 6371000;
+        const dLat = (lat2 - lat1) * Math.PI / 180;
+        const dLon = (lon2 - lon1) * Math.PI / 180;
+        const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                  Math.sin(dLon/2) * Math.sin(dLon/2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+        return R * c;
+    }
+
+    function updateCaptureMode() {
+        const mode = document.getElementById('captureMode').value;
+        const autoWalkControls = document.getElementById('autoWalkControls');
+        const manualCards = document.getElementById('manualPointCards');
+
+        if (mode === 'AUTO_WALK' || mode === 'HYBRID') {
+            autoWalkControls.style.display = 'block';
+            if (manualCards) manualCards.style.display = 'none';
+        } else {
+            autoWalkControls.style.display = 'none';
+            if (manualCards) manualCards.style.display = 'block';
+        }
+    }
+
+    function addManualPoint() {
+        if (isSubmitting) return;
+
+        const seq = gpsPoints.length + 1;
+        const container = document.getElementById('gpsPointsContainer');
+        const noMsg = document.getElementById('noPointsMessage');
+        if (noMsg) noMsg.style.display = 'none';
+
+        const col = document.createElement('div');
+        col.className = 'col-12 col-md-6';
+        col.id = 'pointCard' + seq;
+        col.innerHTML = `
+            <div class="card gps-point-card active">
+                <div class="card-body p-2">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="gps-badge gps-badge-active">${seq}</div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold small">Point ${seq}</div>
+                            <div class="coordinate-preview small" id="coord${seq}">—</div>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-success" onclick="captureGPS(${seq})">
+                            <i class="bi bi-satellite"></i> Capture
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removePoint(${seq})">
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        container.appendChild(col);
+        captureGPS(seq);
+    }
+
+    function removePoint(seq) {
+        const idx = gpsPoints.findIndex(p => p.sequence === seq);
+        if (idx > -1) {
+            gpsPoints.splice(idx, 1);
+        }
+        const card = document.getElementById('pointCard' + seq);
+        if (card) card.remove();
+
+        if (gpsPoints.length === 0) {
+            const noMsg = document.getElementById('noPointsMessage');
+            if (noMsg) noMsg.style.display = 'block';
+        }
+        updateDisplay();
+    }
+
     // ── Update Display ──────────────────────────────────────────────────
     function updateDisplay() {
-        document.getElementById('capturedCount').textContent = `${gpsPoints.length}/${MAX_POINTS} captured`;
+        document.getElementById('capturedCount').textContent = `${gpsPoints.length} points captured`;
         document.getElementById('mapPointCount').textContent = gpsPoints.length;
         document.getElementById('boundariesJson').value = JSON.stringify(gpsPoints);
         updateMap();
@@ -647,13 +720,17 @@
             return false;
         }
 
-        if (gpsPoints.length < MAX_POINTS) {
+        if (gpsPoints.length < 3) {
             e.preventDefault();
             const msg = document.getElementById('validationMessage');
-            msg.textContent = `⚠️ Please capture all ${MAX_POINTS} GPS points. Currently: ${gpsPoints.length}/${MAX_POINTS}`;
+            msg.textContent = `⚠️ Please capture at least 3 GPS points. Currently: ${gpsPoints.length}`;
             msg.className = 'text-danger';
-            alert(`Please capture all ${MAX_POINTS} GPS points. Currently: ${gpsPoints.length}/${MAX_POINTS}`);
+            alert(`Please capture at least 3 GPS points. Currently: ${gpsPoints.length}`);
             return false;
+        }
+
+        if (watchId !== null) {
+            stopAutoWalk();
         }
 
         // Verify all points have valid coordinates
@@ -672,28 +749,7 @@
         return true;
     });
 
-    // ── Keyboard shortcut ──────────────────────────────────────────────
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' && !e.ctrlKey && !e.altKey && !e.shiftKey) {
-            // Check if we're in a form input
-            const activeElement = document.activeElement;
-            if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.tagName === 'SELECT')) {
-                // Don't interfere with form inputs
-                return;
-            }
-
-            for (let i = 1; i <= MAX_POINTS; i++) {
-                const btn = document.querySelector(`#pointCard${i} button`);
-                if (btn && !btn.disabled && btn.textContent.trim() !== 'Captured') {
-                    captureGPS(i);
-                    break;
-                }
-            }
-        }
-    });
-
-    console.log('Parcel creation ready. Capture 6 GPS points to define the boundary.');
-    console.log('Press Enter to capture the current point.');
+    console.log('Parcel creation ready. Use GPS walk-trace or manual tap to capture boundary.');
 </script>
 </body>
 </html>

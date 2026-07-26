@@ -2,6 +2,7 @@ package za.co.taloms.parcel.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import za.co.taloms.parcel.domain.entity.CaptureMode;
 import za.co.taloms.pto.domain.entity.PTO;
 import za.co.taloms.traditionalauthority.domain.entity.Village;
 import java.time.LocalDateTime;
@@ -64,6 +65,11 @@ public class Parcel {
 
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "capture_mode", nullable = false, length = 30)
+    @Builder.Default
+    private CaptureMode captureMode = CaptureMode.MANUAL_TAP;
 
     @OneToMany(mappedBy = "parcel", cascade = CascadeType.ALL, orphanRemoval = true)
     @OrderBy("sequence ASC")

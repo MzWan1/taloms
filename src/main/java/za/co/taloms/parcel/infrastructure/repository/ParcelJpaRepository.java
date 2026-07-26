@@ -107,4 +107,53 @@ public interface ParcelJpaRepository extends JpaRepository<Parcel, Long> {
                                         @Param("minLng") Double minLng,
                                         @Param("maxLat") Double maxLat,
                                         @Param("maxLng") Double maxLng);
+
+    @Query(value = """
+            SELECT p.id, p.parcel_number, p.stand_number, p.village_id,
+                   ST_AsText(p.geometry) as geom_wkt
+            FROM parcels p
+            WHERE p.id != :parcelId
+              AND p.geometry IS NOT NULL
+              AND ST_Intersects(
+                  p.geometry,
+                  (SELECT geometry FROM parcels WHERE id = :parcelId)
+              )
+            """, nativeQuery = true)
+    List<Object[]> findOverlappingParcelsWithGeometry(@Param("parcelId") Long parcelId);
+
+    @Query(value = """
+            SELECT NOT ST_IsValid(p.geometry)
+            FROM parcels p
+            WHERE p.id = :parcelId
+              AND p.geometry IS NOT NULL
+            """, nativeQuery = true)
+    boolean hasSelfIntersection(@Param("parcelId") Long parcelId);
+
+    @Query(value = """
+            SELECT p.id, p.parcel_number, p.stand_number,
+                   ST_ClusterDBSCAN(ST_Centroid(p.geometry), eps := :epsMeters, minpoints := :minPts)
+                       OVER () AS cluster_id
+            FROM parcels p
+            WHERE p.village_id = :villageId
+              AND p.geometry IS NOT NULL
+              AND ST_IsValid(p.geometry)
+            GROUP BY p.id, p.parcel_number, p.stand_number,
+                     ST_ClusterDBSCAN(ST_Centroid(p.geometry), eps := :epsMeters, minpoints := :minPts)
+            ORDER BY cluster_id
+            """, nativeQuery = true)
+    List<Object[]> findParcelClusters(@Param("villageId") Long villageId,
+                                       @Param("epsMeters") double epsMeters,
+                                       @Param("minPts") int minPts);
+
+    @Query(value = """
+            SELECT ST_VoronoiPolygons(
+                ST_Collect(ST_Centroid(p.geometry)),
+                0.0001
+            ).geom as voronoi_geom
+            FROM parcels p
+            WHERE p.village_id = :villageId
+              AND p.geometry IS NOT NULL
+              AND ST_IsValid(p.geometry)
+            """, nativeQuery = true)
+    List<Object[]> findVoronoiCells(@Param("villageId") Long villageId);
 }

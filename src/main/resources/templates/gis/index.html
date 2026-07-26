@@ -303,20 +303,24 @@
             onEachFeature: function(feature, layer) {
                 const props = feature.properties;
                 const occupant = props.occupantTag || 'Not Assigned';
+                const ptoInfo = props.ptoNumber
+                    ? `<strong>${props.ptoHolderName || 'Unknown'}</strong><br/>${props.ptoNumber}`
+                    : occupant;
                 const popupContent = `
                 <div class="fw-bold">${props.standNumber || 'N/A'}</div>
                 <div><strong>Parcel:</strong> ${props.parcelNumber || 'N/A'}</div>
                 <div><strong>Status:</strong> ${props.statusDisplay || 'N/A'}</div>
                 <div><strong>Village:</strong> ${props.villageName || 'N/A'}</div>
                 <div><strong>Area:</strong> ${props.areaM2 ? props.areaM2.toFixed(2) + ' m²' : 'N/A'}</div>
-                <div><strong>Occupant:</strong> ${occupant}</div>
-                ${props.ptoNumber ? `<div><strong>PTO:</strong> ${props.ptoNumber}</div>` : ''}
-                ${props.ptoHolderName ? `<div><strong>Holder:</strong> ${props.ptoHolderName}</div>` : ''}
+                ${props.ptoNumber ? `
+                <div><strong>PTO:</strong> ${props.ptoNumber}</div>
+                <div><strong>Holder:</strong> ${props.ptoHolderName}</div>
+                ` : `<div><strong>Occupant:</strong> ${occupant}</div>`}
                 <hr class="my-1">
                 <a href="/parcels/${props.id}" class="btn btn-sm btn-navy w-100">View Parcel</a>
             `;
                 layer.bindPopup(popupContent);
-                layer.bindTooltip(occupant, {
+                layer.bindTooltip(ptoInfo, {
                     permanent: true,
                     direction: 'center',
                     className: 'parcel-label'

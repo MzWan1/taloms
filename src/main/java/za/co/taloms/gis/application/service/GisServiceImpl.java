@@ -16,6 +16,7 @@ import za.co.taloms.household.domain.repository.HouseholdRepositoryPort;
 import za.co.taloms.parcel.application.dto.ParcelResponse;
 import za.co.taloms.parcel.application.service.ParcelService;
 import za.co.taloms.parcel.domain.entity.ParcelStatus;
+import za.co.taloms.parcel.domain.repository.ParcelRepositoryPort;
 import za.co.taloms.traditionalauthority.application.dto.TraditionalAuthorityResponse;
 import za.co.taloms.traditionalauthority.application.dto.VillageResponse;
 import za.co.taloms.traditionalauthority.application.service.TraditionalAuthorityService;
@@ -34,6 +35,7 @@ public class GisServiceImpl implements GisService {
     private final VillageService villageService;
     private final BusinessOccupancyRepositoryPort businessOccupancyRepository;
     private final HouseholdRepositoryPort householdRepository;
+    private final ParcelRepositoryPort parcelRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -304,6 +306,86 @@ public class GisServiceImpl implements GisService {
 
         Map<String, Object> metadata = new HashMap<>();
         metadata.put("totalCount", parcels.size());
+
+        return GeoJsonResponse.builder()
+                .features(features)
+                .metadata(metadata)
+                .build();
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public GeoJsonResponse getCommunityLayout(Long villageId) {
+        var parcels = parcelService.findByVillage(villageId);
+        return buildCommunityLayout(parcels, villageId);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public GeoJsonResponse getCommunityLayoutByAuthority(Long authorityId) {
+        var villages = villageService.findByAuthority(authorityId);
+        List<ParcelResponse> allParcels = new ArrayList<>();
+        for (VillageResponse village : villages) {
+            allParcels.addAll(parcelService.findByVillage(village.getId()));
+        }
+        return buildCommunityLayout(allParcels, null);
+    }
+
+    private GeoJsonResponse buildCommunityLayout(List<ParcelResponse> parcels, Long villageId) {
+        List<GeoJsonFeature> features = new ArrayList<>();
+
+        Map<Long, String> clusterMap = new HashMap<>();
+        if (villageId != null) {
+            List<Object[]> clusters = parcelRepository.findParcelClusters(villageId, 50.0, 3);
+            for (Object[] row : clusters) {
+                clusterMap.put((Long) row[0], String.valueOf(row[3]));
+            }
+        }
+
+        for (ParcelResponse parcel : parcels) {
+            if (parcel.getBoundaries() == null || parcel.getBoundaries().isEmpty()) {
+                continue;
+            }
+
+            List<List<Double>> coordinates = parcel.getBoundaries().stream()
+                    .map(b -> Arrays.asList(b.getLongitude(), b.getLatitude()))
+                    .collect(Collectors.toList());
+
+            if (!coordinates.isEmpty()) {
+                coordinates.add(coordinates.get(0));
+            }
+
+            Map<String, Object> geometry = new HashMap<>();
+            geometry.put("type", "Polygon");
+            geometry.put("coordinates", Collections.singletonList(coordinates));
+
+            String clusterId = clusterMap.getOrDefault(parcel.getId(), "0");
+
+            Map<String, Object> properties = new HashMap<>();
+            properties.put("id", parcel.getId());
+            properties.put("parcelNumber", parcel.getParcelNumber());
+            properties.put("standNumber", parcel.getStandNumber());
+            properties.put("status", parcel.getStatus().name());
+            properties.put("statusDisplay", parcel.getStatusDisplay());
+            properties.put("villageName", parcel.getVillageName());
+            properties.put("areaM2", parcel.getAreaM2());
+            properties.put("ptoHolderName", parcel.getPtoHolderName());
+            properties.put("ptoNumber", parcel.getPtoNumber());
+            properties.put("clusterId", clusterId);
+            properties.put("occupantTag", parcel.getPtoHolderName() != null ? parcel.getPtoHolderName() : "Not Assigned");
+
+            GeoJsonFeature feature = GeoJsonFeature.builder()
+                    .type("Feature")
+                    .geometry(geometry)
+                    .properties(properties)
+                    .build();
+
+            features.add(feature);
+        }
+
+        Map<String, Object> metadata = new HashMap<>();
+        metadata.put("totalCount", parcels.size());
+        metadata.put("clusterCount", new HashSet<>(clusterMap.values()).size());
 
         return GeoJsonResponse.builder()
                 .features(features)

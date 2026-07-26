@@ -75,4 +75,18 @@ public class GisRestController {
         boolean valid = gisService.validateCoordinates(latitude, longitude);
         return ResponseEntity.ok(ApiResponse.success(valid, "Coordinate validation completed"));
     }
+
+    @GetMapping("/community/village/{villageId}")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER','ROLE_REPORT_VIEWER')")
+    public ResponseEntity<ApiResponse<GeoJsonResponse>> getCommunityLayout(@PathVariable Long villageId) {
+        var response = gisService.getCommunityLayout(villageId);
+        return ResponseEntity.ok(ApiResponse.success(response, "Community layout retrieved successfully"));
+    }
+
+    @GetMapping("/community/authority/{authorityId}")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER','ROLE_REPORT_VIEWER')")
+    public ResponseEntity<ApiResponse<GeoJsonResponse>> getCommunityLayoutByAuthority(@PathVariable Long authorityId) {
+        var response = gisService.getCommunityLayoutByAuthority(authorityId);
+        return ResponseEntity.ok(ApiResponse.success(response, "Community layout retrieved successfully"));
+    }
 }

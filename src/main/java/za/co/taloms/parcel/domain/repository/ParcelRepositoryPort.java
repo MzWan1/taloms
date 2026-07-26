@@ -15,7 +15,7 @@ public interface ParcelRepositoryPort {
     List<Parcel> findByStatus(ParcelStatus status);
     List<Parcel> findByStatusAndVillageId(ParcelStatus status, Long villageId);
     List<Parcel> findAvailable(Long villageId);
-    List<Parcel> findAllAvailable();  // NEW METHOD
+    List<Parcel> findAllAvailable();
     boolean existsByStandNumberAndVillageId(String standNumber, Long villageId);
     boolean existsByParcelNumber(String parcelNumber);
     long countByStatus(ParcelStatus status);
@@ -24,4 +24,8 @@ public interface ParcelRepositoryPort {
     long countAll();
     void deleteById(Long id);
     List<Parcel> findOverlappingParcels(Long parcelId, Double minLat, Double minLng, Double maxLat, Double maxLng);
+    List<Object[]> findOverlappingParcelsWithGeometry(Long parcelId);
+    boolean hasSelfIntersection(Long parcelId);
+    List<Object[]> findParcelClusters(Long villageId, double epsMeters, int minPts);
+    List<Object[]> findVoronoiCells(Long villageId);
 }

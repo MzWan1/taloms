@@ -103,4 +103,24 @@ public class ParcelRepositoryAdapter implements ParcelRepositoryPort {
     public List<Parcel> findOverlappingParcels(Long parcelId, Double minLat, Double minLng, Double maxLat, Double maxLng) {
         return jpaRepository.findOverlappingParcels(parcelId, minLat, minLng, maxLat, maxLng);
     }
+
+    @Override
+    public List<Object[]> findOverlappingParcelsWithGeometry(Long parcelId) {
+        return jpaRepository.findOverlappingParcelsWithGeometry(parcelId);
+    }
+
+    @Override
+    public boolean hasSelfIntersection(Long parcelId) {
+        return jpaRepository.hasSelfIntersection(parcelId);
+    }
+
+    @Override
+    public List<Object[]> findParcelClusters(Long villageId, double epsMeters, int minPts) {
+        return jpaRepository.findParcelClusters(villageId, epsMeters, minPts);
+    }
+
+    @Override
+    public List<Object[]> findVoronoiCells(Long villageId) {
+        return jpaRepository.findVoronoiCells(villageId);
+    }
 }

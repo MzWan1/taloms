@@ -15,6 +15,7 @@ import za.co.taloms.parcel.application.dto.BoundaryPointDto;
 import za.co.taloms.parcel.application.dto.ParcelRequest;
 import za.co.taloms.parcel.application.dto.ParcelResponse;
 import za.co.taloms.parcel.application.service.ParcelService;
+import za.co.taloms.parcel.domain.entity.CaptureMode;
 import za.co.taloms.parcel.domain.entity.ParcelStatus;
 import za.co.taloms.traditionalauthority.application.service.TraditionalAuthorityService;
 import za.co.taloms.traditionalauthority.application.service.VillageService;
@@ -74,6 +75,7 @@ public class ParcelPageController {
 
             model.addAttribute("authorities", authorities);
             model.addAttribute("statuses", ParcelStatus.values());
+            model.addAttribute("captureModes", CaptureMode.values());
             model.addAttribute("pageTitle", "Create Parcel");
             model.addAttribute("currentPage", "parcels");
             return "parcels/create";
@@ -82,6 +84,7 @@ public class ParcelPageController {
             model.addAttribute("errorMessage", "Error loading form: " + e.getMessage());
             model.addAttribute("authorities", Collections.emptyList());
             model.addAttribute("statuses", ParcelStatus.values());
+            model.addAttribute("captureModes", CaptureMode.values());
             model.addAttribute("pageTitle", "Create Parcel");
             model.addAttribute("currentPage", "parcels");
             return "parcels/create";
@@ -161,6 +164,7 @@ public class ParcelPageController {
                     .villageId(parcel.getVillageId())
                     .notes(parcel.getNotes())
                     .boundaries(parcel.getBoundaries())
+                    .captureMode(parcel.getCaptureMode())
                     .build();
 
             var authorities = authorityService.findAllActive();
@@ -171,6 +175,7 @@ public class ParcelPageController {
             model.addAttribute("authorities", authorities);
             model.addAttribute("villages", villages);
             model.addAttribute("statuses", ParcelStatus.values());
+            model.addAttribute("captureModes", CaptureMode.values());
             model.addAttribute("pageTitle", "Edit Parcel " + parcel.getParcelNumber());
             model.addAttribute("currentPage", "parcels");
             return "parcels/edit";

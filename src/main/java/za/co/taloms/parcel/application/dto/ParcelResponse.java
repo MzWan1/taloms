@@ -1,6 +1,7 @@
 package za.co.taloms.parcel.application.dto;
 
 import lombok.*;
+import za.co.taloms.parcel.domain.entity.CaptureMode;
 import za.co.taloms.parcel.domain.entity.ParcelStatus;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -33,4 +34,5 @@ public class ParcelResponse {
     private LocalDateTime updatedAt;
     private List<BoundaryPointDto> boundaries;
     private Integer boundaryCount;
+    private CaptureMode captureMode;
 }
