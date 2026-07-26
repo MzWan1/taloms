@@ -311,9 +311,14 @@
                                     <div class="text-muted" style="font-size:0.78rem" th:text="${doc.originalFilename}">filename.pdf</div>
                                 </div>
                             </div>
-                            <a th:href="@{/api/documents/{id}/download(id=${doc.id})}" class="btn btn-outline-info btn-sm">
-                                <i class="bi bi-download"></i>
-                            </a>
+                            <div class="btn-group gap-1">
+                                <a th:href="@{/api/documents/{id}/view(id=${doc.id})}" target="_blank" class="btn btn-outline-primary btn-sm" title="View">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a th:href="@{/api/documents/{id}/download(id=${doc.id})}" class="btn btn-outline-info btn-sm" title="Download">
+                                    <i class="bi bi-download"></i>
+                                </a>
+                            </div>
                         </li>
                     </ul>
                 </div>

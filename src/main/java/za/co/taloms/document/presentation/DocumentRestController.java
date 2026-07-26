@@ -7,6 +7,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.ContentDisposition;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -120,6 +121,32 @@ public class DocumentRestController {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.parseMediaType(document.getContentType()));
         headers.setContentDispositionFormData("attachment", document.getOriginalFilename());
+        headers.setContentLength(content.length);
+
+        return ResponseEntity.ok()
+                .headers(headers)
+                .body(content);
+    }
+
+    @GetMapping("/{id}/view")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_DATA_CAPTURER','ROLE_LAND_OFFICER','ROLE_REPORT_VIEWER')")
+    public ResponseEntity<byte[]> view(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails,
+            HttpServletRequest httpRequest) {
+
+        String clientIp = httpRequest.getRemoteAddr();
+        String userAgent = httpRequest.getHeader("User-Agent");
+
+        var document = documentService.findById(id);
+        byte[] content = documentService.downloadDocument(
+                id, userDetails.getUsername(), clientIp, userAgent);
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType(document.getContentType()));
+        headers.setContentDisposition(ContentDisposition.builder("inline")
+                .filename(document.getOriginalFilename())
+                .build());
         headers.setContentLength(content.length);
 
         return ResponseEntity.ok()
