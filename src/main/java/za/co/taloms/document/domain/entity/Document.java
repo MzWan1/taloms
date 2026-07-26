@@ -29,7 +29,6 @@ public class Document {
     @Column(name = "file_size", nullable = false)
     private Long fileSize;
 
-    @Lob
     @Column(name = "content", columnDefinition = "BYTEA")
     private byte[] content;
 
