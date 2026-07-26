@@ -3,6 +3,7 @@ package za.co.taloms.parcel.application.service;
 import za.co.taloms.parcel.application.dto.BoundaryPointDto;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.TreeSet;
 
 /**
  * Utility for simplifying GPS boundary traces using the Douglas-Peucker algorithm.
@@ -25,10 +26,8 @@ public class BoundarySimplifier {
             return points;
         }
 
-        List<Integer> keepIndices = new ArrayList<>();
+        TreeSet<Integer> keepIndices = new TreeSet<>();
         douglasPeucker(points, 0, points.size() - 1, toleranceM, keepIndices);
-
-        keepIndices.sort(Integer::compareTo);
 
         List<BoundaryPointDto> result = new ArrayList<>();
         for (int idx : keepIndices) {
@@ -41,7 +40,7 @@ public class BoundarySimplifier {
     private static void douglasPeucker(List<BoundaryPointDto> points,
                                        int start, int end,
                                        double toleranceM,
-                                       List<Integer> keepIndices) {
+                                       TreeSet<Integer> keepIndices) {
         keepIndices.add(start);
         keepIndices.add(end);
 

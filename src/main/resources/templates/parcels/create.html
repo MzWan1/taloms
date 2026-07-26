@@ -442,10 +442,12 @@
                 coordDisplay.className = 'coordinate-preview small text-success';
 
                 const card = document.getElementById(`pointCard${pointNumber}`);
-                card.querySelector('.card').className = 'card gps-point-card captured';
-                card.querySelector('.gps-badge').className = 'gps-badge gps-badge-captured';
+                if (card) {
+                    card.querySelector('.card').className = 'card gps-point-card captured';
+                    card.querySelector('.gps-badge').className = 'gps-badge gps-badge-captured';
+                }
 
-                btn.disabled = false;
+                btn.disabled = true;
                 btn.innerHTML = '<i class="bi bi-check-circle"></i> Captured';
                 btn.className = 'btn btn-sm btn-success';
 
@@ -484,6 +486,7 @@
     let watchId = null;
     let lastAutoCapture = null;
     let autoWalkActive = false;
+    let nextPointId = 1;
     const AUTO_CAPTURE_MIN_DISTANCE_M = 2.0;
     const AUTO_CAPTURE_MAX_ACCURACY_M = 30.0;
 
@@ -502,13 +505,12 @@
         const stopBtn = document.getElementById('stopAutoWalk');
         const startBtn = document.getElementById('startAutoWalk');
 
-        statusEl.innerHTML = '<span class="text-warning"><i class="bi bi-hourglass-split me-1"></i>Acquiring GPS signal... Please stand at the starting corner.</span>';
-        stopBtn.style.display = 'none';
-        startBtn.style.display = 'none';
-
+        autoWalkActive = true;
         lastAutoCapture = null;
-        let seqCounter = gpsPoints.length + 1;
-        let initialFix = false;
+
+        statusEl.innerHTML = '<span class="text-warning"><i class="bi bi-hourglass-split me-1"></i>Acquiring GPS signal... Please stand at the starting corner.</span>';
+        if (stopBtn) stopBtn.style.display = 'none';
+        if (startBtn) startBtn.style.display = 'none';
 
         watchId = navigator.geolocation.watchPosition(
             function(position) {
@@ -517,28 +519,23 @@
                 const accuracy = position.coords.accuracy;
 
                 if (lat < -35 || lat > -22 || lng < 16 || lng > 33) {
-                    if (!initialFix) {
-                        document.getElementById('autoWalkStatus').innerHTML = '<span class="text-danger"><i class="bi bi-exclamation-triangle me-1"></i>GPS fix outside South Africa. Check your location settings.</span>';
-                        startBtn.style.display = 'inline-block';
-                        stopBtn.style.display = 'none';
-                        navigator.geolocation.clearWatch(watchId);
-                        watchId = null;
-                        autoWalkActive = false;
+                    if (statusEl) {
+                        statusEl.innerHTML = '<span class="text-danger"><i class="bi bi-exclamation-triangle me-1"></i>GPS fix outside South Africa. Check your location settings.</span>';
                     }
+                    stopAutoWalk();
                     return;
                 }
 
-                if (!initialFix) {
-                    initialFix = true;
-                    document.getElementById('autoWalkStatus').innerHTML = '<span class="text-success"><i class="bi bi-play-circle me-1"></i>Recording... Walk the perimeter now.</span>';
-                    stopBtn.style.display = 'inline-block';
-                    startBtn.style.display = 'none';
-                    autoWalkActive = true;
-                    lastAutoCapture = null;
+                if (statusEl && statusEl.querySelector('.text-warning')) {
+                    statusEl.innerHTML = '<span class="text-success"><i class="bi bi-play-circle me-1"></i>Recording... Walk the perimeter now.</span>';
+                    if (stopBtn) stopBtn.style.display = 'inline-block';
+                    if (startBtn) startBtn.style.display = 'none';
                 }
 
                 if (accuracy > AUTO_CAPTURE_MAX_ACCURACY_M) {
-                    document.getElementById('autoWalkStatus').innerHTML = '<span class="text-warning"><i class="bi bi-exclamation-triangle me-1"></i>GPS accuracy weak (±' + Math.round(accuracy) + 'm). Move to open sky for better results.</span>';
+                    if (statusEl) {
+                        statusEl.innerHTML = '<span class="text-warning"><i class="bi bi-exclamation-triangle me-1"></i>GPS accuracy weak (±' + Math.round(accuracy) + 'm). Move to open sky for better results.</span>';
+                    }
                 }
 
                 if (lastAutoCapture) {
@@ -548,10 +545,11 @@
                     }
                 }
 
+                const seq = nextPointId++;
                 gpsPoints.push({
                     latitude: lat,
                     longitude: lng,
-                    sequence: seqCounter++,
+                    sequence: seq,
                     accuracy: accuracy,
                     autoCaptured: true
                 });
@@ -593,6 +591,7 @@
             watchId = null;
         }
         autoWalkActive = false;
+        lastAutoCapture = null;
 
         const statusEl = document.getElementById('autoWalkStatus');
         const stopBtn = document.getElementById('stopAutoWalk');
@@ -627,13 +626,17 @@
 
         if (!autoWalkControls || !manualCards) return;
 
-        if (mode === 'AUTO_WALK') {
+        if (mode === 'AUTO_WALK' || mode === 'HYBRID') {
             autoWalkControls.style.display = 'block';
-            manualCards.style.display = 'none';
-        } else if (mode === 'HYBRID') {
-            autoWalkControls.style.display = 'block';
-            manualCards.style.display = 'block';
+            if (mode === 'AUTO_WALK') {
+                manualCards.style.display = 'none';
+            } else {
+                manualCards.style.display = 'block';
+            }
         } else {
+            if (watchId !== null) {
+                stopAutoWalk();
+            }
             autoWalkControls.style.display = 'none';
             manualCards.style.display = 'block';
         }
@@ -642,7 +645,7 @@
     function addManualPoint() {
         if (isSubmitting) return;
 
-        const seq = gpsPoints.length + 1;
+        const seq = nextPointId++;
         const container = document.getElementById('gpsPointsContainer');
         const noMsg = document.getElementById('noPointsMessage');
         if (noMsg) noMsg.style.display = 'none';
@@ -701,6 +704,11 @@
         } else {
             document.getElementById('areaPreview').textContent = 'Area: — (need 3+ points)';
         }
+
+        const submitBtn = document.getElementById('submitBtn');
+        if (submitBtn) {
+            submitBtn.disabled = gpsPoints.length < 3;
+        }
     }
 
     // ── Update Map ──────────────────────────────────────────────────────
@@ -716,10 +724,13 @@
 
         // Sort points by sequence for proper polygon formation
         const sortedPoints = [...gpsPoints].sort((a, b) => a.sequence - b.sequence);
+        
+        // Build closed ring: repeat first point at end
         const latlngs = sortedPoints.map(p => [p.latitude, p.longitude]);
+        const closedRing = [...latlngs, latlngs[0]];
 
         if (gpsPoints.length >= 3) {
-            polygonLayer = L.polygon(latlngs, {
+            polygonLayer = L.polygon(closedRing, {
                 color: '#1B3A6B',
                 weight: 3,
                 opacity: 0.8,
@@ -811,6 +822,25 @@
         document.getElementById('submitBtn').disabled = true;
         document.getElementById('submitBtn').innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Creating...';
         return true;
+    });
+
+    // ── Keyboard shortcut ──────────────────────────────────────────────
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' && !e.ctrlKey && !e.altKey && !e.shiftKey) {
+            const activeElement = document.activeElement;
+            if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'TEXTAREA' || activeElement.tagName === 'SELECT')) {
+                return;
+            }
+
+            const cards = document.querySelectorAll('#gpsPointsContainer .gps-point-card');
+            for (const card of cards) {
+                const btn = card.querySelector('button');
+                if (btn && !btn.disabled && btn.textContent.trim() !== 'Captured') {
+                    btn.click();
+                    break;
+                }
+            }
+        }
     });
 
     console.log('Parcel creation ready. Use GPS walk-trace or manual tap to capture boundary.');
