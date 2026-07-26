@@ -29,6 +29,10 @@ public class Document {
     @Column(name = "file_size", nullable = false)
     private Long fileSize;
 
+    @Lob
+    @Column(name = "content", columnDefinition = "BYTEA")
+    private byte[] content;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "document_type", nullable = false, length = 50)
     private DocumentType documentType;

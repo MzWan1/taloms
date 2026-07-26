@@ -19,9 +19,6 @@ import za.co.taloms.document.domain.repository.DocumentAccessLogRepositoryPort;
 import za.co.taloms.document.domain.repository.DocumentRepositoryPort;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.LocalDateTime;
@@ -38,9 +35,6 @@ public class DocumentServiceImpl implements DocumentService {
     private final DocumentRepositoryPort documentRepository;
     private final DocumentAccessLogRepositoryPort accessLogRepository;
 
-    @Value("${taloms.upload.path:uploads}")
-    private String uploadPath;
-
     @Value("${taloms.upload.max-size:20971520}")
     private long maxFileSize;
 
@@ -52,14 +46,6 @@ public class DocumentServiceImpl implements DocumentService {
             "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
             "application/msword"
     );
-
-    private Path resolveUploadPath() {
-        Path path = Paths.get(uploadPath);
-        if (path.isAbsolute()) {
-            return path;
-        }
-        return Paths.get(System.getProperty("user.dir")).resolve(uploadPath).normalize();
-    }
 
     // Required document types by entity
     private static final java.util.Map<EntityType, List<DocumentType>> REQUIRED_DOCUMENTS =
@@ -85,36 +71,25 @@ public class DocumentServiceImpl implements DocumentService {
         String extension = getFileExtension(originalFilename);
         String storedFilename = UUID.randomUUID().toString() + "." + extension;
 
-        // Create upload directory if it doesn't exist
-        Path uploadDir = resolveUploadPath();
+        // Read file content into memory for database storage
+        byte[] fileContent;
         try {
-            if (!Files.exists(uploadDir)) {
-                Files.createDirectories(uploadDir);
-                log.info("Created upload directory: {}", uploadDir.toAbsolutePath());
-            }
+            fileContent = file.getBytes();
         } catch (IOException e) {
-            log.error("Failed to create upload directory: {}", e.getMessage(), e);
-            throw new BusinessValidationException("Failed to create upload directory");
+            log.error("Failed to read file bytes: {}", e.getMessage(), e);
+            throw new BusinessValidationException("Failed to read file content");
         }
 
-        // Save file to disk FIRST, then create DB record
-        Path filePath = uploadDir.resolve(storedFilename);
-        try {
-            file.transferTo(filePath.toFile());
-        } catch (IOException e) {
-            log.error("Failed to save file to disk at {}: {}", filePath.toAbsolutePath(), e.getMessage(), e);
-            throw new BusinessValidationException("Failed to save file to disk");
-        }
+        // Calculate checksum from bytes
+        String checksum = calculateChecksum(fileContent);
 
-        // Calculate checksum from the saved file
-        String checksum = calculateChecksum(filePath);
-
-        // Create document entity AFTER file is persisted
+        // Create document entity with content stored as BLOB in database
         var document = Document.builder()
                 .originalFilename(originalFilename)
                 .storedFilename(storedFilename)
                 .contentType(file.getContentType())
                 .fileSize(file.getSize())
+                .content(fileContent)
                 .documentType(documentType)
                 .relatedEntityType(entityType)
                 .relatedEntityId(request.getEntityId())
@@ -127,7 +102,7 @@ public class DocumentServiceImpl implements DocumentService {
                 .build();
 
         var saved = documentRepository.save(document);
-        log.info("Document uploaded: {} ({}) by {} for {}#{}",
+        log.info("Document uploaded to DB: {} ({}) by {} for {}#{}",
                 saved.getOriginalFilename(), saved.getStoredFilename(),
                 uploadedBy, entityType, request.getEntityId());
 
@@ -233,17 +208,8 @@ public class DocumentServiceImpl implements DocumentService {
         var document = documentRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Document", id));
 
-        // Delete file from disk
-        Path filePath = resolveUploadPath().resolve(document.getStoredFilename());
-        try {
-            Files.deleteIfExists(filePath);
-        } catch (IOException e) {
-            log.error("Failed to delete file: {}", e.getMessage(), e);
-            // Continue with deleting the record even if file deletion fails
-        }
-
         documentRepository.delete(document);
-        log.info("Document {} deleted by {}", document.getId(), deletedBy);
+        log.info("Document {} deleted from database by {}", document.getId(), deletedBy);
     }
 
     @Override
@@ -265,16 +231,15 @@ public class DocumentServiceImpl implements DocumentService {
                 .build();
         accessLogRepository.save(accessLog);
 
-        // Read file
-        Path filePath = resolveUploadPath().resolve(document.getStoredFilename());
-        try {
-            byte[] content = Files.readAllBytes(filePath);
-            log.info("Document {} downloaded by {}", document.getId(), accessedBy);
-            return content;
-        } catch (IOException e) {
-            log.error("Failed to read file at {}: {}", filePath.toAbsolutePath(), e.getMessage(), e);
-            throw new BusinessValidationException("Failed to read file. File may be missing or path is incorrect: " + filePath.toAbsolutePath());
+        // Read content from database BLOB
+        byte[] content = document.getContent();
+        if (content == null) {
+            log.error("Document {} has null content in database", document.getId());
+            throw new BusinessValidationException("Document content is missing from database");
         }
+
+        log.info("Document {} downloaded by {} ({} bytes)", document.getId(), accessedBy, content.length);
+        return content;
     }
 
     @Override
@@ -366,9 +331,8 @@ public class DocumentServiceImpl implements DocumentService {
         return filename.substring(filename.lastIndexOf(".") + 1).toLowerCase();
     }
 
-    private String calculateChecksum(Path filePath) {
+    private String calculateChecksum(byte[] content) {
         try {
-            byte[] content = Files.readAllBytes(filePath);
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             byte[] hash = digest.digest(content);
             StringBuilder hexString = new StringBuilder();
@@ -376,7 +340,7 @@ public class DocumentServiceImpl implements DocumentService {
                 hexString.append(String.format("%02x", b));
             }
             return hexString.toString();
-        } catch (IOException | NoSuchAlgorithmException e) {
+        } catch (NoSuchAlgorithmException e) {
             log.error("Failed to calculate checksum: {}", e.getMessage(), e);
             return null;
         }
