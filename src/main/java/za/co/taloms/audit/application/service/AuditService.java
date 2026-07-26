@@ -18,3 +18,4 @@ public interface AuditService {
     long countByPerformedBy(String performedBy);
     long countAll();
 }
+

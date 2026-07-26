@@ -30,3 +30,4 @@ public class PTORevokedEvent extends ApplicationEvent {
         this.revokedAt     = revokedAt;
     }
 }
+

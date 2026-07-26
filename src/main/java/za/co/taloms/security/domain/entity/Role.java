@@ -42,3 +42,4 @@ public class Role {
         createdAt = LocalDateTime.now();
     }
 }
+

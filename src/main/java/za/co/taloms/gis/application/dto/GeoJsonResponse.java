@@ -13,3 +13,4 @@ public class GeoJsonResponse {
     private List<GeoJsonFeature> features;
     private Map<String, Object> metadata;
 }
+

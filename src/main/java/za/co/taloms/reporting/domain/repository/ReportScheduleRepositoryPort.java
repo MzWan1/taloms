@@ -14,3 +14,4 @@ public interface ReportScheduleRepositoryPort {
     List<ReportSchedule> findActiveByReportType(ReportType reportType);
     long countAll();
 }
+

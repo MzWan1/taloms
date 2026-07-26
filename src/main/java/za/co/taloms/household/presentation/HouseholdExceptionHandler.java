@@ -25,3 +25,5 @@ public class HouseholdExceptionHandler {
         return "Error loading household page: " + ex.getClass().getSimpleName() + " - " + ex.getMessage();
     }
 }
+
+

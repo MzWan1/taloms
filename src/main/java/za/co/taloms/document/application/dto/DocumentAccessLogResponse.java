@@ -17,3 +17,4 @@ public class DocumentAccessLogResponse {
     private String userAgent;
     private LocalDateTime accessedAt;
 }
+

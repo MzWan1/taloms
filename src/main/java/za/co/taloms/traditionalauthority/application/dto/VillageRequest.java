@@ -21,3 +21,4 @@ public class VillageRequest {
     @NotNull(message = "Traditional Authority is required")
     private Long traditionalAuthorityId;
 }
+

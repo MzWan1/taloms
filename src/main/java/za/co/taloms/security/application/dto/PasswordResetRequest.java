@@ -10,3 +10,4 @@ public class PasswordResetRequest {
     @Email(message = "Must be a valid email address")
     private String email;
 }
+

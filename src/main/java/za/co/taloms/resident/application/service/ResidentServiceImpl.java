@@ -269,3 +269,4 @@ public class ResidentServiceImpl implements ResidentService {
                 .build();
     }
 }
+

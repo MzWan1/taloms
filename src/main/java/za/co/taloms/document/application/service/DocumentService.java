@@ -29,3 +29,4 @@ public interface DocumentService {
     List<DocumentResponse> getRequiredDocumentsForEntity(EntityType entityType, Long entityId);
     List<DocumentType> getMissingRequiredDocumentTypes(EntityType entityType, Long entityId);
 }
+

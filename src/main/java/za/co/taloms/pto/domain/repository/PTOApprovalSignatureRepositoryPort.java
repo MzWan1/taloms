@@ -8,3 +8,5 @@ public interface PTOApprovalSignatureRepositoryPort {
     List<PTOApprovalSignature> findByPtoId(Long ptoId);
     List<PTOApprovalSignature> findBySignedBy(String signedBy);
 }
+
+

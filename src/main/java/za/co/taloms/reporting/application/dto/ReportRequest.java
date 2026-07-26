@@ -23,3 +23,4 @@ public class ReportRequest {
     private LocalDate dateTo;
     private String[] columns;
 }
+

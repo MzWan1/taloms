@@ -45,3 +45,4 @@ public final class ApplicationConstants {
     public static final double SA_LON_MIN =  16.0;
     public static final double SA_LON_MAX =  33.0;
 }
+

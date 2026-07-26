@@ -78,3 +78,4 @@ public class PTORequest {
 
     private Boolean communityResolutionRequired;
 }
+

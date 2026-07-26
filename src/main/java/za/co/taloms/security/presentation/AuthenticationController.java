@@ -33,3 +33,4 @@ public class AuthenticationController {
         return ResponseEntity.ok(encoder.encode("Admin@1234"));
     }
 }
+

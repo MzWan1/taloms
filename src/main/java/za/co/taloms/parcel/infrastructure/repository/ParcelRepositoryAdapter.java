@@ -124,3 +124,4 @@ public class ParcelRepositoryAdapter implements ParcelRepositoryPort {
         return jpaRepository.findVoronoiCells(villageId);
     }
 }
+

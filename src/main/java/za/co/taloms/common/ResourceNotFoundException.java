@@ -10,3 +10,4 @@ public class ResourceNotFoundException extends RuntimeException {
         super(entity + " not found with id: " + id);
     }
 }
+

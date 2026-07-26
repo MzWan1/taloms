@@ -60,3 +60,4 @@ public class VillageRepositoryAdapter
         return jpaRepository.countByTraditionalAuthorityId(authorityId);
     }
 }
+

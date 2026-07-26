@@ -15,3 +15,4 @@ public interface PasswordResetTokenJpaRepository
     @Query("DELETE FROM PasswordResetToken t WHERE t.user.id = :userId")
     void deleteByUserId(Long userId);
 }
+

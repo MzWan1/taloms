@@ -27,3 +27,4 @@ public class UserCreateRequest {
     @NotBlank(message = "Role is required")
     private String roleName;
 }
+

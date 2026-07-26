@@ -14,3 +14,4 @@ public class PTOSearchCriteria {
     private Long       villageId;
     private Long       authorityId;
 }
+

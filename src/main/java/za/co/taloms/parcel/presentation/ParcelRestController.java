@@ -23,7 +23,7 @@ public class ParcelRestController {
     private final ParcelService parcelService;
 
     @PostMapping
-    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR','LAND_OFFICER')")
     public ResponseEntity<ApiResponse<ParcelResponse>> create(
             @Valid @RequestBody ParcelRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -34,7 +34,7 @@ public class ParcelRestController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR','LAND_OFFICER')")
     public ResponseEntity<ApiResponse<ParcelResponse>> update(
             @PathVariable Long id,
             @Valid @RequestBody ParcelRequest request,
@@ -84,7 +84,7 @@ public class ParcelRestController {
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR')")
     public ResponseEntity<ApiResponse<ParcelResponse>> updateStatus(
             @PathVariable Long id,
             @RequestParam ParcelStatus status,
@@ -95,7 +95,7 @@ public class ParcelRestController {
     }
 
     @PatchMapping("/{id}/allocate")
-    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_LAND_OFFICER')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR','LAND_OFFICER')")
     public ResponseEntity<ApiResponse<ParcelResponse>> allocate(
             @PathVariable Long id,
             @RequestParam Long ptoId,
@@ -106,7 +106,7 @@ public class ParcelRestController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
     public ResponseEntity<ApiResponse<Void>> delete(
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -115,3 +115,5 @@ public class ParcelRestController {
         return ResponseEntity.ok(ApiResponse.success(null, "Parcel deleted successfully"));
     }
 }
+
+

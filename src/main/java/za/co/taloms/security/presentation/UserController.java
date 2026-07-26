@@ -19,7 +19,7 @@ public class UserController {
     private final UserService userService;
 
     @PostMapping
-    @PreAuthorize("hasAuthority('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
     public ResponseEntity<ApiResponse<UserResponse>> createUser(
             @Valid @RequestBody UserCreateRequest request) {
         return ResponseEntity.status(HttpStatus.CREATED)
@@ -29,7 +29,7 @@ public class UserController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAuthority('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
     public ResponseEntity<ApiResponse<List<UserResponse>>> getAllUsers() {
         return ResponseEntity.ok(
                 ApiResponse.success(userService.findAll(),
@@ -37,7 +37,7 @@ public class UserController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAuthority('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
     public ResponseEntity<ApiResponse<UserResponse>> getUserById(
             @PathVariable Long id) {
         return ResponseEntity.ok(
@@ -46,7 +46,7 @@ public class UserController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAuthority('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
     public ResponseEntity<ApiResponse<UserResponse>> updateUser(
             @PathVariable Long id,
             @Valid @RequestBody UserUpdateRequest request) {
@@ -57,7 +57,7 @@ public class UserController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deleteUser(
             @PathVariable Long id) {
         userService.deleteUser(id);
@@ -66,7 +66,7 @@ public class UserController {
     }
 
     @PatchMapping("/{id}/lock")
-    @PreAuthorize("hasAuthority('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
     public ResponseEntity<ApiResponse<Void>> lockUser(
             @PathVariable Long id) {
         userService.lockUser(id);
@@ -75,7 +75,7 @@ public class UserController {
     }
 
     @PatchMapping("/{id}/unlock")
-    @PreAuthorize("hasAuthority('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
     public ResponseEntity<ApiResponse<Void>> unlockUser(
             @PathVariable Long id) {
         userService.unlockUser(id);
@@ -93,7 +93,7 @@ public class UserController {
     }
 
     @PatchMapping("/{id}/reset-password")
-    @PreAuthorize("hasAuthority('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
     public ResponseEntity<ApiResponse<Void>> adminResetPassword(
             @PathVariable Long id) {
         userService.resetPasswordByAdmin(id);
@@ -120,3 +120,5 @@ public class UserController {
                         "Password reset successfully"));
     }
 }
+
+

@@ -25,3 +25,4 @@ public interface BusinessOccupancyRepositoryPort {
     long countByVillageId(Long villageId);
     long countAll();
 }
+

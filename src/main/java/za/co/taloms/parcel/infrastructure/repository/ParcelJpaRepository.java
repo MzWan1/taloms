@@ -157,3 +157,4 @@ public interface ParcelJpaRepository extends JpaRepository<Parcel, Long> {
             """, nativeQuery = true)
     List<Object[]> findVoronoiCells(@Param("villageId") Long villageId);
 }
+

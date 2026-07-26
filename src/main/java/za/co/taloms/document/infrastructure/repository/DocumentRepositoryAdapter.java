@@ -80,3 +80,4 @@ public class DocumentRepositoryAdapter implements DocumentRepositoryPort {
         jpaRepository.delete(document);
     }
 }
+

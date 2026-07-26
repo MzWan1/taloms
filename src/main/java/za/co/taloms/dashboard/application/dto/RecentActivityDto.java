@@ -19,3 +19,4 @@ public class RecentActivityDto {
     private String performedAtDisplay;
     private String description;
 }
+

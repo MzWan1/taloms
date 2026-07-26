@@ -156,3 +156,4 @@ public class PTORepositoryAdapter implements PTORepositoryPort {
         return jpaRepository.findDeleted();
     }
 }
+

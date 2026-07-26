@@ -10,3 +10,4 @@ public interface ParcelBoundaryRepositoryPort {
     void deleteByParcelId(Long parcelId);
     void deleteAll(List<ParcelBoundary> boundaries);
 }
+

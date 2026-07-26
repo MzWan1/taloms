@@ -6,3 +6,4 @@ public class BusinessValidationException extends RuntimeException {
         super(message);
     }
 }
+

@@ -38,3 +38,4 @@ public class ParcelBoundary {
         createdAt = LocalDateTime.now();
     }
 }
+

@@ -49,3 +49,4 @@ public class TraditionalAuthorityRepositoryAdapter
         jpaRepository.delete(authority);
     }
 }
+

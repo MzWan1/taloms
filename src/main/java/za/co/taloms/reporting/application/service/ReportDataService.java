@@ -37,3 +37,5 @@ public interface ReportDataService {
 
     VillageResponse getVillage(Long villageId);
 }
+
+

@@ -13,3 +13,4 @@ public class GeoJsonFeature {
     private Map<String, Object> geometry;
     private Map<String, Object> properties;
 }
+

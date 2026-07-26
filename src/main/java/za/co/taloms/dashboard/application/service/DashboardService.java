@@ -6,3 +6,4 @@ public interface DashboardService {
     DashboardSummaryDto getDashboardSummary();
     DashboardSummaryDto getDashboardSummaryForAuthority(Long authorityId);
 }
+

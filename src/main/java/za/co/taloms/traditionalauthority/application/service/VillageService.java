@@ -13,3 +13,4 @@ public interface VillageService {
     void deactivate(Long id);
     void activate(Long id);
 }
+

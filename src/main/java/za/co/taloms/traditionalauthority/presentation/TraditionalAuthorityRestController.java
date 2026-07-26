@@ -21,7 +21,7 @@ public class TraditionalAuthorityRestController {
     private final TraditionalAuthorityService authorityService;
 
     @PostMapping
-    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR')")
     public ResponseEntity<ApiResponse<TraditionalAuthorityResponse>> create(
             @Valid @RequestBody TraditionalAuthorityRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -58,7 +58,7 @@ public class TraditionalAuthorityRestController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR')")
     public ResponseEntity<ApiResponse<TraditionalAuthorityResponse>> update(
             @PathVariable Long id,
             @Valid @RequestBody TraditionalAuthorityRequest request) {
@@ -77,7 +77,7 @@ public class TraditionalAuthorityRestController {
     }
 
     @PatchMapping("/{id}/deactivate")
-    @PreAuthorize("hasAuthority('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
     public ResponseEntity<ApiResponse<Void>> deactivate(
             @PathVariable Long id) {
         authorityService.deactivate(id);
@@ -87,7 +87,7 @@ public class TraditionalAuthorityRestController {
     }
 
     @PatchMapping("/{id}/activate")
-    @PreAuthorize("hasAuthority('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
     public ResponseEntity<ApiResponse<Void>> activate(
             @PathVariable Long id) {
         authorityService.activate(id);
@@ -96,3 +96,5 @@ public class TraditionalAuthorityRestController {
                         "Authority activated successfully"));
     }
 }
+
+

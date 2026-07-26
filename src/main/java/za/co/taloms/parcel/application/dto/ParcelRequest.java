@@ -31,3 +31,4 @@ public class ParcelRequest {
 
     private CaptureMode captureMode = CaptureMode.MANUAL_TAP;
 }
+

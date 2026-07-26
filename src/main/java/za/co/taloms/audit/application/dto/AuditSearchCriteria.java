@@ -19,3 +19,4 @@ public class AuditSearchCriteria {
     private Integer page;
     private Integer size;
 }
+

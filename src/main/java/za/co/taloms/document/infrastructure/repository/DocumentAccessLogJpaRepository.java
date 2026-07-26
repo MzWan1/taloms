@@ -17,3 +17,4 @@ public interface DocumentAccessLogJpaRepository extends JpaRepository<DocumentAc
 
     long countByDocumentId(Long documentId);
 }
+

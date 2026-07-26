@@ -30,3 +30,4 @@ public class PasswordResetTokenRepositoryAdapter
         jpaRepository.deleteByUserId(userId);
     }
 }
+

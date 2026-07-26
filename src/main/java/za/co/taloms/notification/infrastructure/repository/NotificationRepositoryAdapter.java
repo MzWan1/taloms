@@ -43,3 +43,5 @@ public class NotificationRepositoryAdapter implements NotificationRepositoryPort
         return jpaRepository.findPendingNotifications();
     }
 }
+
+

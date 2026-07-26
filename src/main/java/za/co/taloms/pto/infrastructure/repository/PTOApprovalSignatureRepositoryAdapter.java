@@ -27,3 +27,5 @@ public class PTOApprovalSignatureRepositoryAdapter implements PTOApprovalSignatu
         return jpaRepository.findBySignedByOrderBySignedAtDesc(signedBy);
     }
 }
+
+

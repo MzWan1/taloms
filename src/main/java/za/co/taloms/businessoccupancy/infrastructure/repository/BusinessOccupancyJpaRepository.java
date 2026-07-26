@@ -43,3 +43,4 @@ public interface BusinessOccupancyJpaRepository extends JpaRepository<BusinessOc
     @Query("SELECT b FROM BusinessOccupancy b ORDER BY b.createdAt DESC")
     List<BusinessOccupancy> findAllOrderByCreatedAtDesc();
 }
+

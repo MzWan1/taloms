@@ -10,3 +10,4 @@ public class DuplicateRecordException extends RuntimeException {
         super(entity + " already exists with " + field + ": " + value);
     }
 }
+

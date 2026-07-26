@@ -13,3 +13,4 @@ public interface TraditionalAuthorityRepositoryPort {
     boolean existsByAuthorityNameAndIdNot(String name, Long id);
     void delete(TraditionalAuthority authority);
 }
+

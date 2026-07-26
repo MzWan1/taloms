@@ -39,3 +39,4 @@ public interface ResidentJpaRepository extends JpaRepository<Resident, Long> {
     @Query("SELECT r FROM Resident r ORDER BY r.createdAt DESC")
     List<Resident> findAllOrderByCreatedAtDesc();
 }
+

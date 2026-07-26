@@ -51,3 +51,4 @@ public class DashboardSummaryDto {
     // Recent Activity
     private List<RecentActivityDto> recentActivity;
 }
+

@@ -47,3 +47,4 @@ public class ResidentRequest {
 
     private String notes;
 }
+

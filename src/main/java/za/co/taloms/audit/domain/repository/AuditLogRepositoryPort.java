@@ -21,3 +21,4 @@ public interface AuditLogRepositoryPort {
     long countByPerformedBy(String performedBy);
     long countAll();
 }
+

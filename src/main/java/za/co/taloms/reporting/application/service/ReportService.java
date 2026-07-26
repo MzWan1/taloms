@@ -17,3 +17,4 @@ public interface ReportService {
     ReportResponse generatePerformanceDashboardReport(ReportRequest request);
     ReportResponse generateLandBoundaryReport(ReportRequest request);
 }
+

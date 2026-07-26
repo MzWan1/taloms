@@ -92,3 +92,4 @@ public interface HouseholdJpaRepository extends JpaRepository<Household, Long> {
            """)
     List<Household> findAllOrderByCreatedAtDesc();
 }
+

@@ -17,3 +17,4 @@ public class BoundaryPointDto {
     @NotNull(message = "Longitude is required")
     private Double longitude;
 }
+

@@ -49,3 +49,4 @@ public class ReportScheduleRepositoryAdapter implements ReportScheduleRepository
         return jpaRepository.count();
     }
 }
+

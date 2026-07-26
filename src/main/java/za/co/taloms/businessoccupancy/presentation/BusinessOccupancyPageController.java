@@ -244,3 +244,4 @@ public class BusinessOccupancyPageController {
         return "redirect:/business-occupancies/" + id;
     }
 }
+

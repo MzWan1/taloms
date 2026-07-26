@@ -37,3 +37,4 @@ public class DocumentAccessLogRepositoryAdapter implements DocumentAccessLogRepo
         return jpaRepository.countByDocumentId(documentId);
     }
 }
+

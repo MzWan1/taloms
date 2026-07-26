@@ -31,3 +31,4 @@ public interface UserService {
     // Roles
     List<Role> findAllRoles();
 }
+

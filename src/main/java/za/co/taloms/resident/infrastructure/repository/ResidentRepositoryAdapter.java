@@ -89,3 +89,4 @@ public class ResidentRepositoryAdapter implements ResidentRepositoryPort {
         return jpaRepository.count();
     }
 }
+

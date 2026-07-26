@@ -83,3 +83,4 @@ public class HouseholdRepositoryAdapter implements HouseholdRepositoryPort {
         return jpaRepository.count();
     }
 }
+

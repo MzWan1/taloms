@@ -14,3 +14,4 @@ public interface GisLayerRepositoryPort {
     List<GisLayer> findByVisibleTrueAndLayerType(LayerType layerType);
     long countAll();
 }
+

@@ -26,3 +26,4 @@ public interface BusinessOccupancyService {
     long countByVillageId(Long villageId);
     boolean existsByParcelId(Long parcelId);
 }
+

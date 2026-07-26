@@ -18,3 +18,5 @@ public interface NotificationJpaRepository extends JpaRepository<Notification, L
     @Query("SELECT n FROM Notification n WHERE n.sentAt IS NULL ORDER BY n.createdAt ASC")
     List<Notification> findPendingNotifications();
 }
+
+

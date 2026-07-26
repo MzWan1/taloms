@@ -9,3 +9,5 @@ public record ReportSection(
     List<String> tableHeaders,
     List<List<String>> tableRows
 ) {}
+
+

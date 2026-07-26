@@ -30,3 +30,4 @@ public class TraditionalAuthorityRequest {
     @Size(max = 100, message = "Region must not exceed 100 characters")
     private String region;
 }
+

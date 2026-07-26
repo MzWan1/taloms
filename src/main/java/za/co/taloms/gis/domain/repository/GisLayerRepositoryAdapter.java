@@ -49,3 +49,4 @@ public class GisLayerRepositoryAdapter implements GisLayerRepositoryPort {
         return jpaRepository.count();
     }
 }
+

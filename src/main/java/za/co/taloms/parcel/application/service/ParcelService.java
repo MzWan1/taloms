@@ -27,3 +27,4 @@ public interface ParcelService {
     boolean isStandNumberUnique(String standNumber, Long villageId);
     Double calculateArea(List<BoundaryPointDto> boundaries);
 }
+

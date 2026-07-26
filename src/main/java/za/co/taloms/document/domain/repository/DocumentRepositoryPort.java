@@ -21,3 +21,4 @@ public interface DocumentRepositoryPort {
     long countAll();
     void delete(Document document);
 }
+

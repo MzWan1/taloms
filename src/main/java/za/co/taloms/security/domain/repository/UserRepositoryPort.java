@@ -20,3 +20,4 @@ public interface UserRepositoryPort {
     long countByActiveTrue();
     List<Role> findAllRoles();
 }
+

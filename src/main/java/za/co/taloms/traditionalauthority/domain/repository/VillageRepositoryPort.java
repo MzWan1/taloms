@@ -16,3 +16,4 @@ public interface VillageRepositoryPort {
             String villageName, Long authorityId, Long excludeId);
     long countByTraditionalAuthorityId(Long authorityId);
 }
+

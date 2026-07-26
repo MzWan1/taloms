@@ -84,3 +84,4 @@ public class Resident {
         return java.time.Period.between(dateOfBirth, LocalDate.now()).getYears();
     }
 }
+

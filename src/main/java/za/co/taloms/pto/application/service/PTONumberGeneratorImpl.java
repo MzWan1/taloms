@@ -21,3 +21,4 @@ public class PTONumberGeneratorImpl implements PTONumberGenerator {
         return String.format("PTO-%s-%05d", year, next);
     }
 }
+

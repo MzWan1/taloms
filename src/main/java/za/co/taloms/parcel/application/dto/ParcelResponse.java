@@ -36,3 +36,4 @@ public class ParcelResponse {
     private Integer boundaryCount;
     private CaptureMode captureMode;
 }
+

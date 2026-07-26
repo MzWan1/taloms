@@ -18,3 +18,4 @@ public interface TraditionalAuthorityJpaRepository
     @Query("SELECT t FROM TraditionalAuthority t ORDER BY t.authorityName")
     List<TraditionalAuthority> findAllOrderByName();
 }
+

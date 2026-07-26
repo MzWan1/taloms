@@ -81,3 +81,4 @@ public class UserRepositoryAdapter implements UserRepositoryPort {
         return roleJpaRepository.findAll();
     }
 }
+

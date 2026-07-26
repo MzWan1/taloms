@@ -20,3 +20,4 @@ public class AuditLogRequest {
     private String userAgent;
     private String description;
 }
+

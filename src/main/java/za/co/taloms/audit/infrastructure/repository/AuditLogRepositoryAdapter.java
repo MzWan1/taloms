@@ -80,3 +80,4 @@ public class AuditLogRepositoryAdapter implements AuditLogRepositoryPort {
         return jpaRepository.count();
     }
 }
+

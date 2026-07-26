@@ -15,3 +15,4 @@ public interface ParcelBoundaryJpaRepository extends JpaRepository<ParcelBoundar
     @Query("DELETE FROM ParcelBoundary pb WHERE pb.parcel.id = :parcelId")
     void deleteByParcelId(@Param("parcelId") Long parcelId);
 }
+

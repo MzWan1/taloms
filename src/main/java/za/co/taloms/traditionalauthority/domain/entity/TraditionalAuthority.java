@@ -70,3 +70,4 @@ public class TraditionalAuthority {
         updatedAt = LocalDateTime.now();
     }
 }
+

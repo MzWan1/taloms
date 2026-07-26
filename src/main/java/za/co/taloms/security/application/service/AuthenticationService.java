@@ -6,3 +6,4 @@ import za.co.taloms.security.application.dto.LoginResponse;
 public interface AuthenticationService {
     LoginResponse login(LoginRequest request);
 }
+

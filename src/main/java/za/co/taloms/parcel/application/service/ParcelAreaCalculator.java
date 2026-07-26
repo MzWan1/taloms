@@ -8,3 +8,4 @@ public interface ParcelAreaCalculator {
     Double calculateAreaHectares(List<BoundaryPointDto> boundaries);
     Double[] calculateCentroid(List<BoundaryPointDto> boundaries);
 }
+

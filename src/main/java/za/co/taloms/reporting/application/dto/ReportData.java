@@ -26,3 +26,5 @@ public record ReportData(
     List<AuditLogResponse> auditLogs,
     List<DocumentResponse> documents
 ) {}
+
+

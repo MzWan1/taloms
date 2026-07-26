@@ -20,3 +20,4 @@ public interface HouseholdRepositoryPort {
     long countByVillageId(Long villageId);
     long countAll();
 }
+

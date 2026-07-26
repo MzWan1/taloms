@@ -298,3 +298,4 @@ public class HouseholdServiceImpl implements HouseholdService {
                 .build();
     }
 }
+

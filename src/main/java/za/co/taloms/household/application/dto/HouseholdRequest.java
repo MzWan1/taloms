@@ -41,3 +41,4 @@ public class HouseholdRequest {
 
     private String notes;
 }
+

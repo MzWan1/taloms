@@ -10,3 +10,5 @@ public interface PTOApprovalSignatureJpaRepository extends JpaRepository<PTOAppr
 
     List<PTOApprovalSignature> findBySignedByOrderBySignedAtDesc(String signedBy);
 }
+
+

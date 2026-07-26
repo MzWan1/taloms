@@ -14,7 +14,7 @@ import java.security.Principal;
 @Controller
 @RequestMapping("/users")
 @RequiredArgsConstructor
-@PreAuthorize("hasAuthority('SYSTEM_ADMIN')")
+@PreAuthorize("hasRole('SYSTEM_ADMIN')")
 public class UserPageController {
 
     private final UserService        userService;
@@ -164,3 +164,5 @@ public class UserPageController {
         }
     }
 }
+
+

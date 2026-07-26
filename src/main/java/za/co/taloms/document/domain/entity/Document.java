@@ -90,3 +90,4 @@ public class Document {
         return String.format("%.1f MB", fileSize / (1024.0 * 1024.0));
     }
 }
+

@@ -19,3 +19,4 @@ public class TraditionalAuthorityResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
+

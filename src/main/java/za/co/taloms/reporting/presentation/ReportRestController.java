@@ -24,84 +24,84 @@ public class ReportRestController {
     private final ReportServiceExcelExporter excelExporter;
 
     @PostMapping("/pto")
-    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_REPORT_VIEWER')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR','REPORT_VIEWER')")
     public ResponseEntity<byte[]> generatePTOReport(@RequestBody ReportRequest request) {
         log.info("Generating PTO Occupancy Register Report - Format: {}", request.getFormat());
         return buildResponse(getExporter(request.getFormat()).generatePtoOccupancyRegisterReport(request));
     }
 
     @PostMapping("/parcel")
-    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_REPORT_VIEWER')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR','REPORT_VIEWER')")
     public ResponseEntity<byte[]> generateLandParcelReport(@RequestBody ReportRequest request) {
         log.info("Generating Land Parcel Utilisation Report - Format: {}", request.getFormat());
         return buildResponse(getExporter(request.getFormat()).generateLandParcelUtilisationReport(request));
     }
 
     @PostMapping("/stand-allocation")
-    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_REPORT_VIEWER')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR','REPORT_VIEWER')")
     public ResponseEntity<byte[]> generateStandAllocationReport(@RequestBody ReportRequest request) {
         log.info("Generating Stand Allocation Report - Format: {}", request.getFormat());
         return buildResponse(getExporter(request.getFormat()).generateStandAllocationReport(request));
     }
 
     @PostMapping("/village-population")
-    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_REPORT_VIEWER')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR','REPORT_VIEWER')")
     public ResponseEntity<byte[]> generateVillagePopulationReport(@RequestBody ReportRequest request) {
         log.info("Generating Village Population Report - Format: {}", request.getFormat());
         return buildResponse(getExporter(request.getFormat()).generateVillagePopulationReport(request));
     }
 
     @PostMapping("/household-register")
-    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_REPORT_VIEWER')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR','REPORT_VIEWER')")
     public ResponseEntity<byte[]> generateHouseholdRegisterReport(@RequestBody ReportRequest request) {
         log.info("Generating Household Register Report - Format: {}", request.getFormat());
         return buildResponse(getExporter(request.getFormat()).generateHouseholdRegisterReport(request));
     }
 
     @PostMapping("/resident-demographics")
-    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_REPORT_VIEWER')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR','REPORT_VIEWER')")
     public ResponseEntity<byte[]> generateResidentDemographicsReport(@RequestBody ReportRequest request) {
         log.info("Generating Resident Demographics Report - Format: {}", request.getFormat());
         return buildResponse(getExporter(request.getFormat()).generateResidentDemographicsReport(request));
     }
 
     @PostMapping("/business-occupancy")
-    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_REPORT_VIEWER')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR','REPORT_VIEWER')")
     public ResponseEntity<byte[]> generateBusinessOccupancyReport(@RequestBody ReportRequest request) {
         log.info("Generating Business Occupancy Report - Format: {}", request.getFormat());
         return buildResponse(getExporter(request.getFormat()).generateBusinessOccupancyReport(request));
     }
 
     @PostMapping("/economic-activity")
-    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_REPORT_VIEWER')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR','REPORT_VIEWER')")
     public ResponseEntity<byte[]> generateEconomicActivityReport(@RequestBody ReportRequest request) {
         log.info("Generating Economic Activity Report - Format: {}", request.getFormat());
         return buildResponse(getExporter(request.getFormat()).generateEconomicActivityReport(request));
     }
 
     @PostMapping("/user-activity-audit")
-    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_REPORT_VIEWER')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR','REPORT_VIEWER')")
     public ResponseEntity<byte[]> generateUserActivityAuditReport(@RequestBody ReportRequest request) {
         log.info("Generating User Activity Audit Report - Format: {}", request.getFormat());
         return buildResponse(getExporter(request.getFormat()).generateUserActivityAuditReport(request));
     }
 
     @PostMapping("/document-management")
-    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_REPORT_VIEWER')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR','REPORT_VIEWER')")
     public ResponseEntity<byte[]> generateDocumentManagementReport(@RequestBody ReportRequest request) {
         log.info("Generating Document Management Report - Format: {}", request.getFormat());
         return buildResponse(getExporter(request.getFormat()).generateDocumentManagementReport(request));
     }
 
     @PostMapping("/performance-dashboard")
-    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_REPORT_VIEWER')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR','REPORT_VIEWER')")
     public ResponseEntity<byte[]> generatePerformanceDashboardReport(@RequestBody ReportRequest request) {
         log.info("Generating Performance Dashboard Report - Format: {}", request.getFormat());
         return buildResponse(getExporter(request.getFormat()).generatePerformanceDashboardReport(request));
     }
 
     @PostMapping("/land-boundary")
-    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_REPORT_VIEWER')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR','REPORT_VIEWER')")
     public ResponseEntity<byte[]> generateLandBoundaryReport(@RequestBody ReportRequest request) {
         log.info("Generating Land Boundary Report - Format: {}", request.getFormat());
         return buildResponse(getExporter(request.getFormat()).generateLandBoundaryReport(request));
@@ -126,3 +126,5 @@ public class ReportRestController {
                 .body(response.getContent());
     }
 }
+
+

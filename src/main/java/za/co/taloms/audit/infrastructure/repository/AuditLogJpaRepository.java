@@ -38,3 +38,4 @@ public interface AuditLogJpaRepository extends JpaRepository<AuditLog, Long> {
     @Query("SELECT a FROM AuditLog a ORDER BY a.performedAt DESC")
     List<AuditLog> findAllOrderByPerformedAtDesc();
 }
+

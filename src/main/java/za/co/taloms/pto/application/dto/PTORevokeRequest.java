@@ -9,3 +9,4 @@ public class PTORevokeRequest {
     @NotBlank(message = "Revoke reason is required")
     private String reason;
 }
+

@@ -16,3 +16,4 @@ public class VillageResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
+

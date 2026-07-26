@@ -26,3 +26,4 @@ public class AuditLogResponse {
     private String userAgent;
     private String description;
 }
+

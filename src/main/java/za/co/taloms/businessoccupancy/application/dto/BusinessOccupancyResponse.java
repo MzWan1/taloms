@@ -39,3 +39,4 @@ public class BusinessOccupancyResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
+

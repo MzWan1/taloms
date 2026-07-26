@@ -25,3 +25,4 @@ public interface ResidentService {
     long countByVillageId(Long villageId);
     boolean existsByIdNumber(String idNumber);
 }
+

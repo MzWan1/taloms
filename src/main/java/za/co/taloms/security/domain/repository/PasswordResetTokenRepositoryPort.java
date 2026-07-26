@@ -8,3 +8,4 @@ public interface PasswordResetTokenRepositoryPort {
     Optional<PasswordResetToken> findByToken(String token);
     void deleteByUserId(Long userId);
 }
+

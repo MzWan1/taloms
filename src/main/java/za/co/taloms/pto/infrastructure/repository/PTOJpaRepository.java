@@ -104,3 +104,4 @@ public interface PTOJpaRepository extends JpaRepository<PTO, Long> {
     @Query("SELECT p FROM PTO p WHERE p.deletedAt IS NOT NULL ORDER BY p.deletedAt DESC")
     List<PTO> findDeleted();
 }
+

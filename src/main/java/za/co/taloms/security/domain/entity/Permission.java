@@ -31,3 +31,4 @@ public class Permission {
         createdAt = LocalDateTime.now();
     }
 }
+

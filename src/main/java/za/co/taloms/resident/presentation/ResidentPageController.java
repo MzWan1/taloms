@@ -198,3 +198,4 @@ public class ResidentPageController {
         return "redirect:/residents/" + id;
     }
 }
+

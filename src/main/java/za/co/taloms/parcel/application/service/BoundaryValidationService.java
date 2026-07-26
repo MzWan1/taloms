@@ -120,3 +120,5 @@ public class BoundaryValidationService {
         // The check is performed after geometry is saved.
     }
 }
+
+

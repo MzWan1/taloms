@@ -13,3 +13,4 @@ public interface GisLayerJpaRepository extends JpaRepository<GisLayer, Long> {
 
     List<GisLayer> findByVisibleTrueAndLayerType(LayerType layerType);
 }
+

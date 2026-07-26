@@ -98,3 +98,4 @@ public class Parcel {
     public boolean canBeDisputed() { return isAllocated(); }
     public boolean canBeReserved() { return isAvailable(); }
 }
+

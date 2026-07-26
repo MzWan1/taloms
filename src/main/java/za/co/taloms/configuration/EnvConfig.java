@@ -64,3 +64,4 @@ public class EnvConfig {
     public String getEmailPassword() { return emailPassword; }
     public String getEmailFrom() { return emailFrom; }
 }
+

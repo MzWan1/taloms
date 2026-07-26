@@ -35,3 +35,4 @@ public interface DocumentJpaRepository extends JpaRepository<Document, Long> {
     @Query("SELECT d FROM Document d ORDER BY d.uploadedAt DESC")
     List<Document> findAllOrderByUploadedAtDesc();
 }
+

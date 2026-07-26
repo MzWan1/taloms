@@ -91,3 +91,4 @@ public class BusinessOccupancy {
     public boolean isPending() { return BusinessStatus.PENDING == status; }
     public boolean isSuspended() { return BusinessStatus.SUSPENDED == status; }
 }
+

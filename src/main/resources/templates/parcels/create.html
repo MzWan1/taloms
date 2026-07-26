@@ -483,10 +483,12 @@
     }
 
     // ── Auto-Walk Capture ────────────────────────────────────────────────
-    let watchId = null;
+    let autoWalkInterval = null;
     let lastAutoCapture = null;
     let autoWalkActive = false;
     let nextPointId = 1;
+    let autoWalkInitialized = false;
+    const AUTO_CAPTURE_INTERVAL_MS = 3000;
     const AUTO_CAPTURE_MIN_DISTANCE_M = 2.0;
     const AUTO_CAPTURE_MAX_ACCURACY_M = 30.0;
 
@@ -506,91 +508,104 @@
         const startBtn = document.getElementById('startAutoWalk');
 
         autoWalkActive = true;
+        autoWalkInitialized = false;
         lastAutoCapture = null;
 
         statusEl.innerHTML = '<span class="text-warning"><i class="bi bi-hourglass-split me-1"></i>Acquiring GPS signal... Please stand at the starting corner.</span>';
         if (stopBtn) stopBtn.style.display = 'none';
         if (startBtn) startBtn.style.display = 'none';
 
-        watchId = navigator.geolocation.watchPosition(
-            function(position) {
-                const lat = position.coords.latitude;
-                const lng = position.coords.longitude;
-                const accuracy = position.coords.accuracy;
+        function captureStep() {
+            if (!autoWalkActive) return;
 
-                if (lat < -35 || lat > -22 || lng < 16 || lng > 33) {
-                    if (statusEl) {
-                        statusEl.innerHTML = '<span class="text-danger"><i class="bi bi-exclamation-triangle me-1"></i>GPS fix outside South Africa. Check your location settings.</span>';
-                    }
-                    stopAutoWalk();
-                    return;
-                }
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    const accuracy = position.coords.accuracy;
 
-                if (statusEl && statusEl.querySelector('.text-warning')) {
-                    statusEl.innerHTML = '<span class="text-success"><i class="bi bi-play-circle me-1"></i>Recording... Walk the perimeter now.</span>';
-                    if (stopBtn) stopBtn.style.display = 'inline-block';
-                    if (startBtn) startBtn.style.display = 'none';
-                }
-
-                if (accuracy > AUTO_CAPTURE_MAX_ACCURACY_M) {
-                    if (statusEl) {
-                        statusEl.innerHTML = '<span class="text-warning"><i class="bi bi-exclamation-triangle me-1"></i>GPS accuracy weak (±' + Math.round(accuracy) + 'm). Move to open sky for better results.</span>';
-                    }
-                }
-
-                if (lastAutoCapture) {
-                    const dist = haversineDistanceM(lat, lng, lastAutoCapture.latitude, lastAutoCapture.longitude);
-                    if (dist < AUTO_CAPTURE_MIN_DISTANCE_M) {
+                    if (lat < -35 || lat > -22 || lng < 16 || lng > 33) {
+                        if (statusEl) {
+                            statusEl.innerHTML = '<span class="text-danger"><i class="bi bi-exclamation-triangle me-1"></i>GPS fix outside South Africa. Check your location settings.</span>';
+                        }
+                        stopAutoWalk();
                         return;
                     }
-                }
 
-                const seq = nextPointId++;
-                gpsPoints.push({
-                    latitude: lat,
-                    longitude: lng,
-                    sequence: seq,
-                    accuracy: accuracy,
-                    autoCaptured: true
-                });
+                    if (!autoWalkInitialized) {
+                        autoWalkInitialized = true;
+                        if (statusEl) {
+                            statusEl.innerHTML = '<span class="text-success"><i class="bi bi-play-circle me-1"></i>Recording... Walk the perimeter now.</span>';
+                        }
+                        if (stopBtn) stopBtn.style.display = 'inline-block';
+                        if (startBtn) startBtn.style.display = 'none';
+                    }
 
-                lastAutoCapture = { latitude: lat, longitude: lng };
-                updateDisplay();
-            },
-            function(error) {
-                console.error('Auto-watch GPS Error:', error);
-                autoWalkActive = false;
-                let errorMsg = 'Auto-walk GPS error: ';
-                switch(error.code) {
-                    case error.PERMISSION_DENIED:
-                        errorMsg += 'Permission denied. Please allow location access.';
-                        break;
-                    case error.POSITION_UNAVAILABLE:
-                        errorMsg += 'Location unavailable. Please enable GPS.';
-                        break;
-                    case error.TIMEOUT:
-                        errorMsg += 'Location request timed out. Please try again.';
-                        break;
-                    default:
-                        errorMsg += error.message;
+                    if (accuracy > AUTO_CAPTURE_MAX_ACCURACY_M) {
+                        if (statusEl) {
+                            statusEl.innerHTML = '<span class="text-warning"><i class="bi bi-exclamation-triangle me-1"></i>GPS accuracy weak (±' + Math.round(accuracy) + 'm). Move to open sky for better results.</span>';
+                        }
+                    }
+
+                    if (lastAutoCapture) {
+                        const dist = haversineDistanceM(lat, lng, lastAutoCapture.latitude, lastAutoCapture.longitude);
+                        if (dist < AUTO_CAPTURE_MIN_DISTANCE_M) {
+                            return;
+                        }
+                    }
+
+                    const seq = nextPointId++;
+                    gpsPoints.push({
+                        latitude: lat,
+                        longitude: lng,
+                        sequence: seq,
+                        accuracy: accuracy,
+                        autoCaptured: true
+                    });
+
+                    lastAutoCapture = { latitude: lat, longitude: lng };
+                    updateDisplay();
+                },
+                function(error) {
+                    console.error('Auto-walk GPS Error:', error);
+                    if (!autoWalkInitialized) {
+                        let errorMsg = 'Auto-walk GPS error: ';
+                        switch(error.code) {
+                            case error.PERMISSION_DENIED:
+                                errorMsg += 'Permission denied. Please allow location access.';
+                                break;
+                            case error.POSITION_UNAVAILABLE:
+                                errorMsg += 'Location unavailable. Please enable GPS.';
+                                break;
+                            case error.TIMEOUT:
+                                errorMsg += 'Location request timed out. Please try again.';
+                                break;
+                            default:
+                                errorMsg += error.message;
+                        }
+                        alert(errorMsg);
+                        stopAutoWalk();
+                    }
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 15000,
+                    maximumAge: 0
                 }
-                alert(errorMsg);
-                stopAutoWalk();
-            },
-            {
-                enableHighAccuracy: true,
-                timeout: 15000,
-                maximumAge: 0
-            }
-        );
+            );
+        }
+
+        captureStep();
+        autoWalkInterval = setInterval(captureStep, AUTO_CAPTURE_INTERVAL_MS);
     }
 
     function stopAutoWalk() {
-        if (watchId !== null) {
-            navigator.geolocation.clearWatch(watchId);
-            watchId = null;
+        if (autoWalkInterval !== null) {
+            clearInterval(autoWalkInterval);
+            autoWalkInterval = null;
         }
         autoWalkActive = false;
+        autoWalkInitialized = false;
         lastAutoCapture = null;
 
         const statusEl = document.getElementById('autoWalkStatus');
@@ -634,7 +649,7 @@
                 manualCards.style.display = 'block';
             }
         } else {
-            if (watchId !== null) {
+            if (autoWalkInterval !== null) {
                 stopAutoWalk();
             }
             autoWalkControls.style.display = 'none';
@@ -805,7 +820,7 @@
             return false;
         }
 
-        if (watchId !== null) {
+        if (autoWalkInterval !== null) {
             stopAutoWalk();
         }
 

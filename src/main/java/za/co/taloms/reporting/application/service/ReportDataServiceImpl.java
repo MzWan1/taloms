@@ -986,3 +986,5 @@ public class ReportDataServiceImpl implements ReportDataService {
         return businesses;
     }
 }
+
+

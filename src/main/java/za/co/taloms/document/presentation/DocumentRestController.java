@@ -33,7 +33,7 @@ public class DocumentRestController {
     private final DocumentService documentService;
 
     @PostMapping("/upload")
-    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_DATA_CAPTURER','ROLE_LAND_OFFICER')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR','DATA_CAPTURER','LAND_OFFICER')")
     public ResponseEntity<ApiResponse<DocumentResponse>> upload(
             @RequestParam("file") MultipartFile file,
             @RequestPart(value = "request", required = false) DocumentUploadRequest requestPart,
@@ -70,21 +70,21 @@ public class DocumentRestController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_DATA_CAPTURER','ROLE_REPORT_VIEWER')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR','DATA_CAPTURER','REPORT_VIEWER')")
     public ResponseEntity<ApiResponse<List<DocumentResponse>>> getAll() {
         return ResponseEntity.ok(ApiResponse.success(documentService.findAll(),
                 "Documents retrieved successfully"));
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_DATA_CAPTURER','ROLE_REPORT_VIEWER')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR','DATA_CAPTURER','REPORT_VIEWER')")
     public ResponseEntity<ApiResponse<DocumentResponse>> getById(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(documentService.findById(id),
                 "Document retrieved successfully"));
     }
 
     @GetMapping("/entity/{entityType}/{entityId}")
-    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_DATA_CAPTURER','ROLE_REPORT_VIEWER')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR','DATA_CAPTURER','REPORT_VIEWER')")
     public ResponseEntity<ApiResponse<List<DocumentResponse>>> getByEntity(
             @PathVariable EntityType entityType,
             @PathVariable Long entityId) {
@@ -95,7 +95,7 @@ public class DocumentRestController {
     }
 
     @GetMapping("/type/{documentType}")
-    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_DATA_CAPTURER','ROLE_REPORT_VIEWER')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR','DATA_CAPTURER','REPORT_VIEWER')")
     public ResponseEntity<ApiResponse<List<DocumentResponse>>> getByType(
             @PathVariable DocumentType documentType) {
 
@@ -105,7 +105,7 @@ public class DocumentRestController {
     }
 
     @GetMapping("/{id}/download")
-    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_DATA_CAPTURER','ROLE_LAND_OFFICER','ROLE_REPORT_VIEWER')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR','DATA_CAPTURER','LAND_OFFICER','REPORT_VIEWER')")
     public ResponseEntity<byte[]> download(
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails,
@@ -129,7 +129,7 @@ public class DocumentRestController {
     }
 
     @GetMapping("/{id}/view")
-    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_DATA_CAPTURER','ROLE_LAND_OFFICER','ROLE_REPORT_VIEWER')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR','DATA_CAPTURER','LAND_OFFICER','REPORT_VIEWER')")
     public ResponseEntity<byte[]> view(
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails,
@@ -155,7 +155,7 @@ public class DocumentRestController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_DATA_CAPTURER')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR','DATA_CAPTURER')")
     public ResponseEntity<ApiResponse<DocumentResponse>> update(
             @PathVariable Long id,
             @RequestParam(required = false) String description,
@@ -166,7 +166,7 @@ public class DocumentRestController {
     }
 
     @PatchMapping("/{id}/deactivate")
-    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR')")
     public ResponseEntity<ApiResponse<DocumentResponse>> deactivate(
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -176,7 +176,7 @@ public class DocumentRestController {
     }
 
     @PatchMapping("/{id}/activate")
-    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR')")
     public ResponseEntity<ApiResponse<DocumentResponse>> activate(
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -186,7 +186,7 @@ public class DocumentRestController {
     }
 
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasAuthority('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
     public ResponseEntity<ApiResponse<Void>> delete(
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -196,7 +196,7 @@ public class DocumentRestController {
     }
 
     @GetMapping("/{id}/access-logs")
-    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR')")
     public ResponseEntity<ApiResponse<List<DocumentAccessLogResponse>>> getAccessLogs(
             @PathVariable Long id) {
 
@@ -206,7 +206,7 @@ public class DocumentRestController {
     }
 
     @GetMapping("/count")
-    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR')")
     public ResponseEntity<ApiResponse<DocumentCountDto>> getCounts() {
         var counts = DocumentCountDto.builder()
                 .total(documentService.countAll())
@@ -223,3 +223,5 @@ public class DocumentRestController {
         private long total;
     }
 }
+
+

@@ -31,3 +31,4 @@ public class HouseholdResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
+

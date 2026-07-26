@@ -43,3 +43,4 @@ public class PasswordResetToken {
         return !used && !isExpired();
     }
 }
+

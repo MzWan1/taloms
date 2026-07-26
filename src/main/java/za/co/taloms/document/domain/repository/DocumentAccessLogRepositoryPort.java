@@ -10,3 +10,4 @@ public interface DocumentAccessLogRepositoryPort {
     List<DocumentAccessLog> findByDocumentIdOrderByAccessedAtDesc(Long documentId);
     long countByDocumentId(Long documentId);
 }
+

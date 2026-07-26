@@ -15,3 +15,4 @@ public interface TraditionalAuthorityService {
     void deactivate(Long id);
     void activate(Long id);
 }
+

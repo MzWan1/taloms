@@ -24,7 +24,7 @@ public class BusinessOccupancyRestController {
     private final BusinessOccupancyService businessService;
 
     @PostMapping
-    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_DATA_CAPTURER')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR','DATA_CAPTURER')")
     public ResponseEntity<ApiResponse<BusinessOccupancyResponse>> create(
             @Valid @RequestBody BusinessOccupancyRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -35,7 +35,7 @@ public class BusinessOccupancyRestController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_DATA_CAPTURER')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR','DATA_CAPTURER')")
     public ResponseEntity<ApiResponse<BusinessOccupancyResponse>> update(
             @PathVariable Long id,
             @Valid @RequestBody BusinessOccupancyRequest request,
@@ -106,7 +106,7 @@ public class BusinessOccupancyRestController {
     }
 
     @PatchMapping("/{id}/status")
-    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR')")
     public ResponseEntity<ApiResponse<BusinessOccupancyResponse>> updateStatus(
             @PathVariable Long id,
             @RequestParam BusinessStatus status,
@@ -117,7 +117,7 @@ public class BusinessOccupancyRestController {
     }
 
     @PatchMapping("/{id}/activate")
-    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR')")
     public ResponseEntity<ApiResponse<BusinessOccupancyResponse>> activate(
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -127,7 +127,7 @@ public class BusinessOccupancyRestController {
     }
 
     @PatchMapping("/{id}/deactivate")
-    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR')")
     public ResponseEntity<ApiResponse<BusinessOccupancyResponse>> deactivate(
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -160,3 +160,5 @@ public class BusinessOccupancyRestController {
         private long inactive;
     }
 }
+
+

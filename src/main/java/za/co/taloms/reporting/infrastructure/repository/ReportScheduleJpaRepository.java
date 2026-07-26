@@ -13,3 +13,4 @@ public interface ReportScheduleJpaRepository extends JpaRepository<ReportSchedul
 
     List<ReportSchedule> findByActiveTrueAndReportType(ReportType reportType);
 }
+

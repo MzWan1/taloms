@@ -29,3 +29,4 @@ public interface ParcelRepositoryPort {
     List<Object[]> findParcelClusters(Long villageId, double epsMeters, int minPts);
     List<Object[]> findVoronoiCells(Long villageId);
 }
+

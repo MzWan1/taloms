@@ -18,3 +18,4 @@ public interface GisService {
     GeoJsonResponse getCommunityLayout(Long villageId);
     GeoJsonResponse getCommunityLayoutByAuthority(Long authorityId);
 }
+

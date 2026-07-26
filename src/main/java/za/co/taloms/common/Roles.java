@@ -10,3 +10,4 @@ public final class Roles {
     public static final String DATA_CAPTURER   = "ROLE_DATA_CAPTURER";
     public static final String REPORT_VIEWER   = "ROLE_REPORT_VIEWER";
 }
+

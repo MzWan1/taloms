@@ -12,3 +12,5 @@ public interface NotificationRepositoryPort {
     List<Notification> findByChannel(NotificationChannel channel);
     List<Notification> findPendingNotifications();
 }
+
+

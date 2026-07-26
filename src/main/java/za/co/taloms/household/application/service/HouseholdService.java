@@ -22,3 +22,4 @@ public interface HouseholdService {
     long countByParcel(Long parcelId);
     boolean hasActiveHousehold(Long parcelId);
 }
+

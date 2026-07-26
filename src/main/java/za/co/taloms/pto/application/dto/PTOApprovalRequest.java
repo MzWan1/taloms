@@ -10,3 +10,4 @@ public class PTOApprovalRequest {
     private String ipAddress;
     private String userAgent;
 }
+

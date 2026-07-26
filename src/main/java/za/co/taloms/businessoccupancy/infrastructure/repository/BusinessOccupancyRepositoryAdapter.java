@@ -100,3 +100,4 @@ public class BusinessOccupancyRepositoryAdapter implements BusinessOccupancyRepo
         return jpaRepository.count();
     }
 }
+

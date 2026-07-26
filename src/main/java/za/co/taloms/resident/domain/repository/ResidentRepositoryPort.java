@@ -22,3 +22,4 @@ public interface ResidentRepositoryPort {
     long countByVillageId(Long villageId);
     long countAll();
 }
+

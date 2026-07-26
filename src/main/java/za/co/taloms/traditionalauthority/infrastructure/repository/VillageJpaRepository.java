@@ -26,3 +26,4 @@ public interface VillageJpaRepository
             "ORDER BY v.villageName")
     List<Village> findByAuthorityIdOrdered(@Param("authorityId") Long authorityId);
 }
+

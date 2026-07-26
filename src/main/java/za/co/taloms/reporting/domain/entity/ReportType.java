@@ -95,3 +95,4 @@ public enum ReportType {
         };
     }
 }
+

@@ -40,3 +40,4 @@ public class DocumentAccessLog {
         accessedAt = LocalDateTime.now();
     }
 }
+

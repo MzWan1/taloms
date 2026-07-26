@@ -36,3 +36,4 @@ public interface PTORepositoryPort {
     List<PTO> findAllIncludingDeleted();
     List<PTO> findDeleted();
 }
+

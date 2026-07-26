@@ -37,3 +37,4 @@ public class ResidentResponse {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }
+

@@ -25,7 +25,7 @@ public class HouseholdRestController {
     private final HouseholdService householdService;
 
     @PostMapping
-    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_DATA_CAPTURER')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR','DATA_CAPTURER')")
     public ResponseEntity<ApiResponse<HouseholdResponse>> create(
             @Valid @RequestBody HouseholdRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -39,7 +39,7 @@ public class HouseholdRestController {
     }
 
     @PutMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_DATA_CAPTURER')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR','DATA_CAPTURER')")
     public ResponseEntity<ApiResponse<HouseholdResponse>> update(
             @PathVariable Long id,
             @Valid @RequestBody HouseholdRequest request,
@@ -52,7 +52,7 @@ public class HouseholdRestController {
     }
 
     @GetMapping
-    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_DATA_CAPTURER','ROLE_REPORT_VIEWER')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR','DATA_CAPTURER','REPORT_VIEWER')")
     public ResponseEntity<ApiResponse<List<HouseholdResponse>>> getAll() {
         log.debug("REST API: Getting all households");
         return ResponseEntity.ok(ApiResponse.success(householdService.findAll(),
@@ -60,7 +60,7 @@ public class HouseholdRestController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_DATA_CAPTURER','ROLE_REPORT_VIEWER')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR','DATA_CAPTURER','REPORT_VIEWER')")
     public ResponseEntity<ApiResponse<HouseholdResponse>> getById(@PathVariable Long id) {
         log.debug("REST API: Getting household by ID: {}", id);
         return ResponseEntity.ok(ApiResponse.success(householdService.findById(id),
@@ -68,7 +68,7 @@ public class HouseholdRestController {
     }
 
     @GetMapping("/parcel/{parcelId}")
-    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_DATA_CAPTURER','ROLE_REPORT_VIEWER')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR','DATA_CAPTURER','REPORT_VIEWER')")
     public ResponseEntity<ApiResponse<List<HouseholdResponse>>> getByParcel(@PathVariable Long parcelId) {
         log.debug("REST API: Getting households by parcel: {}", parcelId);
         return ResponseEntity.ok(ApiResponse.success(householdService.findByParcelId(parcelId),
@@ -76,7 +76,7 @@ public class HouseholdRestController {
     }
 
     @GetMapping("/parcel/{parcelId}/active")
-    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_DATA_CAPTURER','ROLE_REPORT_VIEWER')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR','DATA_CAPTURER','REPORT_VIEWER')")
     public ResponseEntity<ApiResponse<HouseholdResponse>> getActiveByParcel(@PathVariable Long parcelId) {
         log.debug("REST API: Getting active household by parcel: {}", parcelId);
         var household = householdService.findActiveByParcelId(parcelId);
@@ -87,7 +87,7 @@ public class HouseholdRestController {
     }
 
     @GetMapping("/pto/{ptoId}")
-    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_DATA_CAPTURER','ROLE_REPORT_VIEWER')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR','DATA_CAPTURER','REPORT_VIEWER')")
     public ResponseEntity<ApiResponse<List<HouseholdResponse>>> getByPto(@PathVariable Long ptoId) {
         log.debug("REST API: Getting households by PTO: {}", ptoId);
         return ResponseEntity.ok(ApiResponse.success(householdService.findByPtoId(ptoId),
@@ -95,7 +95,7 @@ public class HouseholdRestController {
     }
 
     @GetMapping("/active")
-    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_DATA_CAPTURER','ROLE_REPORT_VIEWER')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR','DATA_CAPTURER','REPORT_VIEWER')")
     public ResponseEntity<ApiResponse<List<HouseholdResponse>>> getActive() {
         log.debug("REST API: Getting active households");
         return ResponseEntity.ok(ApiResponse.success(householdService.findActive(),
@@ -103,7 +103,7 @@ public class HouseholdRestController {
     }
 
     @GetMapping("/search")
-    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_DATA_CAPTURER','ROLE_REPORT_VIEWER')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR','DATA_CAPTURER','REPORT_VIEWER')")
     public ResponseEntity<ApiResponse<List<HouseholdResponse>>> search(@RequestParam String name) {
         log.debug("REST API: Searching households by name: {}", name);
         return ResponseEntity.ok(ApiResponse.success(householdService.searchByName(name),
@@ -111,7 +111,7 @@ public class HouseholdRestController {
     }
 
     @PatchMapping("/{id}/deactivate")
-    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR')")
     public ResponseEntity<ApiResponse<HouseholdResponse>> deactivate(
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -122,7 +122,7 @@ public class HouseholdRestController {
     }
 
     @PatchMapping("/{id}/activate")
-    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR')")
     public ResponseEntity<ApiResponse<HouseholdResponse>> activate(
             @PathVariable Long id,
             @AuthenticationPrincipal UserDetails userDetails) {
@@ -133,7 +133,7 @@ public class HouseholdRestController {
     }
 
     @GetMapping("/count")
-    @PreAuthorize("hasAnyAuthority('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_REPORT_VIEWER')")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR','REPORT_VIEWER')")
     public ResponseEntity<ApiResponse<HouseholdCountDto>> getCounts() {
         log.debug("REST API: Getting household counts");
         var counts = HouseholdCountDto.builder()
@@ -153,3 +153,5 @@ public class HouseholdRestController {
         private long active;
     }
 }
+
+

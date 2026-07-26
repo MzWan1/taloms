@@ -15,3 +15,4 @@ public class ReportResponse {
     private long fileSize;
     private LocalDateTime generatedAt;
 }
+
