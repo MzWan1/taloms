@@ -129,6 +129,20 @@
                             onclick="showRevokeModal()">
                         <i class="bi bi-x-circle me-2"></i>Revoke
                     </button>
+
+                    <!-- Delete button — any non-deleted status -->
+                    <button th:if="${pto.deletedAt == null}"
+                            type="button"
+                            class="btn btn-outline-danger px-4 fw-semibold"
+                            onclick="showDeleteModal()">
+                        <i class="bi bi-trash me-2"></i>Delete PTO
+                    </button>
+
+                    <!-- Deleted badge -->
+                    <span th:if="${pto.deletedAt != null}"
+                          class="badge bg-danger px-3 py-2">
+                        <i class="bi bi-trash me-1"></i>Deleted
+                    </span>
                 </div>
             </div>
         </div>
@@ -943,6 +957,60 @@
     </div>
 </div>
 
+<!-- ============================================================ -->
+<!-- DELETE MODAL -->
+<!-- ============================================================ -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold text-danger">
+                    <i class="bi bi-trash me-2"></i>Delete PTO
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form th:action="@{/ptos/{id}/delete(id=${pto.id})}" method="post">
+                <div class="modal-body">
+                    <div class="d-flex align-items-start gap-3 mb-3">
+                        <div class="rounded-circle d-flex align-items-center
+                                    justify-content-center flex-shrink-0"
+                             style="width:48px;height:48px;background:#FEE2E2">
+                            <i class="bi bi-exclamation-triangle-fill text-danger fs-5"></i>
+                        </div>
+                        <div>
+                            <p class="mb-1 fw-semibold">
+                                Delete PTO <span th:text="${pto.ptoNumber}">PTO-2026-00001</span>?
+                            </p>
+                            <small class="text-muted">
+                                This will <strong>soft-delete</strong> the PTO record.
+                                The data will be preserved for audit and reporting purposes,
+                                but the PTO will be marked as deleted and hidden from active views.
+                                <span class="text-danger fw-semibold">This action is logged.</span>
+                            </small>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="deleteReason" class="form-label small fw-semibold">
+                            Reason for Deletion <span class="text-danger">*</span>
+                        </label>
+                        <textarea id="deleteReason" name="reason"
+                                  class="form-control" rows="3"
+                                  required
+                                  placeholder="Enter the reason for deleting this PTO..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0">
+                    <button type="button" class="btn btn-light px-4"
+                            data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger px-4 fw-semibold">
+                        <i class="bi bi-trash me-1"></i>Confirm Deletion
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 <style>
     .pto-hero-avatar {
         width: 64px; height: 64px;
@@ -978,6 +1046,11 @@
     function showRevokeModal() {
         document.getElementById('revokeReason').value = '';
         new bootstrap.Modal(document.getElementById('revokeModal')).show();
+    }
+
+    function showDeleteModal() {
+        document.getElementById('deleteReason').value = '';
+        new bootstrap.Modal(document.getElementById('deleteModal')).show();
     }
 
     // Auto-focus when modals open

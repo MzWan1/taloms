@@ -144,6 +144,22 @@ public class PTORestController {
         return ResponseEntity.ok(ApiResponse.success(response, "PTO reinstated successfully"));
     }
 
+    @DeleteMapping("/{id}")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR')")
+    public ResponseEntity<ApiResponse<Void>> delete(
+            @PathVariable Long id,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        ptoService.deletePTO(id, userDetails.getUsername());
+        return ResponseEntity.ok(ApiResponse.success(null, "PTO deleted successfully"));
+    }
+
+    @GetMapping("/deleted")
+    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_REPORT_VIEWER')")
+    public ResponseEntity<ApiResponse<List<PTOResponse>>> getDeleted() {
+        return ResponseEntity.ok(ApiResponse.success(ptoService.findDeleted(), "Deleted PTOs retrieved successfully"));
+    }
+
     @GetMapping("/{id}/certificate")
     @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','ROLE_TA_ADMINISTRATOR','ROLE_REPORT_VIEWER')")
     public ResponseEntity<byte[]> downloadCertificate(@PathVariable Long id) {

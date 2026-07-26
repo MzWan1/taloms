@@ -28,4 +28,6 @@ public interface PTOService {
     long countByVillageIdAndIssueDateBetween(Long villageId, java.time.LocalDate dateFrom, java.time.LocalDate dateTo);
     long countByIssueDateBetween(java.time.LocalDate dateFrom, java.time.LocalDate dateTo);
     void reinstate(Long id, String reason);
+    void deletePTO(Long id, String deletedBy);
+    List<PTOResponse> findDeleted();
 }

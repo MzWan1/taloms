@@ -140,4 +140,19 @@ public class PTORepositoryAdapter implements PTORepositoryPort {
                              PTOStatus status, PTOPurpose purpose, Long villageId, Long authorityId) {
         return jpaRepository.search(holderName, idNumber, ptoNumber, status, purpose, villageId, authorityId);
     }
+
+    @Override
+    public void softDeleteById(Long id, String deletedBy) {
+        jpaRepository.softDeleteById(id, deletedBy);
+    }
+
+    @Override
+    public List<PTO> findAllIncludingDeleted() {
+        return jpaRepository.findAllIncludingDeleted();
+    }
+
+    @Override
+    public List<PTO> findDeleted() {
+        return jpaRepository.findDeleted();
+    }
 }

@@ -68,4 +68,8 @@ public class PTOResponse {
     private String createdBy;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    // Soft-delete fields
+    private LocalDateTime deletedAt;
+    private String deletedBy;
 }

@@ -1,6 +1,7 @@
 package za.co.taloms.pto.infrastructure.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import za.co.taloms.pto.domain.entity.PTO;
@@ -82,6 +83,7 @@ public interface PTOJpaRepository extends JpaRepository<PTO, Long> {
             AND (:purpose IS NULL OR p.purpose = :purpose)
             AND (:villageId IS NULL OR p.village.id = :villageId)
             AND (:authorityId IS NULL OR p.traditionalAuthority.id = :authorityId)
+            AND p.deletedAt IS NULL
             ORDER BY p.createdAt DESC
             """)
     List<PTO> search(@Param("holderName") String holderName,
@@ -91,4 +93,14 @@ public interface PTOJpaRepository extends JpaRepository<PTO, Long> {
                      @Param("purpose") za.co.taloms.pto.domain.entity.PTOPurpose purpose,
                      @Param("villageId") Long villageId,
                      @Param("authorityId") Long authorityId);
+
+    @Modifying
+    @Query(value = "UPDATE pto_records SET deleted_at = CURRENT_TIMESTAMP, deleted_by = :deletedBy, status = 'REVOKED', revoked_by = :deletedBy, revoked_at = CURRENT_TIMESTAMP, revoke_reason = 'PTO record deleted by ' || :deletedBy WHERE id = :id", nativeQuery = true)
+    void softDeleteById(@Param("id") Long id, @Param("deletedBy") String deletedBy);
+
+    @Query("SELECT p FROM PTO p WHERE p.deletedAt IS NULL ORDER BY p.createdAt DESC")
+    List<PTO> findAllIncludingDeleted();
+
+    @Query("SELECT p FROM PTO p WHERE p.deletedAt IS NOT NULL ORDER BY p.deletedAt DESC")
+    List<PTO> findDeleted();
 }

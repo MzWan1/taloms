@@ -519,4 +519,36 @@ public class PTOPageController {
             return "redirect:/ptos/" + id + "/edit";
         }
     }
+
+    @PostMapping("/{id}/delete")
+    public String deletePTO(
+            @PathVariable Long id,
+            @RequestParam String reason,
+            @AuthenticationPrincipal UserDetails userDetails,
+            RedirectAttributes ra) {
+
+        try {
+            ptoService.deletePTO(id, userDetails.getUsername());
+            ra.addFlashAttribute("successMessage", "✅ PTO deleted successfully. Record preserved for audit trail.");
+            return "redirect:/ptos/deleted";
+        } catch (Exception e) {
+            log.error("Error deleting PTO: {}", e.getMessage(), e);
+            ra.addFlashAttribute("errorMessage", "Error deleting PTO: " + e.getMessage());
+            return "redirect:/ptos/" + id;
+        }
+    }
+
+    @GetMapping("/deleted")
+    public String deletedList(Model model) {
+        try {
+            var deletedPtos = ptoService.findDeleted();
+            model.addAttribute("ptos", deletedPtos);
+            model.addAttribute("pageTitle", "Deleted PTOs");
+            model.addAttribute("currentPage", "ptos");
+            return "ptos/deleted";
+        } catch (Exception e) {
+            log.error("Error loading deleted PTOs: {}", e.getMessage(), e);
+            return "redirect:/ptos";
+        }
+    }
 }

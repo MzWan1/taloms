@@ -146,6 +146,12 @@ public class PTO {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    @Column(name = "deleted_at")
+    private LocalDateTime deletedAt;
+
+    @Column(name = "deleted_by", length = 50)
+    private String deletedBy;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();
@@ -188,4 +194,15 @@ public class PTO {
     public boolean canBeApproved() { return isPending() || isSuspended(); }
     public boolean canBeRevoked()  { return isActive() || isSuspended(); }
     public boolean canBeSuspended(){ return isActive(); }
+
+    public boolean isDeleted() { return deletedAt != null; }
+
+    public void softDelete(String deletedBy) {
+        this.deletedAt = LocalDateTime.now();
+        this.deletedBy = deletedBy;
+        this.status = PTOStatus.REVOKED;
+        this.revokedBy = deletedBy;
+        this.revokedAt = LocalDateTime.now();
+        this.revokeReason = "PTO record deleted by " + deletedBy;
+    }
 }

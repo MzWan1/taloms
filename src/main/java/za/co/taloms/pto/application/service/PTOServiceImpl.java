@@ -535,6 +535,34 @@ public class PTOServiceImpl implements PTOService {
         return ptoRepository.countByIssueDateBetween(dateFrom, dateTo);
     }
 
+    @Override
+    @Transactional
+    public void deletePTO(Long id, String deletedBy) {
+        var pto = ptoRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("PTO", id));
+
+        if (pto.isDeleted()) {
+            throw new BusinessValidationException("PTO is already deleted");
+        }
+
+        pto.softDelete(deletedBy);
+        ptoRepository.save(pto);
+
+        eventPublisher.publishEvent(new PTODeletedEvent(
+                this, pto.getId(), pto.getPtoNumber(),
+                pto.getPtoHolderName(), deletedBy, pto.getDeletedAt(), pto.getRevokeReason()));
+
+        log.info("PTO {} soft-deleted by {}", pto.getPtoNumber(), deletedBy);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PTOResponse> findDeleted() {
+        return ptoRepository.findDeleted().stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
     private PTOResponse toResponse(PTO p) {
         return PTOResponse.builder()
                 .id(p.getId())
@@ -579,6 +607,8 @@ public class PTOServiceImpl implements PTOService {
                 .createdBy(p.getCreatedBy())
                 .createdAt(p.getCreatedAt())
                 .updatedAt(p.getUpdatedAt())
+                .deletedAt(p.getDeletedAt())
+                .deletedBy(p.getDeletedBy())
                 .build();
     }
 }

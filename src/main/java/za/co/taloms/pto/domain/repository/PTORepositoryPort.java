@@ -32,4 +32,7 @@ public interface PTORepositoryPort {
     boolean existsByIdNumberAndVillageIdAndStatus(String idNumber, Long villageId, PTOStatus status);
     List<PTO> search(String holderName, String idNumber, String ptoNumber, PTOStatus status,
                      za.co.taloms.pto.domain.entity.PTOPurpose purpose, Long villageId, Long authorityId);
+    void softDeleteById(Long id, String deletedBy);
+    List<PTO> findAllIncludingDeleted();
+    List<PTO> findDeleted();
 }

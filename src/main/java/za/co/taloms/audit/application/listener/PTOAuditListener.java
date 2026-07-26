@@ -9,6 +9,7 @@ import za.co.taloms.audit.application.service.AuditService;
 import za.co.taloms.audit.domain.entity.AuditAction;
 import za.co.taloms.pto.domain.event.PTOApprovedEvent;
 import za.co.taloms.pto.domain.event.PTOCreatedEvent;
+import za.co.taloms.pto.domain.event.PTODeletedEvent;
 import za.co.taloms.pto.domain.event.PTOReinstatedEvent;
 import za.co.taloms.pto.domain.event.PTORevokedEvent;
 
@@ -107,6 +108,29 @@ public class PTOAuditListener {
             auditService.logAction(request);
         } catch (Exception e) {
             log.error("Failed to log PTO reinstated event: {}", e.getMessage(), e);
+        }
+    }
+
+    @Async
+    @EventListener
+    public void onPTODeleted(PTODeletedEvent event) {
+        try {
+            String details = String.format("{\"ptoId\":%d,\"ptoNumber\":\"%s\",\"holderName\":\"%s\",\"deletedBy\":\"%s\",\"reason\":\"%s\",\"deletedAt\":\"%s\"}",
+                    event.getPtoId(), event.getPtoNumber(), event.getPtoHolderName(),
+                    event.getDeletedBy(), event.getReason(), event.getDeletedAt() != null ? event.getDeletedAt().toString() : null);
+
+            var request = AuditLogRequest.builder()
+                    .entityType("PTO")
+                    .entityId(event.getPtoId())
+                    .action(AuditAction.DELETE)
+                    .previousValue(details)
+                    .performedBy(event.getDeletedBy())
+                    .description("PTO " + event.getPtoNumber() + " deleted for " + event.getPtoHolderName() + " - Reason: " + event.getReason())
+                    .build();
+
+            auditService.logAction(request);
+        } catch (Exception e) {
+            log.error("Failed to log PTO deleted event: {}", e.getMessage(), e);
         }
     }
 }
