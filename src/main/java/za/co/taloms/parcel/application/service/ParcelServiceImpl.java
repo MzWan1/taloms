@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import jakarta.persistence.EntityManager;
 import za.co.taloms.common.BusinessValidationException;
 import za.co.taloms.common.DuplicateRecordException;
 import za.co.taloms.common.ResourceNotFoundException;
@@ -42,6 +43,7 @@ public class ParcelServiceImpl implements ParcelService {
     private final ParcelAreaCalculator areaCalculator;
     private final ApplicationEventPublisher eventPublisher;
     private final BoundaryValidationService boundaryValidationService;
+    private final EntityManager entityManager;
 
     private static final String PARCEL_NUMBER_PREFIX = "PRC";
 
@@ -101,6 +103,7 @@ public class ParcelServiceImpl implements ParcelService {
 
         // Save parcel
         var saved = parcelRepository.save(parcel);
+        entityManager.flush();
 
         // Save simplified boundaries
         List<ParcelBoundary> boundaries = new ArrayList<>();
@@ -116,6 +119,7 @@ public class ParcelServiceImpl implements ParcelService {
         }
         boundaryRepository.saveAll(boundaries);
         saved.setBoundaries(boundaries);
+        entityManager.flush();
 
         // PostGIS geometry is auto-updated via V30 trigger on parcel_boundaries
 
@@ -198,8 +202,7 @@ public class ParcelServiceImpl implements ParcelService {
         parcel.setBoundaries(boundaries);
 
         var saved = parcelRepository.save(parcel);
-
-        // PostGIS geometry auto-updated via V30 trigger
+        entityManager.flush();
 
         // Check for self-intersecting polygon
         if (parcelRepository.hasSelfIntersection(saved.getId())) {
