@@ -512,8 +512,8 @@
         lastAutoCapture = null;
 
         statusEl.innerHTML = '<span class="text-warning"><i class="bi bi-hourglass-split me-1"></i>Acquiring GPS signal... Please stand at the starting corner.</span>';
-        if (stopBtn) stopBtn.style.display = 'none';
         if (startBtn) startBtn.style.display = 'none';
+        if (stopBtn) stopBtn.style.display = 'inline-block';
 
         function captureStep() {
             if (!autoWalkActive) return;
