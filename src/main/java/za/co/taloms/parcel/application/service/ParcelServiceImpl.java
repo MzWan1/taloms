@@ -49,6 +49,10 @@ public class ParcelServiceImpl implements ParcelService {
 
     @Override
     public ParcelResponse createParcel(ParcelRequest request, String createdBy) {
+        if (request.getVillageId() == null) {
+            throw new BusinessValidationException("Village is required");
+        }
+
         // Validate village exists
         var village = villageRepository.findById(request.getVillageId())
                 .orElseThrow(() -> new ResourceNotFoundException("Village", request.getVillageId()));
@@ -125,11 +129,10 @@ public class ParcelServiceImpl implements ParcelService {
 
         // Check for self-intersecting polygon
         if (parcelRepository.hasSelfIntersection(saved.getId())) {
-            log.warn("Parcel {} has self-intersecting geometry — ST_IsValid returned false", saved.getId());
+            log.warn("Parcel geometry invalid");
         }
 
-        log.info("Created parcel: {} ({}) in village: {} by {}",
-                saved.getParcelNumber(), saved.getStandNumber(), village.getVillageName(), createdBy);
+        log.info("Parcel created: {}", saved.getParcelNumber());
 
         return toResponse(saved);
     }
@@ -206,10 +209,10 @@ public class ParcelServiceImpl implements ParcelService {
 
         // Check for self-intersecting polygon
         if (parcelRepository.hasSelfIntersection(saved.getId())) {
-            log.warn("Parcel {} has self-intersecting geometry after update", saved.getId());
+            log.warn("Parcel geometry invalid after update");
         }
 
-        log.info("Updated parcel: {} by {}", saved.getParcelNumber(), updatedBy);
+        log.info("Parcel updated: {}", saved.getParcelNumber());
 
         return toResponse(saved);
     }
@@ -327,8 +330,7 @@ public class ParcelServiceImpl implements ParcelService {
         parcel.setStatus(status);
         var saved = parcelRepository.save(parcel);
 
-        log.info("Parcel {} status updated to {} by {}",
-                saved.getParcelNumber(), status.getDisplayName(), updatedBy);
+        log.info("Parcel status updated: {}", status.name());
 
         return toResponse(saved);
     }
@@ -350,8 +352,7 @@ public class ParcelServiceImpl implements ParcelService {
         parcel.setPto(pto);
         var saved = parcelRepository.save(parcel);
 
-        log.info("Parcel {} allocated to PTO {} by {}",
-                saved.getParcelNumber(), pto.getPtoNumber(), allocatedBy);
+        log.info("Parcel allocated");
 
         return toResponse(saved);
     }
@@ -368,7 +369,7 @@ public class ParcelServiceImpl implements ParcelService {
         boundaryRepository.deleteByParcelId(id);
         parcelRepository.deleteById(id);
 
-        log.info("Parcel {} deleted by {}", parcel.getParcelNumber(), deletedBy);
+        log.info("Parcel deleted");
     }
 
     @Override

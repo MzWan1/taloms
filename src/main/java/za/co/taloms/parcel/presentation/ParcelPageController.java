@@ -67,7 +67,7 @@ public class ParcelPageController {
     public String createForm(Model model) {
         try {
             var authorities = authorityService.findAllActive();
-            log.info("Loaded {} active authorities for parcel create form", authorities.size());
+            log.info("Loading parcel create form");
 
             if (!model.containsAttribute("form")) {
                 model.addAttribute("form", ParcelRequest.builder().build());
@@ -98,21 +98,16 @@ public class ParcelPageController {
             @AuthenticationPrincipal UserDetails userDetails,
             RedirectAttributes ra) {
 
-        log.info("Creating parcel - Stand: {}, Village: {}, Boundaries JSON length: {}",
-                request.getStandNumber(), request.getVillageId(),
-                boundariesJson != null ? boundariesJson.length() : 0);
+        log.info("Creating parcel");
 
         try {
             // Parse the JSON boundaries
             List<BoundaryPointDto> boundaries = parseBoundariesJson(boundariesJson);
 
-            log.info("Parsed {} boundary points from JSON", boundaries != null ? boundaries.size() : 0);
-
             // Validate boundaries
             if (boundaries == null || boundaries.size() < 3) {
-                String errorMsg = "❌ Please capture at least 3 GPS boundary points. Currently: " +
-                        (boundaries != null ? boundaries.size() : 0) + " points.";
-                log.warn(errorMsg);
+                String errorMsg = "Please capture at least 3 GPS boundary points.";
+                log.warn("Parcel creation failed: insufficient boundary points");
                 ra.addFlashAttribute("errorMessage", errorMsg);
                 ra.addFlashAttribute("form", request);
                 return "redirect:/parcels/create";
@@ -123,18 +118,19 @@ public class ParcelPageController {
 
             var response = parcelService.createParcel(request, userDetails.getUsername());
             ra.addFlashAttribute("successMessage",
-                    "✅ Parcel " + response.getParcelNumber() +
+                    "Parcel " + response.getParcelNumber() +
                             " created successfully for stand " + response.getStandNumber() + ".");
+            log.info("Parcel created: {}", response.getParcelNumber());
             return "redirect:/parcels";
 
         } catch (JsonProcessingException e) {
-            log.error("Error parsing boundaries JSON: {}", e.getMessage(), e);
-            ra.addFlashAttribute("errorMessage", "❌ Invalid boundary data format: " + e.getMessage());
+            log.warn("Parcel creation failed: invalid boundary data");
+            ra.addFlashAttribute("errorMessage", "Invalid boundary data format.");
             ra.addFlashAttribute("form", request);
             return "redirect:/parcels/create";
         } catch (Exception e) {
-            log.error("Error creating parcel: {}", e.getMessage(), e);
-            ra.addFlashAttribute("errorMessage", "❌ Error creating parcel: " + e.getMessage());
+            log.error("Parcel creation failed", e);
+            ra.addFlashAttribute("errorMessage", "Error creating parcel: " + e.getMessage());
             ra.addFlashAttribute("form", request);
             return "redirect:/parcels/create";
         }
@@ -149,7 +145,7 @@ public class ParcelPageController {
             model.addAttribute("currentPage", "parcels");
             return "parcels/detail";
         } catch (Exception e) {
-            log.error("Error loading parcel detail: {}", e.getMessage(), e);
+            log.error("Error loading parcel detail", e);
             return "redirect:/parcels";
         }
     }
@@ -180,7 +176,7 @@ public class ParcelPageController {
             model.addAttribute("currentPage", "parcels");
             return "parcels/edit";
         } catch (Exception e) {
-            log.error("Error loading edit form: {}", e.getMessage(), e);
+            log.error("Error loading edit form", e);
             return "redirect:/parcels/" + id;
         }
     }
@@ -208,15 +204,16 @@ public class ParcelPageController {
 
             var response = parcelService.updateParcel(id, request, userDetails.getUsername());
             ra.addFlashAttribute("successMessage",
-                    "✅ Parcel " + response.getParcelNumber() + " updated successfully.");
+                    "Parcel " + response.getParcelNumber() + " updated successfully.");
+            log.info("Parcel updated: {}", response.getParcelNumber());
             return "redirect:/parcels/" + id;
         } catch (JsonProcessingException e) {
-            log.error("Error parsing boundaries JSON: {}", e.getMessage(), e);
-            ra.addFlashAttribute("errorMessage", "❌ Invalid boundary data format: " + e.getMessage());
+            log.error("Error parsing boundaries", e);
+            ra.addFlashAttribute("errorMessage", "Invalid boundary data format.");
             return "redirect:/parcels/" + id + "/edit";
         } catch (Exception e) {
-            log.error("Error updating parcel: {}", e.getMessage(), e);
-            ra.addFlashAttribute("errorMessage", "❌ Error updating parcel: " + e.getMessage());
+            log.error("Error updating parcel", e);
+            ra.addFlashAttribute("errorMessage", "Error updating parcel: " + e.getMessage());
             return "redirect:/parcels/" + id + "/edit";
         }
     }
@@ -242,12 +239,10 @@ public class ParcelPageController {
     @ResponseBody
     public Object getVillagesByAuthority(@PathVariable Long authorityId) {
         try {
-            log.info("Loading villages for authority ID: {}", authorityId);
             var villages = villageService.findByAuthority(authorityId);
-            log.info("Found {} villages for authority {}", villages.size(), authorityId);
             return villages;
         } catch (Exception e) {
-            log.error("Error loading villages for authority {}: {}", authorityId, e.getMessage());
+            log.error("Error loading villages", e);
             return Collections.emptyList();
         }
     }

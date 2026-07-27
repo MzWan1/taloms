@@ -96,9 +96,13 @@ public class BoundaryValidationService {
      * traditional authority land.
      */
     public void validateMinimumArea(List<BoundaryPointDto> boundaries, String purpose) {
+        if (purpose == null) {
+            return;
+        }
+
         double areaM2 = new ParcelAreaCalculatorImpl().calculateAreaM2(boundaries);
 
-        double minArea = switch (purpose != null ? purpose.toUpperCase() : "RESIDENTIAL") {
+        double minArea = switch (purpose.toUpperCase()) {
             case "BUSINESS", "COMMERCIAL" -> 100.0;
             case "AGRICULTURAL" -> 2500.0;
             case "RESIDENTIAL", "HOUSEHOLD" -> 200.0;
