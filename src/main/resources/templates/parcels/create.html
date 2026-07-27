@@ -583,8 +583,9 @@
                             default:
                                 errorMsg += error.message;
                         }
-                        alert(errorMsg);
-                        stopAutoWalk();
+                        if (statusEl) {
+                            statusEl.innerHTML = '<span class="text-danger"><i class="bi bi-exclamation-triangle me-1"></i>' + errorMsg + '</span>';
+                        }
                     }
                 },
                 {
