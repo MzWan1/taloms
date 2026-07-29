@@ -17,6 +17,7 @@ import za.co.taloms.parcel.application.dto.ParcelResponse;
 import za.co.taloms.parcel.application.service.ParcelService;
 import za.co.taloms.parcel.domain.entity.CaptureMode;
 import za.co.taloms.parcel.domain.entity.ParcelStatus;
+import za.co.taloms.traditionalauthority.application.dto.TraditionalAuthorityResponse;
 import za.co.taloms.traditionalauthority.application.service.TraditionalAuthorityService;
 import za.co.taloms.traditionalauthority.application.service.VillageService;
 
@@ -67,8 +68,18 @@ public class ParcelPageController {
     @GetMapping("/create")
     public String createForm(Model model) {
         try {
-            var authorities = authorityService.findAllActive();
+            List<TraditionalAuthorityResponse> authorities = authorityService.findAllActive();
             log.info("Loading parcel create form with {} active authorities", authorities.size());
+
+            if (authorities.isEmpty()) {
+                log.warn("No active authorities found for parcel creation form. Falling back to all authorities.");
+                authorities = authorityService.findAll();
+                if (!authorities.isEmpty()) {
+                    model.addAttribute("warningMessage",
+                            "No active authorities found. Showing all authorities including inactive ones. " +
+                            "Please activate an authority before creating a parcel.");
+                }
+            }
 
             if (!model.containsAttribute("form")) {
                 model.addAttribute("form", ParcelRequest.builder().build());

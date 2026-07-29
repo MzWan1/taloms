@@ -98,6 +98,13 @@
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 
+    <div th:if="${warningMessage}"
+         class="alert alert-warning alert-dismissible fade show border-0 shadow-sm mb-4">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <span th:text="${warningMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
     <!-- Header -->
     <div class="d-flex align-items-start justify-content-between mb-4 flex-wrap gap-3">
         <div>

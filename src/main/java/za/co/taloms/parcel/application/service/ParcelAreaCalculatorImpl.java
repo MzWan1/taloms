@@ -5,20 +5,11 @@ import za.co.taloms.parcel.application.dto.BoundaryPointDto;
 import za.co.taloms.common.BusinessValidationException;
 import java.util.List;
 
-/**
- * Calculates parcel area and centroid using UTM Zone 35S projection for
- * accurate measurements in South Africa.
- *
- * UTM Zone 35S covers most of Limpopo, Mpumalanga, and KwaZulu-Natal
- * where the majority of traditional authorities are located.
- */
 @Service
 public class ParcelAreaCalculatorImpl implements ParcelAreaCalculator {
 
     private static final double R = 6378137.0;
     private static final double HAVERSINE_R = 6371000.0;
-    private static final double LAT_ORIGIN = 0.0;
-    private static final int UTM_ZONE = 35;
     private static final boolean IS_SOUTHERN_HEMISPHERE = true;
 
     @Override
@@ -27,7 +18,8 @@ public class ParcelAreaCalculatorImpl implements ParcelAreaCalculator {
             throw new BusinessValidationException("Polygon must have at least 3 points");
         }
 
-        double[] origin = projectToUtm(boundaries.get(0).getLatitude(), boundaries.get(0).getLongitude());
+        int zone = determineUtmZone(boundaries);
+        double[] origin = projectToUtm(boundaries.get(0).getLatitude(), boundaries.get(0).getLongitude(), zone);
 
         double sum1 = 0.0;
         double sum2 = 0.0;
@@ -37,8 +29,8 @@ public class ParcelAreaCalculatorImpl implements ParcelAreaCalculator {
             BoundaryPointDto p1 = boundaries.get(i);
             BoundaryPointDto p2 = boundaries.get((i + 1) % n);
 
-            double[] utm1 = projectToUtm(p1.getLatitude(), p1.getLongitude());
-            double[] utm2 = projectToUtm(p2.getLatitude(), p2.getLongitude());
+            double[] utm1 = projectToUtm(p1.getLatitude(), p1.getLongitude(), zone);
+            double[] utm2 = projectToUtm(p2.getLatitude(), p2.getLongitude(), zone);
 
             double x1 = utm1[0] - origin[0];
             double y1 = utm1[1] - origin[1];
@@ -86,55 +78,73 @@ public class ParcelAreaCalculatorImpl implements ParcelAreaCalculator {
             return new Double[]{0.0, 0.0};
         }
 
-        double area = calculateAreaM2(boundaries);
-        if (area == 0.0) {
-            return new Double[]{
-                    boundaries.stream().mapToDouble(BoundaryPointDto::getLatitude).average().orElse(0.0),
-                    boundaries.stream().mapToDouble(BoundaryPointDto::getLongitude).average().orElse(0.0)
-            };
-        }
+        double latAvg = boundaries.stream()
+                .mapToDouble(BoundaryPointDto::getLatitude)
+                .average()
+                .orElse(0.0);
+        double lngAvg = boundaries.stream()
+                .mapToDouble(BoundaryPointDto::getLongitude)
+                .average()
+                .orElse(0.0);
 
-        double[] origin = projectToUtm(boundaries.get(0).getLatitude(), boundaries.get(0).getLongitude());
+        double latRad = Math.toRadians(latAvg);
+        double metersPerDegLat = 111132.0;
+        double metersPerDegLng = 111320.0 * Math.cos(latRad);
 
         double cx = 0.0;
         double cy = 0.0;
+        double signedArea = 0.0;
         int n = boundaries.size();
 
         for (int i = 0; i < n; i++) {
             BoundaryPointDto p1 = boundaries.get(i);
             BoundaryPointDto p2 = boundaries.get((i + 1) % n);
 
-            double[] utm1 = projectToUtm(p1.getLatitude(), p1.getLongitude());
-            double[] utm2 = projectToUtm(p2.getLatitude(), p2.getLongitude());
-
-            double x1 = utm1[0] - origin[0];
-            double y1 = utm1[1] - origin[1];
-            double x2 = utm2[0] - origin[0];
-            double y2 = utm2[1] - origin[1];
+            double x1 = (p1.getLongitude() - lngAvg) * metersPerDegLng;
+            double y1 = (p1.getLatitude() - latAvg) * metersPerDegLat;
+            double x2 = (p2.getLongitude() - lngAvg) * metersPerDegLng;
+            double y2 = (p2.getLatitude() - latAvg) * metersPerDegLat;
 
             double cross = x1 * y2 - x2 * y1;
+            signedArea += cross;
             cx += (x1 + x2) * cross;
             cy += (y1 + y2) * cross;
         }
 
-        cx /= (6.0 * area);
-        cy /= (6.0 * area);
+        signedArea /= 2.0;
 
-        double[] centroidUtm = {cx + origin[0], cy + origin[1]};
-        double[] centroidWgs = unprojectFromUtm(centroidUtm[0], centroidUtm[1]);
+        if (Math.abs(signedArea) < 1e-6) {
+            return new Double[]{
+                    boundaries.stream().mapToDouble(BoundaryPointDto::getLatitude).average().orElse(0.0),
+                    boundaries.stream().mapToDouble(BoundaryPointDto::getLongitude).average().orElse(0.0)
+            };
+        }
 
-        return new Double[]{centroidWgs[0], centroidWgs[1]};
+        cx /= (6.0 * signedArea);
+        cy /= (6.0 * signedArea);
+
+        double centroidLat = latAvg + (cy / metersPerDegLat);
+        double centroidLng = lngAvg + (cx / metersPerDegLng);
+
+        return new Double[]{centroidLat, centroidLng};
     }
 
-    /**
-     * Project WGS84 lat/lng to UTM Zone 35S metres.
-     * Returns [easting, northing] in metres.
-     */
-    private double[] projectToUtm(double lat, double lng) {
+    private static int determineUtmZone(List<BoundaryPointDto> boundaries) {
+        double avgLng = boundaries.stream()
+                .mapToDouble(BoundaryPointDto::getLongitude)
+                .average()
+                .orElse(28.0);
+        int zone = (int) Math.floor((avgLng + 180.0) / 6.0) + 1;
+        if (zone < 33) zone = 33;
+        if (zone > 36) zone = 36;
+        return zone;
+    }
+
+    private double[] projectToUtm(double lat, double lng, int zone) {
         double latRad = Math.toRadians(lat);
         double lngRad = Math.toRadians(lng);
 
-        double centralMeridian = Math.toRadians(getCentralMeridian(UTM_ZONE));
+        double centralMeridian = Math.toRadians(getCentralMeridian(zone));
         double falseEasting = 500000.0;
         double falseNorthing = IS_SOUTHERN_HEMISPHERE ? 10000000.0 : 0.0;
         double k0 = 0.9996;
@@ -161,14 +171,11 @@ public class ParcelAreaCalculatorImpl implements ParcelAreaCalculator {
         return new double[]{easting, northing};
     }
 
-    /**
-     * Convert UTM Zone 35S metres back to WGS84 lat/lng.
-     */
-    private double[] unprojectFromUtm(double easting, double northing) {
+    private double[] unprojectFromUtm(double easting, double northing, int zone) {
         double k0 = 0.9996;
         double falseEasting = 500000.0;
         double falseNorthing = IS_SOUTHERN_HEMISPHERE ? 10000000.0 : 0.0;
-        double centralMeridian = Math.toRadians(getCentralMeridian(UTM_ZONE));
+        double centralMeridian = Math.toRadians(getCentralMeridian(zone));
 
         double e1 = Math.sqrt((1 - 0.00669438) / (1 + 0.00669438));
         double m = (northing - falseNorthing) / k0;
@@ -218,9 +225,7 @@ public class ParcelAreaCalculatorImpl implements ParcelAreaCalculator {
         return HAVERSINE_R * c;
     }
 
-    private static double getCentralMeridian(int zone) {
-        return -177 + 6 * zone;
+    private static int getCentralMeridian(int zone) {
+        return -177 + 6 * (zone - 1);
     }
 }
-
-

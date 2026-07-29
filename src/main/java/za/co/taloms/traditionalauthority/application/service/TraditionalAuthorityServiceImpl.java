@@ -94,8 +94,9 @@ public class TraditionalAuthorityServiceImpl
     @Override
     @Transactional(readOnly = true)
     public List<TraditionalAuthorityResponse> findAll() {
-        return authorityRepository.findAll()
-                .stream()
+        List<TraditionalAuthority> all = authorityRepository.findAll();
+        log.info("findAll() returned {} authorities", all.size());
+        return all.stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
@@ -103,8 +104,12 @@ public class TraditionalAuthorityServiceImpl
     @Override
     @Transactional(readOnly = true)
     public List<TraditionalAuthorityResponse> findAllActive() {
-        return authorityRepository.findAllActive()
-                .stream()
+        List<TraditionalAuthority> active = authorityRepository.findAllActive();
+        log.info("findAllActive() returned {} authorities", active.size());
+        if (active.isEmpty()) {
+            log.warn("No active authorities found. Check if active=true is set on traditional_authorities rows.");
+        }
+        return active.stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
