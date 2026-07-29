@@ -3,11 +3,10 @@ package za.co.taloms.parcel.application.service;
 import org.springframework.stereotype.Service;
 import za.co.taloms.common.BusinessValidationException;
 import za.co.taloms.parcel.application.dto.BoundaryPointDto;
-import za.co.taloms.parcel.domain.entity.Parcel;
-import za.co.taloms.parcel.domain.entity.ParcelStatus;
 import za.co.taloms.parcel.domain.repository.ParcelRepositoryPort;
 import za.co.taloms.parcel.domain.repository.ParcelBoundaryRepositoryPort;
 
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -26,11 +25,14 @@ public class BoundaryValidationService {
 
     private final ParcelRepositoryPort parcelRepository;
     private final ParcelBoundaryRepositoryPort boundaryRepository;
+    private final ParcelAreaCalculator areaCalculator;
 
     public BoundaryValidationService(ParcelRepositoryPort parcelRepository,
-                                     ParcelBoundaryRepositoryPort boundaryRepository) {
+                                     ParcelBoundaryRepositoryPort boundaryRepository,
+                                     ParcelAreaCalculator areaCalculator) {
         this.parcelRepository = parcelRepository;
         this.boundaryRepository = boundaryRepository;
+        this.areaCalculator = areaCalculator;
     }
 
     /**
@@ -68,8 +70,9 @@ public class BoundaryValidationService {
     /**
      * Verify the boundary forms a closed loop (first and last point within tolerance).
      * Auto-snaps the last point to the first if within tolerance.
+     * Returns a new list to avoid mutating the caller's collection.
      */
-    public void validateClosedLoop(List<BoundaryPointDto> boundaries) {
+    public List<BoundaryPointDto> validateClosedLoop(List<BoundaryPointDto> boundaries) {
         BoundaryPointDto first = boundaries.get(0);
         BoundaryPointDto last = boundaries.get(boundaries.size() - 1);
 
@@ -85,9 +88,14 @@ public class BoundaryValidationService {
         }
 
         if (distance > 0.01) {
-            last.setLatitude(first.getLatitude());
-            last.setLongitude(first.getLongitude());
+            List<BoundaryPointDto> result = new ArrayList<>(boundaries);
+            BoundaryPointDto snapped = result.get(result.size() - 1);
+            snapped.setLatitude(first.getLatitude());
+            snapped.setLongitude(first.getLongitude());
+            return result;
         }
+
+        return boundaries;
     }
 
     /**
@@ -100,7 +108,7 @@ public class BoundaryValidationService {
             return;
         }
 
-        double areaM2 = new ParcelAreaCalculatorImpl().calculateAreaM2(boundaries);
+        double areaM2 = areaCalculator.calculateAreaM2(boundaries);
 
         double minArea = switch (purpose.toUpperCase()) {
             case "BUSINESS", "COMMERCIAL" -> 100.0;

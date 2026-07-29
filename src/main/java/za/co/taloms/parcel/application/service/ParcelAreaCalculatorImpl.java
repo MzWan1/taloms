@@ -16,6 +16,7 @@ import java.util.List;
 public class ParcelAreaCalculatorImpl implements ParcelAreaCalculator {
 
     private static final double R = 6378137.0;
+    private static final double HAVERSINE_R = 6371000.0;
     private static final double LAT_ORIGIN = 0.0;
     private static final int UTM_ZONE = 35;
     private static final boolean IS_SOUTHERN_HEMISPHERE = true;
@@ -50,6 +51,27 @@ public class ParcelAreaCalculatorImpl implements ParcelAreaCalculator {
 
         double area = Math.abs(sum1 - sum2) / 2.0;
         return Math.round(area * 100.0) / 100.0;
+    }
+
+    @Override
+    public Double calculatePerimeterM(List<BoundaryPointDto> boundaries) {
+        if (boundaries == null || boundaries.size() < 2) {
+            return 0.0;
+        }
+
+        double perimeter = 0.0;
+        int n = boundaries.size();
+
+        for (int i = 0; i < n; i++) {
+            BoundaryPointDto p1 = boundaries.get(i);
+            BoundaryPointDto p2 = boundaries.get((i + 1) % n);
+            perimeter += haversineDistanceM(
+                    p1.getLatitude(), p1.getLongitude(),
+                    p2.getLatitude(), p2.getLongitude()
+            );
+        }
+
+        return Math.round(perimeter * 100.0) / 100.0;
     }
 
     @Override
@@ -184,6 +206,16 @@ public class ParcelAreaCalculatorImpl implements ParcelAreaCalculator {
                 + (61 - 479 * psi + 179 * 0.00669438 - psi * psi) * Math.pow(e, 7) / (5040 * cosFp);
 
         return new double[]{Math.toDegrees(lat), Math.toDegrees(lng)};
+    }
+
+    private static double haversineDistanceM(double lat1, double lon1, double lat2, double lon2) {
+        double dLat = Math.toRadians(lat2 - lat1);
+        double dLon = Math.toRadians(lon2 - lon1);
+        double a = Math.sin(dLat / 2) * Math.sin(dLat / 2)
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return HAVERSINE_R * c;
     }
 
     private static double getCentralMeridian(int zone) {

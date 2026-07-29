@@ -82,13 +82,26 @@ public class ParcelServiceImpl implements ParcelService {
 
         // Validate spatial integrity
         boundaryValidationService.validateCoordinatesInSouthAfrica(simplified);
-        boundaryValidationService.validateClosedLoop(simplified);
-        boundaryValidationService.validateMinimumArea(simplified, null);
+        simplified = boundaryValidationService.validateClosedLoop(simplified);
 
-        // Calculate area and centroid using UTM Zone 35S projection
+        // Deduplicate first/last vertex if they are identical after closed-loop snapping
+        if (simplified.size() > 3) {
+            BoundaryPointDto first = simplified.get(0);
+            BoundaryPointDto last = simplified.get(simplified.size() - 1);
+            double closingDist = BoundarySimplifier.haversineDistanceM(
+                    first.getLatitude(), first.getLongitude(),
+                    last.getLatitude(), last.getLongitude()
+            );
+            if (closingDist < 0.01) {
+                simplified = new ArrayList<>(simplified.subList(0, simplified.size() - 1));
+            }
+        }
+
+        // Calculate area, centroid, and perimeter using UTM Zone 35S projection
         Double areaM2 = areaCalculator.calculateAreaM2(simplified);
         Double areaHectares = areaCalculator.calculateAreaHectares(simplified);
         Double[] centroid = areaCalculator.calculateCentroid(simplified);
+        Double perimeterM = areaCalculator.calculatePerimeterM(simplified);
 
         // Create parcel entity
         var parcel = Parcel.builder()
@@ -99,6 +112,7 @@ public class ParcelServiceImpl implements ParcelService {
                 .areaHectares(areaHectares)
                 .centroidLat(centroid[0])
                 .centroidLng(centroid[1])
+                .perimeterM(perimeterM)
                 .captureMode(request.getCaptureMode() != null ? request.getCaptureMode() : CaptureMode.MANUAL_TAP)
                 .village(village)
                 .notes(request.getNotes())
@@ -129,7 +143,9 @@ public class ParcelServiceImpl implements ParcelService {
 
         // Check for self-intersecting polygon
         if (parcelRepository.hasSelfIntersection(saved.getId())) {
-            log.warn("Parcel geometry invalid");
+            throw new BusinessValidationException(
+                    "Self-intersecting boundary detected. Please re-capture the parcel boundary " +
+                    "to ensure it forms a valid simple polygon.");
         }
 
         log.info("Parcel created: {}", saved.getParcelNumber());
@@ -171,12 +187,25 @@ public class ParcelServiceImpl implements ParcelService {
 
         // Validate spatial integrity
         boundaryValidationService.validateCoordinatesInSouthAfrica(simplified);
-        boundaryValidationService.validateClosedLoop(simplified);
+        simplified = boundaryValidationService.validateClosedLoop(simplified);
 
-        // Recalculate area and centroid using UTM Zone 35S
+        if (simplified.size() > 3) {
+            BoundaryPointDto first = simplified.get(0);
+            BoundaryPointDto last = simplified.get(simplified.size() - 1);
+            double closingDist = BoundarySimplifier.haversineDistanceM(
+                    first.getLatitude(), first.getLongitude(),
+                    last.getLatitude(), last.getLongitude()
+            );
+            if (closingDist < 0.01) {
+                simplified = new ArrayList<>(simplified.subList(0, simplified.size() - 1));
+            }
+        }
+
+        // Recalculate area, centroid, and perimeter using UTM Zone 35S
         Double areaM2 = areaCalculator.calculateAreaM2(simplified);
         Double areaHectares = areaCalculator.calculateAreaHectares(simplified);
         Double[] centroid = areaCalculator.calculateCentroid(simplified);
+        Double perimeterM = areaCalculator.calculatePerimeterM(simplified);
 
         // Replace boundaries
         boundaryRepository.deleteByParcelId(parcel.getId());
@@ -199,6 +228,7 @@ public class ParcelServiceImpl implements ParcelService {
         parcel.setAreaHectares(areaHectares);
         parcel.setCentroidLat(centroid[0]);
         parcel.setCentroidLng(centroid[1]);
+        parcel.setPerimeterM(perimeterM);
         parcel.setCaptureMode(request.getCaptureMode() != null ? request.getCaptureMode() : CaptureMode.MANUAL_TAP);
         parcel.setVillage(village);
         parcel.setNotes(request.getNotes());
@@ -209,7 +239,8 @@ public class ParcelServiceImpl implements ParcelService {
 
         // Check for self-intersecting polygon
         if (parcelRepository.hasSelfIntersection(saved.getId())) {
-            log.warn("Parcel geometry invalid after update");
+            throw new BusinessValidationException(
+                    "Self-intersecting boundary detected after update. Please re-capture the parcel boundary.");
         }
 
         log.info("Parcel updated: {}", saved.getParcelNumber());
@@ -450,6 +481,7 @@ public class ParcelServiceImpl implements ParcelService {
                 .areaHectares(parcel.getAreaHectares())
                 .centroidLat(parcel.getCentroidLat())
                 .centroidLng(parcel.getCentroidLng())
+                .perimeterM(parcel.getPerimeterM())
                 .villageId(parcel.getVillage() != null ? parcel.getVillage().getId() : null)
                 .villageName(parcel.getVillage() != null ? parcel.getVillage().getVillageName() : null)
                 .authorityName(parcel.getVillage() != null && parcel.getVillage().getTraditionalAuthority() != null ?

@@ -603,8 +603,9 @@
         area = Math.abs(area) / 2;
         const latAvg = points.reduce((sum, p) => sum + p.latitude, 0) / points.length;
         const latRad = latAvg * Math.PI / 180;
-        const scale = 111320 * Math.cos(latRad);
-        return area * scale * scale;
+        const metersPerDegLat = 111132;
+        const metersPerDegLng = 111320 * Math.cos(latRad);
+        return area * metersPerDegLat * metersPerDegLng;
     }
 
     // ── Form Validation ──────────────────────────────────────────────────

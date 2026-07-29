@@ -46,6 +46,9 @@ public class Parcel {
     @Column(name = "centroid_lng")
     private Double centroidLng;
 
+    @Column(name = "perimeter_m")
+    private Double perimeterM;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "village_id", nullable = false)
     private Village village;

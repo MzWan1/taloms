@@ -70,26 +70,24 @@ public class BoundarySimplifier {
         double lat = point.getLatitude();
         double lng = point.getLongitude();
 
-        double x0 = lng;
-        double y0 = lat;
-        double x1 = lineStart.getLongitude();
-        double y1 = lineStart.getLatitude();
-        double x2 = lineEnd.getLongitude();
-        double y2 = lineEnd.getLatitude();
+        double latAvg = (lat + lineStart.getLatitude() + lineEnd.getLatitude()) / 3.0;
+        double latRad = Math.toRadians(latAvg);
+        double metersPerDegLat = 111132.0;
+        double metersPerDegLng = 111320.0 * Math.cos(latRad);
 
-        double numerator = Math.abs(
-                (y2 - y1) * x0 - (x2 - x1) * y0 + x2 * y1 - y2 * x1
-        );
-        double denominator = Math.sqrt(
-                Math.pow(y2 - y1, 2) + Math.pow(x2 - x1, 2)
-        );
+        double x0 = (lng - lineStart.getLongitude()) * metersPerDegLng;
+        double y0 = (lat - lineStart.getLatitude()) * metersPerDegLat;
+        double x1 = (lineEnd.getLongitude() - lineStart.getLongitude()) * metersPerDegLng;
+        double y1 = (lineEnd.getLatitude() - lineStart.getLatitude()) * metersPerDegLat;
+
+        double numerator = Math.abs(y1 * x0 - x1 * y0);
+        double denominator = Math.sqrt(x1 * x1 + y1 * y1);
 
         if (denominator == 0.0) {
             return haversineDistanceM(lat, lng, lineStart.getLatitude(), lineStart.getLongitude());
         }
 
-        double perpendicularDegrees = numerator / denominator;
-        return perpendicularDegrees * 111320.0;
+        return numerator / denominator;
     }
 
     public static double haversineDistanceM(double lat1, double lon1, double lat2, double lon2) {

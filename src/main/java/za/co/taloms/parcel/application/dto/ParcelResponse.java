@@ -22,6 +22,7 @@ public class ParcelResponse {
     private Double areaHectares;
     private Double centroidLat;
     private Double centroidLng;
+    private Double perimeterM;
     private Long villageId;
     private String villageName;
     private String authorityName;

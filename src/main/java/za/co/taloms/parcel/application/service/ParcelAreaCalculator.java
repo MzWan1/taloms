@@ -7,5 +7,6 @@ public interface ParcelAreaCalculator {
     Double calculateAreaM2(List<BoundaryPointDto> boundaries);
     Double calculateAreaHectares(List<BoundaryPointDto> boundaries);
     Double[] calculateCentroid(List<BoundaryPointDto> boundaries);
+    Double calculatePerimeterM(List<BoundaryPointDto> boundaries);
 }
 
