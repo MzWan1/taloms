@@ -23,6 +23,7 @@ import za.co.taloms.traditionalauthority.application.service.VillageService;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Controller
@@ -67,7 +68,7 @@ public class ParcelPageController {
     public String createForm(Model model) {
         try {
             var authorities = authorityService.findAllActive();
-            log.info("Loading parcel create form");
+            log.info("Loading parcel create form with {} active authorities", authorities.size());
 
             if (!model.containsAttribute("form")) {
                 model.addAttribute("form", ParcelRequest.builder().build());
@@ -164,7 +165,9 @@ public class ParcelPageController {
                     .build();
 
             var authorities = authorityService.findAllActive();
-            var villages = villageService.findByAuthority(parcel.getVillageId());
+            var parcelVillage = villageService.findById(parcel.getVillageId());
+            var villages = villageService.findByAuthority(
+                    parcelVillage != null ? parcelVillage.getTraditionalAuthorityId() : null);
 
             model.addAttribute("parcel", parcel);
             model.addAttribute("form", form);
@@ -239,10 +242,14 @@ public class ParcelPageController {
     @ResponseBody
     public Object getVillagesByAuthority(@PathVariable Long authorityId) {
         try {
-            var villages = villageService.findByAuthority(authorityId);
+            log.info("Loading villages for authority ID: {}", authorityId);
+            var villages = villageService.findByAuthority(authorityId).stream()
+                    .filter(v -> v.getActive() == null || v.getActive())
+                    .collect(Collectors.toList());
+            log.info("Found {} active villages for authority {}", villages.size(), authorityId);
             return villages;
         } catch (Exception e) {
-            log.error("Error loading villages", e);
+            log.error("Error loading villages for authority {}: {}", authorityId, e.getMessage(), e);
             return Collections.emptyList();
         }
     }

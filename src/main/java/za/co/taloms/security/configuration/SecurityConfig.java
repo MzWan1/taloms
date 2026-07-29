@@ -43,6 +43,7 @@ public class SecurityConfig {
                                 "/api/users/forgot-password",
                                 "/api/users/reset-password",
                                 "/ptos/villages/**",
+                                "/parcels/villages/**",
                                 "/actuator/health",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
