@@ -668,6 +668,41 @@
                 }
             }
 
+            // CRITICAL FIX: Reject exact duplicate coordinates
+            // This prevents GPS from capturing the exact same coordinates when accuracy is poor
+            const exactDuplicate = gpsPoints.find(p =>
+                p.latitude === lat && p.longitude === lng
+            );
+            if (exactDuplicate) {
+                alert(
+                    `❌ Exact duplicate coordinates detected!\n\n` +
+                    `This point has the same coordinates as Point ${exactDuplicate.sequence}.\n` +
+                    `GPS accuracy is currently poor (±${Math.round(accuracy)}m).\n\n` +
+                    `Please move to a location with better GPS signal (open sky) and try again.`
+                );
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-satellite"></i> Retry';
+                btn.className = 'btn btn-sm btn-warning';
+                return;
+            }
+
+            // Warn if GPS accuracy is too poor for reliable boundary capture
+            const MIN_ACCURACY_M = 10.0;
+            if (accuracy > MIN_ACCURACY_M) {
+                const proceed = confirm(
+                    `⚠️ GPS accuracy is poor (±${Math.round(accuracy)}m).\n\n` +
+                    `For accurate parcel boundaries, GPS accuracy should be within ${Math.round(MIN_ACCURACY_M)}m.\n` +
+                    `Poor accuracy may result in incorrect boundary coordinates.\n\n` +
+                    `Do you want to proceed anyway?`
+                );
+                if (!proceed) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="bi bi-satellite"></i> Capture';
+                    btn.className = 'btn btn-sm btn-primary';
+                    return;
+                }
+            }
+
             // Validate coordinates are within South Africa
             if (lat < -35 || lat > -22) {
                 alert('Latitude must be between -35 and -22 (South Africa)');
