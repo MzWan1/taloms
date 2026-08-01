@@ -8,30 +8,78 @@ import java.util.TreeSet;
 /**
  * Utility for simplifying GPS boundary traces using the Douglas-Peucker algorithm.
  *
- * Reduces hundreds of raw walk-trace points to 20-40 meaningful vertices
- * while preserving the true shape of the parcel boundary.
+ * IMPORTANT: This algorithm preserves the ORDER of points while reducing the total count.
+ * The points are in consecutive order as captured by GPS.
  */
 public class BoundarySimplifier {
 
     /**
      * Simplify a list of boundary points using Douglas-Peucker.
+     * The points MUST be in consecutive order (the order they were captured).
      *
-     * @param points     the original boundary points (must be ordered)
+     * @param points     the original boundary points in consecutive order
      * @param toleranceM tolerance in metres — points closer than this to the line
      *                   between start and end are discarded
-     * @return simplified list of boundary points
+     * @return simplified list of boundary points (preserving order)
      */
     public static List<BoundaryPointDto> simplify(List<BoundaryPointDto> points, double toleranceM) {
         if (points == null || points.size() < 3) {
             return points;
         }
 
-        TreeSet<Integer> keepIndices = new TreeSet<>();
-        douglasPeucker(points, 0, points.size() - 1, toleranceM, keepIndices);
+        // Remove null points
+        List<BoundaryPointDto> validPoints = new ArrayList<>();
+        for (BoundaryPointDto p : points) {
+            if (p != null && p.getLatitude() != null && p.getLongitude() != null) {
+                validPoints.add(p);
+            }
+        }
 
+        if (validPoints.size() < 3) {
+            return validPoints;
+        }
+
+        // Check if the boundary is already closed (first point = last point)
+        boolean isClosed = false;
+        if (validPoints.size() > 1) {
+            BoundaryPointDto first = validPoints.get(0);
+            BoundaryPointDto last = validPoints.get(validPoints.size() - 1);
+            double distance = haversineDistanceM(
+                    first.getLatitude(), first.getLongitude(),
+                    last.getLatitude(), last.getLongitude()
+            );
+            isClosed = distance < 1.0;
+        }
+
+        // If closed, remove the duplicate last point for simplification
+        List<BoundaryPointDto> workingPoints = new ArrayList<>(validPoints);
+        if (isClosed && workingPoints.size() > 3) {
+            // Remove the last point (duplicate of first)
+            workingPoints.remove(workingPoints.size() - 1);
+        }
+
+        if (workingPoints.size() < 3) {
+            return validPoints;
+        }
+
+        // Run Douglas-Peucker on the working points (preserving order)
+        TreeSet<Integer> keepIndices = new TreeSet<>();
+        douglasPeucker(workingPoints, 0, workingPoints.size() - 1, toleranceM, keepIndices);
+
+        // Build the result in order
         List<BoundaryPointDto> result = new ArrayList<>();
         for (int idx : keepIndices) {
-            result.add(points.get(idx));
+            result.add(workingPoints.get(idx));
+        }
+
+        // If the original was closed and we have at least 3 points, re-close it
+        if (isClosed && result.size() >= 3) {
+            BoundaryPointDto first = result.get(0);
+            BoundaryPointDto closurePoint = new BoundaryPointDto();
+            closurePoint.setLatitude(first.getLatitude());
+            closurePoint.setLongitude(first.getLongitude());
+            closurePoint.setSequence(result.size() + 1);
+            result.add(closurePoint);
         }
 
         return result;
@@ -101,5 +149,3 @@ public class BoundarySimplifier {
         return R * c;
     }
 }
-
-

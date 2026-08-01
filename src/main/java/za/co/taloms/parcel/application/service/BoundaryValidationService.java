@@ -21,7 +21,6 @@ public class BoundaryValidationService {
     private static final double SOUTH_AFRICA_MIN_LNG = 16.0;
     private static final double SOUTH_AFRICA_MAX_LNG = 33.0;
     private static final double CLOSED_LOOP_TOLERANCE_M = 5.0;
-    private static final double OVERLAP_WARNING_TOLERANCE_M = 0.5;
 
     private final ParcelRepositoryPort parcelRepository;
     private final ParcelBoundaryRepositoryPort boundaryRepository;
@@ -44,7 +43,7 @@ public class BoundaryValidationService {
         }
 
         validateCoordinatesInSouthAfrica(boundaries);
-        validateClosedLoop(boundaries);
+        // The boundary will be closed in the service layer
         validateMinimumArea(boundaries, null);
     }
 
@@ -68,43 +67,12 @@ public class BoundaryValidationService {
     }
 
     /**
-     * Verify the boundary forms a closed loop (first and last point within tolerance).
-     * Auto-snaps the last point to the first if within tolerance.
-     * Returns a new list to avoid mutating the caller's collection.
-     */
-    public List<BoundaryPointDto> validateClosedLoop(List<BoundaryPointDto> boundaries) {
-        BoundaryPointDto first = boundaries.get(0);
-        BoundaryPointDto last = boundaries.get(boundaries.size() - 1);
-
-        double distance = BoundarySimplifier.haversineDistanceM(
-                first.getLatitude(), first.getLongitude(),
-                last.getLatitude(), last.getLongitude()
-        );
-
-        if (distance > CLOSED_LOOP_TOLERANCE_M) {
-            throw new BusinessValidationException(
-                    "Boundary not closed. You are " + String.format("%.1f", distance) +
-                            "m from your starting point. Please return to the start and complete the loop.");
-        }
-
-        if (distance > 0.01) {
-            List<BoundaryPointDto> result = new ArrayList<>(boundaries);
-            BoundaryPointDto snapped = result.get(result.size() - 1);
-            snapped.setLatitude(first.getLatitude());
-            snapped.setLongitude(first.getLongitude());
-            return result;
-        }
-
-        return boundaries;
-    }
-
-    /**
      * Validate minimum area based on intended use (from PTO purpose).
      * These thresholds match the TALOMS framework rules for South African
      * traditional authority land.
      */
     public void validateMinimumArea(List<BoundaryPointDto> boundaries, String purpose) {
-        if (purpose == null) {
+        if (purpose == null || boundaries == null || boundaries.size() < 3) {
             return;
         }
 
@@ -120,7 +88,7 @@ public class BoundaryValidationService {
         if (areaM2 < minArea) {
             throw new BusinessValidationException(
                     "This parcel (" + String.format("%.1f", areaM2) + "m²) is below the minimum " +
-                    "for " + purpose + " stands (" + minArea + "m²). Please re-demarcate.");
+                            "for " + purpose + " stands (" + minArea + "m²). Please re-demarcate.");
         }
     }
 
@@ -132,5 +100,3 @@ public class BoundaryValidationService {
         // The check is performed after geometry is saved.
     }
 }
-
-

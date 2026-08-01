@@ -12,9 +12,6 @@ import za.co.taloms.common.ResourceNotFoundException;
 import za.co.taloms.parcel.application.dto.BoundaryPointDto;
 import za.co.taloms.parcel.application.dto.ParcelRequest;
 import za.co.taloms.parcel.application.dto.ParcelResponse;
-import za.co.taloms.parcel.application.service.BoundarySimplifier;
-import za.co.taloms.parcel.application.service.BoundaryValidationService;
-import za.co.taloms.parcel.application.service.ParcelAreaCalculator;
 import za.co.taloms.parcel.domain.entity.Parcel;
 import za.co.taloms.parcel.domain.entity.CaptureMode;
 import za.co.taloms.parcel.domain.entity.ParcelBoundary;
@@ -24,6 +21,7 @@ import za.co.taloms.parcel.domain.repository.ParcelRepositoryPort;
 import za.co.taloms.pto.domain.entity.PTOStatus;
 import za.co.taloms.pto.domain.repository.PTORepositoryPort;
 import za.co.taloms.traditionalauthority.domain.repository.VillageRepositoryPort;
+
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -46,6 +44,8 @@ public class ParcelServiceImpl implements ParcelService {
     private final EntityManager entityManager;
 
     private static final String PARCEL_NUMBER_PREFIX = "PRC";
+    private static final double MIN_AREA_M2 = 1.0;
+    private static final double MIN_DISTANCE_BETWEEN_POINTS_M = 0.5;
 
     @Override
     public ParcelResponse createParcel(ParcelRequest request, String createdBy) {
@@ -69,44 +69,75 @@ public class ParcelServiceImpl implements ParcelService {
             throw new BusinessValidationException("A parcel must have at least 3 boundary points");
         }
 
+        // Keep points in the order they were captured (consecutive order)
         List<BoundaryPointDto> orderedBoundaries = request.getBoundaries().stream()
                 .sorted(Comparator.comparingInt(BoundaryPointDto::getSequence))
                 .collect(Collectors.toList());
 
-        // Douglas-Peucker simplification — reduces walk-trace noise to meaningful vertices
-        List<BoundaryPointDto> simplified = BoundarySimplifier.simplify(orderedBoundaries, 0.5);
-        if (simplified.size() < 3) {
+        log.info("Creating parcel with {} raw boundary points", orderedBoundaries.size());
+
+        // Remove duplicate consecutive points first
+        List<BoundaryPointDto> uniquePoints = removeDuplicateConsecutivePoints(orderedBoundaries);
+
+        log.info("After removing duplicates: {} unique points", uniquePoints.size());
+
+        // Validate we have enough unique points
+        if (uniquePoints.size() < 3) {
             throw new BusinessValidationException(
-                    "Boundary too simple after simplification. Please capture more points.");
+                    "After removing duplicate points, only " + uniquePoints.size() +
+                            " unique points remain. Please capture at least 3 distinct corners.");
         }
 
-        // Validate spatial integrity
-        boundaryValidationService.validateCoordinatesInSouthAfrica(simplified);
-        simplified = boundaryValidationService.validateClosedLoop(simplified);
-
-        // Deduplicate first/last vertex if they are identical after closed-loop snapping
-        if (simplified.size() > 3) {
-            BoundaryPointDto first = simplified.get(0);
-            BoundaryPointDto last = simplified.get(simplified.size() - 1);
-            double closingDist = BoundarySimplifier.haversineDistanceM(
-                    first.getLatitude(), first.getLongitude(),
-                    last.getLatitude(), last.getLongitude()
-            );
-            if (closingDist < 0.01) {
-                simplified = new ArrayList<>(simplified.subList(0, simplified.size() - 1));
-            }
+        // Log the unique points
+        for (int i = 0; i < uniquePoints.size(); i++) {
+            BoundaryPointDto p = uniquePoints.get(i);
+            log.info("  Point {}: ({}, {})", i + 1, p.getLatitude(), p.getLongitude());
         }
 
-        // Calculate area, centroid, and perimeter using UTM Zone 35S projection
-        Double areaM2 = areaCalculator.calculateAreaM2(simplified);
-        Double areaHectares = areaCalculator.calculateAreaHectares(simplified);
-        Double[] centroid = areaCalculator.calculateCentroid(simplified);
-        Double perimeterM = areaCalculator.calculatePerimeterM(simplified);
+        // Douglas-Peucker simplification to reduce noise while preserving shape
+        List<BoundaryPointDto> simplified = BoundarySimplifier.simplify(uniquePoints, 0.5);
+
+        log.info("After simplification: {} points", simplified.size());
+
+        // Ensure we have at least 3 unique points after simplification
+        List<BoundaryPointDto> uniqueSimplified = removeDuplicateConsecutivePoints(simplified);
+
+        if (uniqueSimplified.size() < 3) {
+            throw new BusinessValidationException(
+                    "After simplification, only " + uniqueSimplified.size() +
+                            " unique points remain. Please capture more distinct corners.");
+        }
+
+        // Close the boundary loop by adding the first point at the end
+        List<BoundaryPointDto> closedBoundary = ensureBoundaryIsClosed(uniqueSimplified);
+
+        log.info("After closing: {} points", closedBoundary.size());
+
+        // Validate spatial integrity (coordinates in SA, etc.)
+        boundaryValidationService.validateCoordinatesInSouthAfrica(closedBoundary);
+
+        // Calculate area, centroid, and perimeter using the closed boundary
+        Double areaM2 = areaCalculator.calculateAreaM2(closedBoundary);
+
+        // Validate area is meaningful
+        if (areaM2 < MIN_AREA_M2) {
+            throw new BusinessValidationException(
+                    "The captured boundary area (" + String.format("%.2f", areaM2) +
+                            " m²) is too small. This likely means the points are too close together. " +
+                            "Please walk a larger perimeter and capture distinct corners.");
+        }
+
+        Double areaHectares = areaCalculator.calculateAreaHectares(closedBoundary);
+        Double[] centroid = areaCalculator.calculateCentroid(closedBoundary);
+        Double perimeterM = areaCalculator.calculatePerimeterM(closedBoundary);
+
+        log.info("Calculated area: {} m², perimeter: {} m", areaM2, perimeterM);
 
         // Create parcel entity
         var parcel = Parcel.builder()
                 .parcelNumber(generateParcelNumber())
                 .standNumber(request.getStandNumber())
+                .parcelType(request.getParcelType())
                 .status(ParcelStatus.AVAILABLE)
                 .areaM2(areaM2)
                 .areaHectares(areaHectares)
@@ -123,10 +154,10 @@ public class ParcelServiceImpl implements ParcelService {
         var saved = parcelRepository.save(parcel);
         entityManager.flush();
 
-        // Save simplified boundaries
+        // Save boundaries in the correct order with proper sequence
         List<ParcelBoundary> boundaries = new ArrayList<>();
-        for (int i = 0; i < simplified.size(); i++) {
-            BoundaryPointDto point = simplified.get(i);
+        for (int i = 0; i < closedBoundary.size(); i++) {
+            BoundaryPointDto point = closedBoundary.get(i);
             var boundary = ParcelBoundary.builder()
                     .parcel(saved)
                     .sequence(i + 1)
@@ -135,22 +166,101 @@ public class ParcelServiceImpl implements ParcelService {
                     .build();
             boundaries.add(boundary);
         }
+
+        // Save all boundaries
         boundaryRepository.saveAll(boundaries);
         saved.setBoundaries(boundaries);
         entityManager.flush();
 
-        // PostGIS geometry is auto-updated via V30 trigger on parcel_boundaries
-
-        // Check for self-intersecting polygon
-        if (parcelRepository.hasSelfIntersection(saved.getId())) {
-            throw new BusinessValidationException(
-                    "Self-intersecting boundary detected. Please re-capture the parcel boundary " +
-                    "to ensure it forms a valid simple polygon.");
-        }
-
-        log.info("Parcel created: {}", saved.getParcelNumber());
+        log.info("Parcel created: {} with {} boundary points ({} unique + 1 closure)",
+                saved.getParcelNumber(), boundaries.size(), boundaries.size() - 1);
 
         return toResponse(saved);
+    }
+
+    /**
+     * Removes consecutive duplicate points (same latitude and longitude).
+     */
+    private List<BoundaryPointDto> removeDuplicateConsecutivePoints(List<BoundaryPointDto> points) {
+        if (points == null || points.isEmpty()) {
+            return points;
+        }
+
+        List<BoundaryPointDto> result = new ArrayList<>();
+
+        for (BoundaryPointDto point : points) {
+            if (point == null || point.getLatitude() == null || point.getLongitude() == null) {
+                continue;
+            }
+
+            if (result.isEmpty()) {
+                result.add(point);
+            } else {
+                BoundaryPointDto last = result.get(result.size() - 1);
+                double latDiff = Math.abs(point.getLatitude() - last.getLatitude());
+                double lngDiff = Math.abs(point.getLongitude() - last.getLongitude());
+
+                // Only keep points that are at least 0.000001 degrees apart (~0.1m)
+                if (latDiff > 0.000001 || lngDiff > 0.000001) {
+                    result.add(point);
+                }
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * Ensures the boundary is a closed loop.
+     */
+    private List<BoundaryPointDto> ensureBoundaryIsClosed(List<BoundaryPointDto> boundaries) {
+        if (boundaries == null || boundaries.isEmpty()) {
+            return boundaries;
+        }
+
+        // Remove any null or invalid points
+        List<BoundaryPointDto> validPoints = boundaries.stream()
+                .filter(p -> p != null && p.getLatitude() != null && p.getLongitude() != null)
+                .collect(Collectors.toList());
+
+        if (validPoints.size() < 3) {
+            throw new BusinessValidationException("Need at least 3 valid boundary points");
+        }
+
+        // Check if the boundary is already closed
+        BoundaryPointDto first = validPoints.get(0);
+        BoundaryPointDto last = validPoints.get(validPoints.size() - 1);
+
+        double distance = BoundarySimplifier.haversineDistanceM(
+                first.getLatitude(), first.getLongitude(),
+                last.getLatitude(), last.getLongitude()
+        );
+
+        log.info("Distance between first and last point: {}m", distance);
+
+        // If the last point is not the same as the first (within 1m), add the first point at the end
+        if (distance > 1.0) {
+            log.info("Boundary not closed. Adding closure point.");
+
+            BoundaryPointDto closurePoint = new BoundaryPointDto();
+            closurePoint.setLatitude(first.getLatitude());
+            closurePoint.setLongitude(first.getLongitude());
+            closurePoint.setSequence(validPoints.size() + 1);
+            closurePoint.setAccuracy(first.getAccuracy());
+            closurePoint.setAutoCaptured(first.getAutoCaptured());
+
+            List<BoundaryPointDto> result = new ArrayList<>(validPoints);
+            result.add(closurePoint);
+
+            log.info("Added closure point. Total points: {}", result.size());
+            return result;
+        } else if (distance > 0.01) {
+            log.info("Snapping last point to first point (distance: {}m)", distance);
+            last.setLatitude(first.getLatitude());
+            last.setLongitude(first.getLongitude());
+        }
+
+        return validPoints;
     }
 
     @Override
@@ -158,13 +268,11 @@ public class ParcelServiceImpl implements ParcelService {
         var parcel = parcelRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Parcel", id));
 
-        // Cannot modify allocated or disputed parcels
         if (parcel.isAllocated() || parcel.isDisputed()) {
             throw new BusinessValidationException(
                     "Cannot modify parcel with status: " + parcel.getStatus().getDisplayName());
         }
 
-        // Validate stand number uniqueness if changed
         if (!parcel.getStandNumber().equals(request.getStandNumber()) &&
                 parcelRepository.existsByStandNumberAndVillageId(request.getStandNumber(), request.getVillageId())) {
             throw new DuplicateRecordException(
@@ -175,44 +283,49 @@ public class ParcelServiceImpl implements ParcelService {
         var village = villageRepository.findById(request.getVillageId())
                 .orElseThrow(() -> new ResourceNotFoundException("Village", request.getVillageId()));
 
-        // Douglas-Peucker simplification
         List<BoundaryPointDto> orderedBoundaries = request.getBoundaries().stream()
                 .sorted(Comparator.comparingInt(BoundaryPointDto::getSequence))
                 .collect(Collectors.toList());
-        List<BoundaryPointDto> simplified = BoundarySimplifier.simplify(orderedBoundaries, 0.5);
-        if (simplified.size() < 3) {
+
+        List<BoundaryPointDto> uniquePoints = removeDuplicateConsecutivePoints(orderedBoundaries);
+
+        if (uniquePoints.size() < 3) {
             throw new BusinessValidationException(
-                    "Boundary too simple after simplification. Please capture more points.");
+                    "After removing duplicates, only " + uniquePoints.size() +
+                            " unique points remain. Please capture at least 3 distinct corners.");
         }
 
-        // Validate spatial integrity
-        boundaryValidationService.validateCoordinatesInSouthAfrica(simplified);
-        simplified = boundaryValidationService.validateClosedLoop(simplified);
+        List<BoundaryPointDto> simplified = BoundarySimplifier.simplify(uniquePoints, 0.5);
 
-        if (simplified.size() > 3) {
-            BoundaryPointDto first = simplified.get(0);
-            BoundaryPointDto last = simplified.get(simplified.size() - 1);
-            double closingDist = BoundarySimplifier.haversineDistanceM(
-                    first.getLatitude(), first.getLongitude(),
-                    last.getLatitude(), last.getLongitude()
-            );
-            if (closingDist < 0.01) {
-                simplified = new ArrayList<>(simplified.subList(0, simplified.size() - 1));
-            }
+        List<BoundaryPointDto> uniqueSimplified = removeDuplicateConsecutivePoints(simplified);
+
+        if (uniqueSimplified.size() < 3) {
+            throw new BusinessValidationException(
+                    "After simplification, only " + uniqueSimplified.size() +
+                            " unique points remain. Please capture more distinct corners.");
         }
 
-        // Recalculate area, centroid, and perimeter using UTM Zone 35S
-        Double areaM2 = areaCalculator.calculateAreaM2(simplified);
-        Double areaHectares = areaCalculator.calculateAreaHectares(simplified);
-        Double[] centroid = areaCalculator.calculateCentroid(simplified);
-        Double perimeterM = areaCalculator.calculatePerimeterM(simplified);
+        List<BoundaryPointDto> closedBoundary = ensureBoundaryIsClosed(uniqueSimplified);
 
-        // Replace boundaries
+        boundaryValidationService.validateCoordinatesInSouthAfrica(closedBoundary);
+
+        Double areaM2 = areaCalculator.calculateAreaM2(closedBoundary);
+
+        if (areaM2 < MIN_AREA_M2) {
+            throw new BusinessValidationException(
+                    "The captured boundary area (" + String.format("%.2f", areaM2) +
+                            " m²) is too small. Please capture distinct corners.");
+        }
+
+        Double areaHectares = areaCalculator.calculateAreaHectares(closedBoundary);
+        Double[] centroid = areaCalculator.calculateCentroid(closedBoundary);
+        Double perimeterM = areaCalculator.calculatePerimeterM(closedBoundary);
+
         boundaryRepository.deleteByParcelId(parcel.getId());
 
         List<ParcelBoundary> boundaries = new ArrayList<>();
-        for (int i = 0; i < simplified.size(); i++) {
-            BoundaryPointDto point = simplified.get(i);
+        for (int i = 0; i < closedBoundary.size(); i++) {
+            BoundaryPointDto point = closedBoundary.get(i);
             var boundary = ParcelBoundary.builder()
                     .parcel(parcel)
                     .sequence(i + 1)
@@ -236,12 +349,6 @@ public class ParcelServiceImpl implements ParcelService {
 
         var saved = parcelRepository.save(parcel);
         entityManager.flush();
-
-        // Check for self-intersecting polygon
-        if (parcelRepository.hasSelfIntersection(saved.getId())) {
-            throw new BusinessValidationException(
-                    "Self-intersecting boundary detected after update. Please re-capture the parcel boundary.");
-        }
 
         log.info("Parcel updated: {}", saved.getParcelNumber());
 
@@ -309,17 +416,12 @@ public class ParcelServiceImpl implements ParcelService {
     @Override
     @Transactional(readOnly = true)
     public List<ParcelResponse> findAvailable(Long villageId) {
-        // Get all parcels with AVAILABLE status
         List<Parcel> availableParcels = parcelRepository.findAvailable(villageId);
 
-        // Filter out parcels that have ACTIVE or SUSPENDED PTOs
         return availableParcels.stream()
                 .filter(parcel -> {
-                    // Check if this parcel has an ACTIVE or SUSPENDED PTO
                     boolean hasActivePto = ptoRepository.existsByParcelIdAndStatus(parcel.getId(), PTOStatus.ACTIVE);
                     boolean hasSuspendedPto = ptoRepository.existsByParcelIdAndStatus(parcel.getId(), PTOStatus.SUSPENDED);
-
-                    // Parcel is available only if it has NO ACTIVE and NO SUSPENDED PTO
                     return !hasActivePto && !hasSuspendedPto;
                 })
                 .map(this::toResponse)
@@ -329,10 +431,8 @@ public class ParcelServiceImpl implements ParcelService {
     @Override
     @Transactional(readOnly = true)
     public List<ParcelResponse> findAllAvailable() {
-        // Get all parcels with AVAILABLE status
         List<Parcel> availableParcels = parcelRepository.findByStatus(ParcelStatus.AVAILABLE);
 
-        // Filter out parcels that have ACTIVE or SUSPENDED PTOs
         return availableParcels.stream()
                 .filter(parcel -> {
                     boolean hasActivePto = ptoRepository.existsByParcelIdAndStatus(parcel.getId(), PTOStatus.ACTIVE);
@@ -348,7 +448,6 @@ public class ParcelServiceImpl implements ParcelService {
         var parcel = parcelRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Parcel", id));
 
-        // Check if trying to set to AVAILABLE - verify no ACTIVE PTO exists
         if (status == ParcelStatus.AVAILABLE) {
             boolean hasActivePto = ptoRepository.existsByParcelIdAndStatus(id, PTOStatus.ACTIVE);
             if (hasActivePto) {
@@ -435,30 +534,26 @@ public class ParcelServiceImpl implements ParcelService {
 
     @Override
     public Double calculateArea(List<BoundaryPointDto> boundaries) {
-        return areaCalculator.calculateAreaM2(boundaries);
+        if (boundaries == null || boundaries.size() < 3) {
+            return 0.0;
+        }
+        try {
+            List<BoundaryPointDto> uniquePoints = removeDuplicateConsecutivePoints(boundaries);
+            if (uniquePoints.size() < 3) {
+                return 0.0;
+            }
+            List<BoundaryPointDto> closedBoundary = ensureBoundaryIsClosed(uniquePoints);
+            return areaCalculator.calculateAreaM2(closedBoundary);
+        } catch (Exception e) {
+            log.warn("Error calculating area: {}", e.getMessage());
+            return 0.0;
+        }
     }
 
     private String generateParcelNumber() {
         String year = String.valueOf(java.time.Year.now().getValue());
         long count = parcelRepository.countAll() + 1;
         return String.format("%s-%s-%05d", PARCEL_NUMBER_PREFIX, year, count);
-    }
-
-    private void checkForOverlaps(Parcel parcel) {
-        if (parcel.getBoundaries() == null || parcel.getBoundaries().isEmpty()) {
-            return;
-        }
-
-        List<Object[]> overlaps = parcelRepository.findOverlappingParcelsWithGeometry(parcel.getId());
-
-        if (overlaps != null && !overlaps.isEmpty()) {
-            String names = overlaps.stream()
-                    .map(row -> row[1] + " (" + row[2] + ")")
-                    .collect(Collectors.joining(", "));
-            throw new BusinessValidationException(
-                    "Parcel boundary overlaps with existing parcel(s): " + names +
-                    ". Please adjust the boundary points to avoid disputes.");
-        }
     }
 
     private ParcelResponse toResponse(Parcel parcel) {
@@ -499,4 +594,3 @@ public class ParcelServiceImpl implements ParcelService {
                 .build();
     }
 }
-

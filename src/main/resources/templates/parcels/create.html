@@ -28,6 +28,10 @@
             border-left-color: #ffc107;
             background-color: #fffbf0;
         }
+        .gps-point-card.pending {
+            border-left-color: #e9ecef;
+            background-color: #f8f9fa;
+        }
         .gps-badge {
             width: 32px;
             height: 32px;
@@ -51,6 +55,10 @@
             background: #ffc107;
             color: #212529;
         }
+        .gps-badge-closed {
+            background: #1B3A6B;
+            color: white;
+        }
         .point-marker {
             background: #1B3A6B;
             color: white;
@@ -64,6 +72,9 @@
             font-weight: bold;
             border: 2px solid white;
             box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        .point-marker-closed {
+            background: #28a745;
         }
         .coordinate-preview {
             font-family: monospace;
@@ -82,6 +93,52 @@
         .accuracy-good { background: #28a745; }
         .accuracy-medium { background: #ffc107; }
         .accuracy-poor { background: #dc3545; }
+        .walking-indicator {
+            animation: pulse 1.5s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        .point-count-badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.75rem;
+        }
+        .gps-status-good {
+            color: #28a745;
+        }
+        .gps-status-warning {
+            color: #ffc107;
+        }
+        .gps-status-danger {
+            color: #dc3545;
+        }
+        #gpsStatusIndicator {
+            font-size: 0.9rem;
+        }
+        .gps-diagnostic {
+            font-family: monospace;
+            font-size: 11px;
+            background: #1a1a2e;
+            color: #00ff41;
+            padding: 8px 12px;
+            border-radius: 4px;
+            max-height: 100px;
+            overflow-y: auto;
+            display: none;
+        }
+        .gps-diagnostic.visible {
+            display: block;
+        }
+        .btn-gps-force {
+            background: #ff6b35;
+            color: white;
+            border: none;
+        }
+        .btn-gps-force:hover {
+            background: #e55a2b;
+            color: white;
+        }
     </style>
 </head>
 <body class="bg-light">
@@ -225,6 +282,21 @@
             <!-- RIGHT - GPS Points -->
             <div class="col-12 col-lg-7">
 
+                <!-- GPS Status Indicator -->
+                <div id="gpsStatusIndicator" class="alert alert-secondary mb-3">
+                    <div class="d-flex align-items-center gap-3 flex-wrap">
+                        <i class="bi bi-satellite fs-4" id="gpsIcon"></i>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold" id="gpsStatusText">GPS Status: Waiting to start...</div>
+                            <div class="small text-muted" id="gpsAccuracyText">Accuracy: —</div>
+                            <div class="small text-muted" id="gpsDiagnosticText">Last fix: —</div>
+                        </div>
+                        <div>
+                            <span class="badge bg-secondary" id="gpsPointCount">0 points</span>
+                        </div>
+                    </div>
+                </div>
+
                 <!-- GPS Instructions -->
                 <div class="alert alert-info mb-3">
                     <div class="d-flex align-items-start gap-3">
@@ -286,18 +358,26 @@
                     <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
                         <h6 class="fw-bold text-navy mb-0">
                             <i class="bi bi-geo-alt me-2"></i>GPS Boundary Points
-                            <span class="badge bg-navy ms-2" id="capturedCount">0 points</span>
+                            <span class="badge bg-navy ms-2 point-count-badge" id="capturedCount">0 points</span>
+                            <span class="badge bg-success ms-1 point-count-badge" id="loopClosedBadge" style="display:none;">
+                                <i class="bi bi-check-circle"></i> Loop Closed
+                            </span>
                         </h6>
-                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addManualPoint()">
-                            <i class="bi bi-plus-circle me-1"></i>Add Point
-                        </button>
+                        <div>
+                            <button type="button" class="btn btn-sm btn-outline-primary me-1" onclick="addManualPoint()" id="addPointBtn">
+                                <i class="bi bi-plus-circle me-1"></i>Add Point
+                            </button>
+                            <button type="button" class="btn btn-sm btn-success" id="finishBtn" style="display:none;" onclick="finishCapture()">
+                                <i class="bi bi-check-circle me-1"></i>Finish
+                            </button>
+                        </div>
                     </div>
                     <div class="card-body p-3">
                         <div class="row g-2" id="gpsPointsContainer">
                             <div class="col-12 text-center text-muted py-4" id="noPointsMessage">
                                 <i class="bi bi-map display-5 d-block mb-2 opacity-25"></i>
                                 <span class="fw-semibold">No points captured yet</span><br>
-                                <small>Use auto-walk mode or tap "Add Point" to capture GPS coordinates</small>
+                                <small>Walk to a corner and click "Capture GPS" or use auto-walk mode</small>
                             </div>
                         </div>
                     </div>
@@ -305,16 +385,20 @@
 
                 <!-- Map Preview -->
                 <div class="card border-0 shadow-sm mb-3">
-                    <div class="card-header bg-white border-bottom py-2">
+                    <div class="card-header bg-white border-bottom py-2 d-flex justify-content-between align-items-center">
                         <h6 class="fw-bold text-navy mb-0">
                             <i class="bi bi-map me-2"></i>Parcel Preview
                         </h6>
+                        <div>
+                            <span class="badge bg-secondary" id="mapPointCount">0 points</span>
+                        </div>
                     </div>
                     <div class="card-body p-2">
                         <div id="map"></div>
                         <div class="d-flex justify-content-between mt-2 text-muted small">
-                            <span>Points: <span id="mapPointCount">0</span></span>
                             <span id="areaPreview">Area: —</span>
+                            <span id="perimeterPreview">Perimeter: —</span>
+                            <span id="loopStatus" class="text-danger">Loop: Open</span>
                         </div>
                     </div>
                 </div>
@@ -327,15 +411,12 @@
                     <a th:href="@{/parcels}" class="btn btn-light px-4">
                         <i class="bi bi-x me-1"></i>Cancel
                     </a>
-                    <button type="button" class="btn btn-success px-4 fw-semibold" id="finishBtn" style="display:none;" onclick="finishCapture()">
-                        <i class="bi bi-check-circle me-2"></i>Finish
-                    </button>
                     <button type="submit" class="btn btn-navy px-4 fw-semibold" id="submitBtn" disabled>
                         <i class="bi bi-save me-2"></i>Create Parcel
                     </button>
                 </div>
-                 <div class="text-muted small mt-2 text-end">
-                    <span id="validationMessage" class="text-danger">Please capture at least 3 GPS points</span>
+                <div class="text-muted small mt-2 text-end">
+                    <span id="validationMessage" class="text-danger">Please capture at least 3 GPS points and close the loop</span>
                 </div>
             </div>
         </div>
@@ -349,6 +430,11 @@
     const gpsPoints = [];
     let isSubmitting = false;
     let loopClosed = false;
+    let nextPointId = 1;
+    let isAutoWalkMode = false;
+    let gpsWatchId = null;
+    let lastGpsPosition = null;
+    let gpsCaptureCount = 0;  // Track number of GPS captures to force fresh readings
 
     // ── Map Setup ──────────────────────────────────────────────────────────
     const map = L.map('map').setView([-25.0, 28.0], 8);
@@ -359,6 +445,51 @@
 
     let polygonLayer = null;
     let markers = [];
+
+    // ── GPS Status Update ────────────────────────────────────────────────
+    function updateGpsStatus(lat, lng, accuracy, timestamp, source) {
+        const statusText = document.getElementById('gpsStatusText');
+        const accuracyText = document.getElementById('gpsAccuracyText');
+        const diagnosticText = document.getElementById('gpsDiagnosticText');
+        const icon = document.getElementById('gpsIcon');
+        const statusDiv = document.getElementById('gpsStatusIndicator');
+
+        if (!statusText || !accuracyText || !icon || !statusDiv) return;
+
+        if (lat && lng) {
+            let accuracyClass = 'gps-status-good';
+            let accuracyLabel = 'Good';
+            let iconClass = 'bi bi-satellite';
+            let statusClass = 'alert-success';
+
+            if (accuracy > 50) {
+                accuracyClass = 'gps-status-warning';
+                accuracyLabel = 'Medium';
+                statusClass = 'alert-warning';
+            }
+            if (accuracy > 100) {
+                accuracyClass = 'gps-status-danger';
+                accuracyLabel = 'Poor';
+                statusClass = 'alert-danger';
+            }
+
+            statusDiv.className = `alert ${statusClass} mb-3`;
+            icon.className = `${iconClass} fs-4`;
+            statusText.textContent = `GPS Position: ${lat.toFixed(8)}, ${lng.toFixed(8)}`;
+            accuracyText.textContent = `Accuracy: ${accuracyLabel} (±${Math.round(accuracy)}m)`;
+
+            if (timestamp) {
+                const time = new Date(timestamp).toLocaleTimeString();
+                diagnosticText.textContent = `Last fix: ${time} | Source: ${source || 'GPS'} | Capture #${gpsCaptureCount}`;
+            }
+        } else {
+            statusDiv.className = 'alert alert-secondary mb-3';
+            icon.className = 'bi bi-satellite fs-4';
+            statusText.textContent = 'GPS Status: Waiting for position...';
+            accuracyText.textContent = 'Accuracy: —';
+            diagnosticText.textContent = 'Last fix: —';
+        }
+    }
 
     // ── Load Villages ────────────────────────────────────────────────────
     document.getElementById('traditionalAuthorityId').addEventListener('change', function() {
@@ -384,7 +515,6 @@
                     villageSelect.innerHTML = '<option value="">No villages for this authority</option>';
                     return;
                 }
-                // Sort villages by name
                 villages.sort((a, b) => a.villageName.localeCompare(b.villageName));
                 villages.forEach(v => {
                     const opt = document.createElement('option');
@@ -399,118 +529,266 @@
             });
     });
 
+    // ── CRITICAL FIX: Force Fresh GPS with Multiple Strategies ──────────
+    function getFreshGpsPosition(options) {
+        return new Promise((resolve, reject) => {
+            if (!navigator.geolocation) {
+                reject(new Error('GPS not supported'));
+                return;
+            }
+
+            const defaultOptions = {
+                enableHighAccuracy: true,
+                timeout: 30000,
+                maximumAge: 0,
+                ...options
+            };
+
+            let watchId = null;
+            let resolved = false;
+
+            const cleanup = () => {
+                if (watchId !== null) {
+                    navigator.geolocation.clearWatch(watchId);
+                    watchId = null;
+                }
+            };
+
+            const tryResolve = (position) => {
+                if (resolved) return;
+                resolved = true;
+                cleanup();
+                resolve(position);
+            };
+
+            const tryReject = (error) => {
+                if (resolved) return;
+                resolved = true;
+                cleanup();
+                reject(error);
+            };
+
+            // Use watchPosition to force a truly fresh GPS reading
+            // watchPosition triggers a new GPS hardware fix rather than returning a cached one
+            watchId = navigator.geolocation.watchPosition(
+                (position) => {
+                    const now = Date.now();
+                    const age = now - position.timestamp;
+
+                    console.log(`GPS position age: ${age}ms`);
+
+                    if (age > 2000) {
+                        console.warn('Position might be cached (age > 2s), but accepting anyway');
+                    }
+
+                    tryResolve(position);
+                },
+                (error) => {
+                    tryReject(error);
+                },
+                defaultOptions
+            );
+
+            // Timeout fallback
+            setTimeout(() => {
+                tryReject(new Error('GPS timeout - unable to get fresh position'));
+            }, defaultOptions.timeout);
+        });
+    }
+
     // ── Capture GPS ──────────────────────────────────────────────────────
-    function captureGPS(pointNumber) {
+    async function captureGPS(pointNumber) {
         if (isSubmitting) return;
-        if (loopClosed) return;
+        if (loopClosed) {
+            alert('The loop has already been closed. Please finish the capture first.');
+            return;
+        }
 
         if (!navigator.geolocation) {
             alert('GPS is not supported by your browser. Please enter coordinates manually.');
             return;
         }
 
-        const btn = document.querySelector(`#pointCard${pointNumber} button`);
+        const btn = document.getElementById('captureGpsBtn' + pointNumber);
+        if (!btn) return;
+
         btn.disabled = true;
         btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Getting location...';
 
-        navigator.geolocation.getCurrentPosition(
-            function(position) {
-                const lat = position.coords.latitude;
-                const lng = position.coords.longitude;
-                const accuracy = position.coords.accuracy;
+        try {
+            // Increment capture count to help force fresh reading
+            gpsCaptureCount++;
 
-                // Validate coordinates are within South Africa
-                if (lat < -35 || lat > -22) {
-                    alert('Latitude must be between -35 and -22 (South Africa)');
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="bi bi-satellite"></i> Capture';
-                    btn.className = 'btn btn-sm btn-warning';
-                    return;
+            // CRITICAL FIX: Use a unique timestamp to force fresh GPS reading
+            const options = {
+                enableHighAccuracy: true,
+                timeout: 30000,
+                maximumAge: 0,  // This is the most important setting
+            };
+
+            console.log(`Capturing point ${pointNumber} (attempt #${gpsCaptureCount}) with options:`, options);
+
+            // Get fresh GPS position
+            const position = await getFreshGpsPosition(options);
+
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+            const accuracy = position.coords.accuracy;
+            const timestamp = position.timestamp;
+
+            // Update GPS status
+            updateGpsStatus(lat, lng, accuracy, timestamp, 'GPS');
+            lastGpsPosition = { lat, lng, accuracy, timestamp };
+
+            // Log for debugging
+            const time = new Date(timestamp).toLocaleTimeString();
+            console.log(`Point ${pointNumber} - GPS position at ${time}`);
+            console.log(`  Lat: ${lat}, Lng: ${lng}, Accuracy: ${accuracy}m`);
+            console.log(`  Position age: ${Date.now() - timestamp}ms`);
+
+            // Check if this position is significantly different from the last captured point
+            if (gpsPoints.length > 0) {
+                const lastPoint = gpsPoints[gpsPoints.length - 1];
+                const distance = haversineDistanceM(lat, lng, lastPoint.latitude, lastPoint.longitude);
+                console.log(`  Distance from last point: ${distance.toFixed(2)}m`);
+
+                // If the user hasn't moved enough, warn them
+                if (distance < 0.5) {
+                    const confirmCapture = confirm(
+                        `⚠️ You are only ${distance.toFixed(1)}m from the last point.\n` +
+                        `This may create a very small parcel or cause duplicate points.\n\n` +
+                        `Are you sure you want to capture another point here?`
+                    );
+                    if (!confirmCapture) {
+                        btn.disabled = false;
+                        btn.innerHTML = '<i class="bi bi-satellite"></i> Capture';
+                        btn.className = 'btn btn-sm btn-primary';
+                        return;
+                    }
                 }
-                if (lng < 16 || lng > 33) {
-                    alert('Longitude must be between 16 and 33 (South Africa)');
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="bi bi-satellite"></i> Capture';
-                    btn.className = 'btn btn-sm btn-warning';
-                    return;
-                }
+            }
 
-                // Add point to array with sequence number
-                gpsPoints.push({ latitude: lat, longitude: lng, sequence: pointNumber, accuracy: accuracy });
-
-                 // Update manual input fields
-                 const latInput = document.getElementById('lat' + pointNumber);
-                 const lngInput = document.getElementById('lng' + pointNumber);
-                 if (latInput) latInput.value = lat.toFixed(6);
-                 if (lngInput) lngInput.value = lng.toFixed(6);
-
-                 const coordDisplay = document.getElementById('coord' + pointNumber);
-                 let accuracyClass = 'accuracy-good';
-                 let accuracyText = 'Good';
-                 if (accuracy > 50) {
-                     accuracyClass = 'accuracy-medium';
-                     accuracyText = 'Medium';
-                 }
-                 if (accuracy > 100) {
-                     accuracyClass = 'accuracy-poor';
-                     accuracyText = 'Poor';
-                 }
-                 coordDisplay.innerHTML = `<span class="accuracy-indicator ${accuracyClass}"></span> ${lat.toFixed(6)}, ${lng.toFixed(6)} (${accuracyText} ±${Math.round(accuracy)}m)`;
-                 coordDisplay.className = 'coordinate-preview small text-success';
-
-                 const card = document.getElementById(`pointCard${pointNumber}`);
-                 if (card) {
-                     card.querySelector('.card').className = 'card gps-point-card captured';
-                     card.querySelector('.gps-badge').className = 'gps-badge gps-badge-captured';
-                 }
-
-                 btn.disabled = true;
-                 btn.innerHTML = '<i class="bi bi-check-circle"></i> Captured';
-                 btn.className = 'btn btn-sm btn-success';
-
-                 updateDisplay();
-            },
-            function(error) {
-                console.error('GPS Error:', error);
-                let errorMsg = 'Error getting GPS location: ';
-                switch(error.code) {
-                    case error.PERMISSION_DENIED:
-                        errorMsg += 'Permission denied. Please allow location access.';
-                        break;
-                    case error.POSITION_UNAVAILABLE:
-                        errorMsg += 'Location unavailable. Please enable GPS.';
-                        break;
-                    case error.TIMEOUT:
-                        errorMsg += 'Location request timed out. Please try again.';
-                        break;
-                    default:
-                        errorMsg += error.message;
-                }
-                alert(errorMsg + '\nPlease try again.');
+            // Validate coordinates are within South Africa
+            if (lat < -35 || lat > -22) {
+                alert('Latitude must be between -35 and -22 (South Africa)');
                 btn.disabled = false;
                 btn.innerHTML = '<i class="bi bi-satellite"></i> Retry';
                 btn.className = 'btn btn-sm btn-warning';
-            },
-            {
-                enableHighAccuracy: true,
-                timeout: 15000,
-                maximumAge: 0
+                return;
             }
-        );
+            if (lng < 16 || lng > 33) {
+                alert('Longitude must be between 16 and 33 (South Africa)');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="bi bi-satellite"></i> Retry';
+                btn.className = 'btn btn-sm btn-warning';
+                return;
+            }
+
+            // Check if this point already exists in our list
+            const existingIdx = gpsPoints.findIndex(p => p.sequence === pointNumber);
+            if (existingIdx > -1) {
+                gpsPoints[existingIdx] = {
+                    latitude: lat,
+                    longitude: lng,
+                    sequence: pointNumber,
+                    accuracy: accuracy,
+                    timestamp: timestamp
+                };
+            } else {
+                gpsPoints.push({
+                    latitude: lat,
+                    longitude: lng,
+                    sequence: pointNumber,
+                    accuracy: accuracy,
+                    timestamp: timestamp
+                });
+            }
+
+            // Update UI
+            const coordDisplay = document.getElementById('coord' + pointNumber);
+            let accuracyClass = 'accuracy-good';
+            let accuracyText = 'Good';
+            if (accuracy > 50) {
+                accuracyClass = 'accuracy-medium';
+                accuracyText = 'Medium';
+            }
+            if (accuracy > 100) {
+                accuracyClass = 'accuracy-poor';
+                accuracyText = 'Poor';
+            }
+
+            if (coordDisplay) {
+                coordDisplay.innerHTML = `<span class="accuracy-indicator ${accuracyClass}"></span> ${lat.toFixed(8)}, ${lng.toFixed(8)} (${accuracyText} ±${Math.round(accuracy)}m)`;
+                coordDisplay.className = 'coordinate-preview small text-success';
+            }
+
+            const card = document.getElementById(`pointCard${pointNumber}`);
+            if (card) {
+                const cardDiv = card.querySelector('.card');
+                if (cardDiv) {
+                    cardDiv.className = 'card gps-point-card captured';
+                }
+                const badge = card.querySelector('.gps-badge');
+                if (badge) {
+                    badge.className = 'gps-badge gps-badge-captured';
+                }
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = '<i class="bi bi-check-circle"></i> Captured';
+            btn.className = 'btn btn-sm btn-success';
+
+            // Update the latitude/longitude input fields
+            const latInput = document.getElementById('lat' + pointNumber);
+            const lngInput = document.getElementById('lng' + pointNumber);
+            if (latInput) latInput.value = lat.toFixed(8);
+            if (lngInput) lngInput.value = lng.toFixed(8);
+
+            // Show a success message with the distance moved
+            if (gpsPoints.length > 1) {
+                const prevPoint = gpsPoints[gpsPoints.length - 2];
+                const dist = haversineDistanceM(lat, lng, prevPoint.latitude, prevPoint.longitude);
+                console.log(`✅ Point ${pointNumber} captured. Distance from previous: ${dist.toFixed(2)}m`);
+            }
+
+            updateDisplay();
+            console.log(`✅ Point ${pointNumber} captured successfully`);
+
+        } catch (error) {
+            console.error('GPS Error:', error);
+            let errorMsg = 'Error getting GPS location: ';
+            switch(error.code) {
+                case 1: // PERMISSION_DENIED
+                    errorMsg += 'Permission denied. Please allow location access.';
+                    break;
+                case 2: // POSITION_UNAVAILABLE
+                    errorMsg += 'Location unavailable. Please enable GPS and move to an open area.';
+                    break;
+                case 3: // TIMEOUT
+                    errorMsg += 'Location request timed out. Please try again in an open area.';
+                    break;
+                default:
+                    errorMsg += error.message;
+            }
+            alert(errorMsg + '\nPlease try again.');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-satellite"></i> Retry';
+            btn.className = 'btn btn-sm btn-warning';
+        }
     }
 
     // ── Auto-Walk Capture ────────────────────────────────────────────────
-    let watchId = null;
-    let lastAutoCapture = null;
+    let autoWatchId = null;
     let autoWalkActive = false;
     let autoWalkInitialized = false;
     let walkStartLat = null;
     let walkStartLng = null;
-    let nextPointId = 1;
     let lastAutoCaptureTime = 0;
+    let autoCapturedPoints = [];
     const AUTO_CAPTURE_INTERVAL_MS = 3000;
     const AUTO_CAPTURE_MIN_DISTANCE_M = 2.0;
     const AUTO_CAPTURE_MAX_ACCURACY_M = 30.0;
+    const AUTO_CLOSE_DISTANCE_M = 5.0;
 
     function startAutoWalk() {
         if (autoWalkActive) {
@@ -527,20 +805,35 @@
         const stopBtn = document.getElementById('stopAutoWalk');
         const startBtn = document.getElementById('startAutoWalk');
 
+        if (!statusEl || !stopBtn || !startBtn) return;
+
         autoWalkActive = true;
+        isAutoWalkMode = true;
         autoWalkInitialized = false;
-        lastAutoCapture = null;
-        lastAutoCaptureTime = 0;
+        autoCapturedPoints = [];
         walkStartLat = null;
         walkStartLng = null;
+        lastAutoCaptureTime = 0;
 
-        statusEl.innerHTML = '<span class="text-warning"><i class="bi bi-hourglass-split me-1"></i>Acquiring GPS signal... Please stand at the starting corner.</span>';
-        if (startBtn) startBtn.style.display = 'none';
-        if (stopBtn) stopBtn.style.display = 'inline-block';
+        statusEl.innerHTML = '<span class="text-warning walking-indicator"><i class="bi bi-hourglass-split me-1"></i>Acquiring GPS signal... Please stand at the starting corner.</span>';
+        startBtn.style.display = 'none';
+        stopBtn.style.display = 'inline-block';
+
+        // CRITICAL FIX: Use maximumAge: 0 for fresh GPS readings
+        const watchOptions = {
+            enableHighAccuracy: true,
+            maximumAge: 0,
+            timeout: 10000
+        };
 
         function tryCapturePoint(lat, lng, accuracy) {
             if (!autoWalkActive) return;
 
+            // Update GPS status
+            updateGpsStatus(lat, lng, accuracy, Date.now(), 'Auto-Walk');
+            lastGpsPosition = { lat, lng, accuracy, timestamp: Date.now() };
+
+            // Validate coordinates
             if (lat < -35 || lat > -22 || lng < 16 || lng > 33) {
                 if (statusEl) {
                     statusEl.innerHTML = '<span class="text-danger"><i class="bi bi-exclamation-triangle me-1"></i>GPS fix outside South Africa. Check your location settings.</span>';
@@ -555,52 +848,79 @@
             }
 
             const now = Date.now();
+
+            // Initialize with first point
             if (!autoWalkInitialized) {
                 autoWalkInitialized = true;
                 walkStartLat = lat;
                 walkStartLng = lng;
-                if (statusEl) {
-                    statusEl.innerHTML = '<span class="text-success"><i class="bi bi-play-circle me-1"></i>Recording... Walk the perimeter now.</span>';
-                }
-                lastAutoCapture = { latitude: lat, longitude: lng };
-                lastAutoCaptureTime = now;
 
+                if (statusEl) {
+                    statusEl.innerHTML = '<span class="text-success walking-indicator"><i class="bi bi-play-circle me-1"></i>Recording... Walk the perimeter now.</span>';
+                }
+
+                lastAutoCaptureTime = now;
+                autoCapturedPoints.push({ latitude: lat, longitude: lng, accuracy: accuracy });
+
+                // Add to main points list
                 const seq = nextPointId++;
                 gpsPoints.push({
                     latitude: lat,
                     longitude: lng,
                     sequence: seq,
                     accuracy: accuracy,
-                    autoCaptured: true
+                    autoCaptured: true,
+                    timestamp: now
                 });
 
-                if (stopBtn) stopBtn.style.display = 'inline-block';
-                if (startBtn) startBtn.style.display = 'none';
-
+                // Add a card for this point
+                addPointCard(seq, lat, lng, accuracy, true);
                 updateDisplay();
                 return;
             }
 
-            const distFromLast = lastAutoCapture
-                ? haversineDistanceM(lat, lng, lastAutoCapture.latitude, lastAutoCapture.longitude)
-                : Infinity;
+            // Check if we've returned to the start (close the loop)
+            if (autoWalkInitialized && walkStartLat !== null && walkStartLng !== null) {
+                const distToStart = haversineDistanceM(lat, lng, walkStartLat, walkStartLng);
 
-            if (distFromLast >= AUTO_CAPTURE_MIN_DISTANCE_M || (now - lastAutoCaptureTime) >= AUTO_CAPTURE_INTERVAL_MS) {
+                if (distToStart <= AUTO_CLOSE_DISTANCE_M && autoCapturedPoints.length >= 2) {
+                    if (statusEl) {
+                        statusEl.innerHTML = '<span class="text-success"><i class="bi bi-check-circle me-1"></i>Returned to start! Closing loop...</span>';
+                    }
+                    finishCapture();
+                    stopAutoWalkInternal();
+                    return;
+                }
+            }
+
+            // Check if we should capture a new point
+            const lastPoint = autoCapturedPoints.length > 0 ? autoCapturedPoints[autoCapturedPoints.length - 1] : null;
+            const distFromLast = lastPoint ? haversineDistanceM(lat, lng, lastPoint.latitude, lastPoint.longitude) : Infinity;
+
+            if (distFromLast >= AUTO_CAPTURE_MIN_DISTANCE_M && (now - lastAutoCaptureTime) >= AUTO_CAPTURE_INTERVAL_MS) {
+                autoCapturedPoints.push({ latitude: lat, longitude: lng, accuracy: accuracy });
+                lastAutoCaptureTime = now;
+
                 const seq = nextPointId++;
                 gpsPoints.push({
                     latitude: lat,
                     longitude: lng,
                     sequence: seq,
                     accuracy: accuracy,
-                    autoCaptured: true
+                    autoCaptured: true,
+                    timestamp: now
                 });
-                lastAutoCapture = { latitude: lat, longitude: lng };
-                lastAutoCaptureTime = now;
+
+                addPointCard(seq, lat, lng, accuracy, true);
                 updateDisplay();
+
+                if (statusEl) {
+                    statusEl.innerHTML = '<span class="text-success walking-indicator"><i class="bi bi-record-circle me-1"></i>Captured point ' + gpsPoints.length + ' &bull; ' + Math.round(distFromLast) + 'm from last</span>';
+                }
             }
         }
 
-        watchId = navigator.geolocation.watchPosition(
+        autoWatchId = navigator.geolocation.watchPosition(
             function(position) {
                 tryCapturePoint(
                     position.coords.latitude,
@@ -610,26 +930,27 @@
             },
             function(error) {
                 console.error('Auto-walk GPS Error:', error);
+                if (statusEl) {
+                    statusEl.innerHTML = '<span class="text-danger"><i class="bi bi-exclamation-triangle me-1"></i>GPS error: ' + error.message + '</span>';
+                }
             },
-            {
-                enableHighAccuracy: true,
-                maximumAge: 0,
-                timeout: 10000
-            }
+            watchOptions
         );
     }
 
     function stopAutoWalk() {
-        if (watchId !== null) {
-            navigator.geolocation.clearWatch(watchId);
-            watchId = null;
+        stopAutoWalkInternal();
+    }
+
+    function stopAutoWalkInternal() {
+        if (autoWatchId !== null) {
+            navigator.geolocation.clearWatch(autoWatchId);
+            autoWatchId = null;
         }
         autoWalkActive = false;
         autoWalkInitialized = false;
-        lastAutoCapture = null;
-        walkStartLat = null;
-        walkStartLng = null;
-        lastAutoCaptureTime = 0;
+        isAutoWalkMode = false;
+        autoCapturedPoints = [];
 
         const statusEl = document.getElementById('autoWalkStatus');
         const stopBtn = document.getElementById('stopAutoWalk');
@@ -640,12 +961,12 @@
         }
         if (stopBtn) stopBtn.style.display = 'none';
         if (startBtn) startBtn.style.display = 'inline-block';
+    }
 
-        const mode = document.getElementById('captureMode');
-        if (mode && mode.value !== 'HYBRID') {
-            finishCapture();
+    function stopAutoWalkIfActive() {
+        if (autoWatchId !== null) {
+            stopAutoWalkInternal();
         }
-        updateDisplay();
     }
 
     function haversineDistanceM(lat1, lon1, lat2, lon2) {
@@ -653,8 +974,8 @@
         const dLat = (lat2 - lat1) * Math.PI / 180;
         const dLon = (lon2 - lon1) * Math.PI / 180;
         const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-                  Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-                  Math.sin(dLon/2) * Math.sin(dLon/2);
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon/2) * Math.sin(dLon/2);
         const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
         return R * c;
     }
@@ -674,13 +995,101 @@
                 manualCards.style.display = 'block';
             }
         } else {
-            if (watchId !== null) {
-                stopAutoWalk();
-            }
-            finishCapture();
+            stopAutoWalkInternal();
             autoWalkControls.style.display = 'none';
             manualCards.style.display = 'block';
         }
+    }
+
+    // ── Add Point Card ──────────────────────────────────────────────────
+    function addPointCard(seq, lat, lng, accuracy, autoCaptured) {
+        const container = document.getElementById('gpsPointsContainer');
+        const noMsg = document.getElementById('noPointsMessage');
+        if (noMsg) noMsg.style.display = 'none';
+
+        // Check if card already exists
+        let existingCard = document.getElementById('pointCard' + seq);
+        if (existingCard) {
+            // Update existing card
+            const coordDisplay = document.getElementById('coord' + seq);
+            if (coordDisplay && lat && lng) {
+                let accuracyClass = 'accuracy-good';
+                let accuracyText = 'Good';
+                if (accuracy > 50) {
+                    accuracyClass = 'accuracy-medium';
+                    accuracyText = 'Medium';
+                }
+                if (accuracy > 100) {
+                    accuracyClass = 'accuracy-poor';
+                    accuracyText = 'Poor';
+                }
+                coordDisplay.innerHTML = `<span class="accuracy-indicator ${accuracyClass}"></span> ${lat.toFixed(8)}, ${lng.toFixed(8)} (${accuracyText} ±${Math.round(accuracy)}m)`;
+                coordDisplay.className = 'coordinate-preview small text-success';
+
+                const latInput = document.getElementById('lat' + seq);
+                const lngInput = document.getElementById('lng' + seq);
+                if (latInput) latInput.value = lat.toFixed(8);
+                if (lngInput) lngInput.value = lng.toFixed(8);
+            }
+            return;
+        }
+
+        const col = document.createElement('div');
+        col.className = 'col-12 col-md-6';
+        col.id = 'pointCard' + seq;
+        const hasCoords = lat !== null && lat !== undefined && !isNaN(lat);
+
+        let coordDisplayText = '— manually enter or capture GPS';
+        let accuracyHtml = '';
+        if (hasCoords) {
+            let accuracyClass = 'accuracy-good';
+            let accuracyText = 'Good';
+            if (accuracy > 50) {
+                accuracyClass = 'accuracy-medium';
+                accuracyText = 'Medium';
+            }
+            if (accuracy > 100) {
+accuracyClass = 'accuracy-poor';
+            accuracyText = 'Poor';
+        }
+        accuracyHtml = `<span class="accuracy-indicator ${accuracyClass}"></span>`;
+        coordDisplayText = `${accuracyHtml} ${lat.toFixed(8)}, ${lng.toFixed(8)} (${accuracyText} ±${Math.round(accuracy)}m)`;
+        }
+
+        col.innerHTML = `
+            <div class="card gps-point-card ${hasCoords ? 'captured' : 'pending'}">
+                <div class="card-body p-2">
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <div class="gps-badge ${hasCoords ? 'gps-badge-captured' : 'gps-badge-pending'}">${seq}</div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold small">Point ${seq}${autoCaptured ? ' <span class="badge bg-info text-white" style="font-size:0.6rem;">auto</span>' : ''}</div>
+                        </div>
+                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removePoint(${seq})" ${loopClosed ? 'disabled' : ''}>
+                            <i class="bi bi-trash"></i>
+                        </button>
+                    </div>
+                    <div class="row g-2 mb-2">
+                        <div class="col-6">
+                            <label class="form-label small mb-1">Latitude</label>
+                            <input type="number" step="any" class="form-control form-control-sm" id="lat${seq}" value="${hasCoords ? lat.toFixed(8) : ''}" placeholder="-25.00000000" onchange="updatePointFromInput(${seq})" ${loopClosed ? 'disabled' : ''}>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small mb-1">Longitude</label>
+                            <input type="number" step="any" class="form-control form-control-sm" id="lng${seq}" value="${hasCoords ? lng.toFixed(8) : ''}" placeholder="28.00000000" onchange="updatePointFromInput(${seq})" ${loopClosed ? 'disabled' : ''}>
+                        </div>
+                    </div>
+                    ${!autoCaptured && !loopClosed ? `
+                    <div class="d-flex gap-2">
+                        <button type="button" class="btn btn-sm btn-primary flex-grow-1" id="captureGpsBtn${seq}" onclick="captureGPS(${seq})">
+                            <i class="bi bi-satellite"></i> Capture GPS
+                        </button>
+                    </div>
+                    ` : ''}
+                    <div class="coordinate-preview small mt-2 ${hasCoords ? 'text-success' : 'text-muted'}" id="coord${seq}">${coordDisplayText}</div>
+                </div>
+            </div>
+        `;
+        container.appendChild(col);
     }
 
     function addManualPoint() {
@@ -691,45 +1100,9 @@
         }
 
         const seq = nextPointId++;
-        const container = document.getElementById('gpsPointsContainer');
-        const noMsg = document.getElementById('noPointsMessage');
-        if (noMsg) noMsg.style.display = 'none';
-
-        const col = document.createElement('div');
-        col.className = 'col-12 col-md-6';
-        col.id = 'pointCard' + seq;
-        col.innerHTML = `
-            <div class="card gps-point-card active">
-                <div class="card-body p-2">
-                    <div class="d-flex align-items-center gap-2 mb-2">
-                        <div class="gps-badge gps-badge-active">${seq}</div>
-                        <div class="flex-grow-1">
-                            <div class="fw-semibold small">Point ${seq}</div>
-                        </div>
-                        <button type="button" class="btn btn-sm btn-outline-danger btn-sm" onclick="removePoint(${seq})">
-                            <i class="bi bi-trash"></i>
-                        </button>
-                    </div>
-                    <div class="row g-2 mb-2">
-                        <div class="col-6">
-                            <label class="form-label small mb-1">Latitude</label>
-                            <input type="number" step="any" class="form-control form-control-sm" id="lat${seq}" placeholder="-25.000000" onchange="updatePointFromInput(${seq})">
-                        </div>
-                        <div class="col-6">
-                            <label class="form-label small mb-1">Longitude</label>
-                            <input type="number" step="any" class="form-control form-control-sm" id="lng${seq}" placeholder="28.000000" onchange="updatePointFromInput(${seq})">
-                        </div>
-                    </div>
-                    <div class="d-flex gap-2">
-                        <button type="button" class="btn btn-sm btn-success flex-grow-1" onclick="captureGPS(${seq})">
-                            <i class="bi bi-satellite"></i> Capture GPS
-                        </button>
-                    </div>
-                    <div class="coordinate-pview small mt-2 text-muted" id="coord${seq}">— manually enter or capture GPS</div>
-                </div>
-            </div>
-        `;
-        container.appendChild(col);
+        gpsPoints.push({ latitude: null, longitude: null, sequence: seq, accuracy: null });
+        addPointCard(seq, null, null, null, false);
+        updateDisplay();
     }
 
     function updatePointFromInput(seq) {
@@ -746,23 +1119,32 @@
         if (idx > -1) {
             gpsPoints[idx].latitude = lat;
             gpsPoints[idx].longitude = lng;
-        } else {
-            gpsPoints.push({ latitude: lat, longitude: lng, sequence: seq, accuracy: null });
         }
 
         const coordDisplay = document.getElementById('coord' + seq);
-        coordDisplay.textContent = `${lat.toFixed(6)}, ${lng.toFixed(6)} (manual)`;
+        coordDisplay.textContent = `${lat.toFixed(8)}, ${lng.toFixed(8)} (manual)`;
         coordDisplay.className = 'coordinate-preview small text-success';
 
         const card = document.getElementById('pointCard' + seq);
         if (card) {
-            card.querySelector('.card').className = 'card gps-point-card captured';
+            const cardDiv = card.querySelector('.card');
+            if (cardDiv) {
+                cardDiv.className = 'card gps-point-card captured';
+            }
+            const badge = card.querySelector('.gps-badge');
+            if (badge) {
+                badge.className = 'gps-badge gps-badge-captured';
+            }
+            updateDisplay();
         }
-
-        updateDisplay();
     }
 
     function removePoint(seq) {
+        if (loopClosed) {
+            alert('Cannot remove points after the loop is closed.');
+            return;
+        }
+
         const idx = gpsPoints.findIndex(p => p.sequence === seq);
         if (idx > -1) {
             gpsPoints.splice(idx, 1);
@@ -777,36 +1159,102 @@
         updateDisplay();
     }
 
-    // ── Update Display ──────────────────────────────────────────────────
-    function updateDisplay() {
-        document.getElementById('capturedCount').textContent = `${gpsPoints.length} points captured`;
-        document.getElementById('mapPointCount').textContent = gpsPoints.length;
-        const sortedForSubmit = [...gpsPoints].sort((a, b) => a.sequence - b.sequence);
-        document.getElementById('boundariesJson').value = JSON.stringify(sortedForSubmit);
-        updateMap();
+    // ── Finish Capture ──────────────────────────────────────────────────
+    function finishCapture() {
+        if (loopClosed) return;
 
-        const areaPreview = document.getElementById('areaPreview');
-        const submitBtn = document.getElementById('submitBtn');
-        const finishBtn = document.getElementById('finishBtn');
+        const validPoints = gpsPoints.filter(p => p.latitude !== null && p.longitude !== null);
 
-        if (gpsPoints.length >= 3) {
-            const area = calculateArea(gpsPoints);
-            const perimeter = calculatePerimeter(gpsPoints);
-            let display = `Area: ${area.toFixed(2)} m² (${(area/10000).toFixed(4)} ha)`;
-            display += ` | Perimeter: ${perimeter.toFixed(2)} m (${(perimeter/1000).toFixed(2)} km)`;
-            areaPreview.textContent = display;
-        } else {
-            areaPreview.textContent = 'Area: — (need 3+ points)';
+        if (validPoints.length < 3) {
+            alert('Please capture at least 3 valid points before closing the loop.');
+            return;
         }
 
+        const sortedPoints = [...validPoints].sort((a, b) => a.sequence - b.sequence);
+        const first = sortedPoints[0];
+        const last = sortedPoints[sortedPoints.length - 1];
+        const distToStart = haversineDistanceM(last.latitude, last.longitude, first.latitude, first.longitude);
+
+        if (distToStart > 5.0) {
+            const closingSeq = nextPointId++;
+            gpsPoints.push({
+                latitude: first.latitude,
+                longitude: first.longitude,
+                sequence: closingSeq,
+                accuracy: 0,
+                autoCaptured: false,
+                isClosurePoint: true
+            });
+            addPointCard(closingSeq, first.latitude, first.longitude, 0, false);
+        }
+
+        loopClosed = true;
+        stopAutoWalkInternal();
+
+        document.getElementById('loopClosedBadge').style.display = 'inline-block';
+        document.getElementById('loopStatus').textContent = 'Loop: Closed ✓';
+        document.getElementById('loopStatus').className = 'text-success';
+        document.getElementById('finishBtn').style.display = 'none';
+        document.getElementById('addPointBtn').disabled = true;
+        document.getElementById('submitBtn').disabled = false;
+        document.getElementById('validationMessage').textContent = '✅ Loop closed! Ready to create parcel.';
+        document.getElementById('validationMessage').className = 'text-success';
+
+        updateDisplay();
+        document.querySelectorAll('[id^="captureGpsBtn"]').forEach(btn => {
+            btn.disabled = true;
+        });
+    }
+
+    // ── Update Display ──────────────────────────────────────────────────
+    function updateDisplay() {
+        const validPoints = gpsPoints.filter(p => p.latitude !== null && p.longitude !== null);
+        const count = validPoints.length;
+
+        document.getElementById('capturedCount').textContent = count + ' points';
+        document.getElementById('mapPointCount').textContent = count + ' points';
+        document.getElementById('gpsPointCount').textContent = count + ' points';
+
+        const sortedPoints = [...gpsPoints].sort((a, b) => a.sequence - b.sequence);
+        const validPointsForJson = sortedPoints.filter(p => p.latitude !== null && p.longitude !== null);
+        document.getElementById('boundariesJson').value = JSON.stringify(validPointsForJson);
+
+        updateMap();
+
+        const validPointsForCalc = validPointsForJson.filter(p => !p.isClosurePoint);
+        if (validPointsForCalc.length >= 3) {
+            const area = calculateArea(validPointsForJson);
+            const perimeter = calculatePerimeter(validPointsForJson);
+            const areaHa = area / 10000;
+
+            document.getElementById('areaPreview').textContent = `Area: ${area.toFixed(2)} m² (${areaHa.toFixed(4)} ha)`;
+            document.getElementById('perimeterPreview').textContent = `Perimeter: ${perimeter.toFixed(2)} m`;
+        } else {
+            document.getElementById('areaPreview').textContent = 'Area: — (need 3+ points)';
+            document.getElementById('perimeterPreview').textContent = 'Perimeter: —';
+        }
+
+        const finishBtn = document.getElementById('finishBtn');
         if (finishBtn) {
-            finishBtn.style.display = gpsPoints.length >= 3 ? 'inline-block' : 'none';
-            finishBtn.disabled = loopClosed || gpsPoints.length < 3;
+            const hasValidPoints = validPointsForJson.filter(p => p.latitude !== null && p.longitude !== null).length >= 3;
+            finishBtn.style.display = (!loopClosed && hasValidPoints) ? 'inline-block' : 'none';
         }
 
         const submitBtn = document.getElementById('submitBtn');
         if (submitBtn) {
-            submitBtn.disabled = !loopClosed || gpsPoints.length < 3;
+            submitBtn.disabled = !loopClosed || validPointsForJson.length < 3;
+        }
+
+        const validationMsg = document.getElementById('validationMessage');
+        if (!loopClosed) {
+            const validCount = validPointsForJson.filter(p => p.latitude !== null && p.longitude !== null).length;
+            if (validCount < 3) {
+                validationMsg.textContent = 'Please capture at least 3 GPS points and close the loop';
+                validationMsg.className = 'text-danger';
+            } else {
+                validationMsg.textContent = 'Click "Finish" to close the loop and calculate area';
+                validationMsg.className = 'text-warning';
+            }
         }
     }
 
@@ -819,26 +1267,34 @@
         markers.forEach(m => map.removeLayer(m));
         markers = [];
 
-        if (gpsPoints.length === 0) return;
+        const sortedPoints = [...gpsPoints]
+            .sort((a, b) => a.sequence - b.sequence)
+            .filter(p => p.latitude !== null && p.longitude !== null);
 
-        // Sort points by sequence for proper polygon formation
-        const sortedPoints = [...gpsPoints].sort((a, b) => a.sequence - b.sequence);
-        
-        // Build closed ring: repeat first point at end
+        if (sortedPoints.length === 0) return;
+
         const latlngs = sortedPoints.map(p => [p.latitude, p.longitude]);
-        const closedRing = [...latlngs, latlngs[0]];
 
-        if (gpsPoints.length >= 3) {
-            polygonLayer = L.polygon(closedRing, {
-                color: '#1B3A6B',
+        if (sortedPoints.length >= 3) {
+            const isClosed = loopClosed || sortedPoints.length > 0 &&
+                haversineDistanceM(
+                    sortedPoints[0].latitude, sortedPoints[0].longitude,
+                    sortedPoints[sortedPoints.length - 1].latitude, sortedPoints[sortedPoints.length - 1].longitude
+                ) < 0.01;
+
+            const ring = isClosed ? latlngs : [...latlngs, latlngs[0]];
+
+            polygonLayer = L.polygon(ring, {
+                color: loopClosed ? '#28a745' : '#1B3A6B',
                 weight: 3,
                 opacity: 0.8,
-                fillColor: '#1B3A6B',
-                fillOpacity: 0.15
+                fillColor: loopClosed ? '#28a745' : '#1B3A6B',
+                fillOpacity: loopClosed ? 0.2 : 0.1
             }).addTo(map);
+
             const bounds = L.latLngBounds(latlngs);
             map.fitBounds(bounds, { padding: [20, 20] });
-        } else if (gpsPoints.length > 0) {
+        } else if (sortedPoints.length > 0) {
             polygonLayer = L.polyline(latlngs, {
                 color: '#1B3A6B',
                 weight: 3,
@@ -849,11 +1305,11 @@
             map.fitBounds(bounds, { padding: [20, 20] });
         }
 
-        // Add markers
         sortedPoints.forEach((p, i) => {
+            const isClosure = p.isClosurePoint;
             const icon = L.divIcon({
-                className: 'point-marker',
-                html: p.sequence || i + 1,
+                className: 'point-marker' + (isClosure ? ' point-marker-closed' : ''),
+                html: isClosure ? '✓' : (p.sequence || i + 1),
                 iconSize: [24, 24],
                 iconAnchor: [12, 12]
             });
@@ -861,16 +1317,23 @@
                 icon: icon,
                 draggable: false
             }).addTo(map);
-            marker.bindPopup(`Point ${p.sequence || i + 1}<br>Lat: ${p.latitude.toFixed(6)}<br>Lng: ${p.longitude.toFixed(6)}`);
+            const label = isClosure ? 'Closure Point' : `Point ${p.sequence || i + 1}`;
+            const accText = p.accuracy ? `Accuracy: ±${Math.round(p.accuracy)}m` : 'Manual entry';
+            marker.bindPopup(`${label}<br>Lat: ${p.latitude.toFixed(8)}<br>Lng: ${p.longitude.toFixed(8)}<br>${accText}`);
             markers.push(marker);
         });
     }
 
     // ── Calculate Perimeter ──
     function calculatePerimeter(points) {
-        if (points.length < 2) return 0;
+        if (!points || points.length < 2) return 0;
 
-        const sorted = [...points].sort((a, b) => a.sequence - b.sequence);
+        const sorted = [...points]
+            .sort((a, b) => a.sequence - b.sequence)
+            .filter(p => p.latitude !== null && p.longitude !== null);
+
+        if (sorted.length < 2) return 0;
+
         let perimeter = 0;
         const n = sorted.length;
 
@@ -885,66 +1348,38 @@
         return perimeter;
     }
 
-    // ── Finish Capture ──
-    function finishCapture() {
-        if (gpsPoints.length < 3 || loopClosed) return;
-
-        const first = gpsPoints[0];
-        gpsPoints.push({
-            latitude: first.latitude,
-            longitude: first.longitude,
-            sequence: nextPointId++,
-            accuracy: 0,
-            autoCaptured: false,
-            isClosurePoint: true
-        });
-
-        loopClosed = true;
-
-        if (watchId !== null) {
-            navigator.geolocation.clearWatch(watchId);
-            watchId = null;
-            autoWalkActive = false;
-            autoWalkInitialized = false;
-        }
-
-        const area = calculateArea(gpsPoints);
-        const perimeter = calculatePerimeter(gpsPoints);
-
-        const areaPreview = document.getElementById('areaPreview');
-        areaPreview.textContent = `Area: ${area.toFixed(2)} m² (${(area/10000).toFixed(4)} ha) | Perimeter: ${perimeter.toFixed(2)} m (${(perimeter/1000).toFixed(2)} km)`;
-
-        const finishBtn = document.getElementById('finishBtn');
-        if (finishBtn) finishBtn.disabled = true;
-
-        const addBtn = document.querySelector('button[onclick="addManualPoint()"]');
-        if (addBtn) addBtn.disabled = true;
-
-        const submitBtn = document.getElementById('submitBtn');
-        if (submitBtn) submitBtn.disabled = false;
-
-        updateMap();
-        updateDisplay();
-    }
-
-    // ── Calculate Area (Shoelace formula with correct meter-per-degree scaling) ──
+    // ── Calculate Area ──
     function calculateArea(points) {
+        if (!points || points.length < 3) return 0;
 
-        // Sort points by sequence
-        const sorted = [...points].sort((a, b) => a.sequence - b.sequence);
+        const sorted = [...points]
+            .sort((a, b) => a.sequence - b.sequence)
+            .filter(p => p.latitude !== null && p.longitude !== null);
+
+        if (sorted.length < 3) return 0;
+
+        let closedPoints = [...sorted];
+        const first = closedPoints[0];
+        const last = closedPoints[closedPoints.length - 1];
+        if (haversineDistanceM(last.latitude, last.longitude, first.latitude, first.longitude) > 0.01) {
+            closedPoints.push({ latitude: first.latitude, longitude: first.longitude });
+        }
 
         let area = 0;
-        const n = sorted.length;
-        for (let i = 0; i < n; i++) {
-            const j = (i + 1) % n;
-            area += sorted[i].latitude * sorted[j].longitude;
-            area -= sorted[j].latitude * sorted[i].longitude;
+        const n = closedPoints.length;
+        for (let i = 0; i < n - 1; i++) {
+            const p1 = closedPoints[i];
+            const p2 = closedPoints[i + 1];
+            area += p1.latitude * p2.longitude;
+            area -= p2.latitude * p1.longitude;
         }
         area = Math.abs(area) / 2;
+
         const latAvg = sorted.reduce((sum, p) => sum + p.latitude, 0) / sorted.length;
         const latRad = latAvg * Math.PI / 180;
         const metersPerDegLat = 111132;
         const metersPerDegLng = 111320 * Math.cos(latRad);
+
         return area * metersPerDegLat * metersPerDegLng;
     }
 
@@ -955,26 +1390,27 @@
             return false;
         }
 
-        if (gpsPoints.length < 3) {
+        const validPoints = gpsPoints.filter(p => p.latitude !== null && p.longitude !== null);
+
+        if (validPoints.length < 3) {
             e.preventDefault();
             const msg = document.getElementById('validationMessage');
-            msg.textContent = `Please capture at least 3 GPS points. Currently: ${gpsPoints.length}`;
+            msg.textContent = `Please capture at least 3 GPS points. Currently: ${validPoints.length}`;
             msg.className = 'text-danger';
-            alert(`Please capture at least 3 GPS points. Currently: ${gpsPoints.length}`);
+            alert(`Please capture at least 3 GPS points. Currently: ${validPoints.length}`);
             return false;
         }
 
         if (!loopClosed) {
-            finishCapture();
+            e.preventDefault();
+            alert('Please close the loop by clicking "Finish" before creating the parcel.');
+            return false;
         }
 
-        if (watchId !== null) {
-            stopAutoWalk();
-        }
+        stopAutoWalkInternal();
 
-        // Verify all points have valid coordinates
-        for (let i = 0; i < gpsPoints.length; i++) {
-            const p = gpsPoints[i];
+        for (let i = 0; i < validPoints.length; i++) {
+            const p = validPoints[i];
             if (!p.latitude || !p.longitude || isNaN(p.latitude) || isNaN(p.longitude)) {
                 e.preventDefault();
                 alert('Invalid GPS coordinates detected. Please re-capture point ' + (i + 1));
@@ -984,7 +1420,7 @@
 
         isSubmitting = true;
         document.getElementById('submitBtn').disabled = true;
-        document.getElementById('submitBtn').innerHTML = 'Creating...';
+        document.getElementById('submitBtn').innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating...';
         return true;
     });
 
@@ -996,19 +1432,34 @@
                 return;
             }
 
-            const cards = document.querySelectorAll('#gpsPointsContainer .gps-point-card');
-            for (const card of cards) {
-                const btn = card.querySelector('button');
-                if (btn && !btn.disabled && btn.textContent.trim() !== 'Captured') {
-                    btn.click();
-                    break;
+            if (loopClosed) return;
+
+            for (let i = 0; i < gpsPoints.length; i++) {
+                const p = gpsPoints[i];
+                if (p.latitude === null || p.longitude === null) {
+                    const btn = document.getElementById('captureGpsBtn' + p.sequence);
+                    if (btn && !btn.disabled) {
+                        captureGPS(p.sequence);
+                        break;
+                    }
                 }
             }
         }
     });
 
-    console.log('Parcel creation ready. Use GPS walk-trace or manual tap to capture boundary.');
+    // ── Initialize ──────────────────────────────────────────────────────
     updateCaptureMode();
+    console.log('✅ Parcel creation ready.');
+    console.log('✅ GPS will use maximumAge: 0 to force fresh readings.');
+    console.log('✅ Open browser console (F12) to see GPS debug info.');
+
+    if (navigator.geolocation) {
+        updateGpsStatus(null, null, null, null);
+        document.getElementById('gpsStatusText').textContent = 'GPS Status: Available - Click "Capture GPS" to get position';
+    } else {
+        document.getElementById('gpsStatusText').textContent = 'GPS Status: NOT AVAILABLE - Please enter coordinates manually';
+        document.getElementById('gpsStatusIndicator').className = 'alert alert-danger mb-3';
+    }
 </script>
 </body>
 </html>

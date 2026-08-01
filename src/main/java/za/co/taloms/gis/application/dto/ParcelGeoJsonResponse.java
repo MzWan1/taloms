@@ -9,6 +9,7 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ParcelGeoJsonResponse {
+    @Builder.Default
     private String type = "FeatureCollection";
     private List<ParcelFeature> features;
     private ParcelMetadata metadata;

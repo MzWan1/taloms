@@ -20,5 +20,7 @@ public class BoundaryPointDto {
     private Double accuracy;
 
     private Boolean autoCaptured;
+
+    private Long timestamp;
 }
 

@@ -9,6 +9,7 @@ import java.util.Map;
 @NoArgsConstructor
 @AllArgsConstructor
 public class GeoJsonResponse {
+    @Builder.Default
     private String type = "FeatureCollection";
     private List<GeoJsonFeature> features;
     private Map<String, Object> metadata;

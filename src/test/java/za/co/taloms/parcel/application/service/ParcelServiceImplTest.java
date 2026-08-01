@@ -93,7 +93,6 @@ class ParcelServiceImplTest {
                 .build();
 
         when(parcelRepository.save(any(Parcel.class))).thenReturn(savedParcel);
-        when(parcelRepository.hasSelfIntersection(anyLong())).thenReturn(false);
 
         var request = ParcelRequest.builder()
                 .standNumber("ST-001")
