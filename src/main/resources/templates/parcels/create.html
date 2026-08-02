@@ -668,17 +668,25 @@
                 }
             }
 
-            // CRITICAL FIX: Reject exact duplicate coordinates
-            // This prevents GPS from capturing the exact same coordinates when accuracy is poor
-            const exactDuplicate = gpsPoints.find(p =>
-                p.latitude === lat && p.longitude === lng
-            );
-            if (exactDuplicate) {
+            // CRITICAL FIX: Reject exact/duplicate coordinates
+            // Use rounded coordinates (8 decimal places) for comparison to handle
+            // poor GPS where raw floats differ but display identically
+            const roundedLat = parseFloat(lat.toFixed(8));
+            const roundedLng = parseFloat(lng.toFixed(8));
+
+            const existingDuplicate = gpsPoints.find(p => {
+                const pLat = parseFloat(p.latitude.toFixed(8));
+                const pLng = parseFloat(p.longitude.toFixed(8));
+                return pLat === roundedLat && pLng === roundedLng;
+            });
+
+            if (existingDuplicate) {
                 alert(
-                    `❌ Exact duplicate coordinates detected!\n\n` +
-                    `This point has the same coordinates as Point ${exactDuplicate.sequence}.\n` +
+                    `❌ Duplicate coordinates detected!\n\n` +
+                    `This point has the same coordinates as Point ${existingDuplicate.sequence}.\n` +
                     `GPS accuracy is currently poor (±${Math.round(accuracy)}m).\n\n` +
-                    `Please move to a location with better GPS signal (open sky) and try again.`
+                    `Please move at least 2 meters away from the previous point and try again.\n` +
+                    `If GPS signal is weak, please manually enter the coordinates.`
                 );
                 btn.disabled = false;
                 btn.innerHTML = '<i class="bi bi-satellite"></i> Retry';
@@ -933,6 +941,24 @@
             const distFromLast = lastPoint ? haversineDistanceM(lat, lng, lastPoint.latitude, lastPoint.longitude) : Infinity;
 
             if (distFromLast >= AUTO_CAPTURE_MIN_DISTANCE_M && (now - lastAutoCaptureTime) >= AUTO_CAPTURE_INTERVAL_MS) {
+                // CRITICAL FIX: Reject duplicate coordinates in auto-capture
+                // Use rounded coordinates (8 decimal places) for comparison
+                const roundedLat = parseFloat(lat.toFixed(8));
+                const roundedLng = parseFloat(lng.toFixed(8));
+
+                const existingDuplicate = gpsPoints.find(p => {
+                    const pLat = parseFloat(p.latitude.toFixed(8));
+                    const pLng = parseFloat(p.longitude.toFixed(8));
+                    return pLat === roundedLat && pLng === roundedLng;
+                });
+
+                if (existingDuplicate) {
+                    if (statusEl) {
+                        statusEl.innerHTML = '<span class="text-warning"><i class="bi bi-exclamation-triangle me-1"></i>Duplicate coordinates skipped (accuracy ±' + Math.round(accuracy) + 'm). Keep walking...</span>';
+                    }
+                    return;
+                }
+
                 autoCapturedPoints.push({ latitude: lat, longitude: lng, accuracy: accuracy });
                 lastAutoCaptureTime = now;
 
