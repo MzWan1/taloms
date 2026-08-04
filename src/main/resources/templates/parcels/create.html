@@ -634,6 +634,10 @@
             const lat = position.coords.latitude;
             const lng = position.coords.longitude;
             const accuracy = position.coords.accuracy;
+
+            if (lat === null || lng === null) {
+                throw new Error('GPS coordinates not available. Please try again.');
+            }
             const timestamp = position.timestamp;
 
             // Update GPS status
@@ -671,10 +675,11 @@
             // CRITICAL FIX: Reject exact/duplicate coordinates
             // Use rounded coordinates (8 decimal places) for comparison to handle
             // poor GPS where raw floats differ but display identically
-            const roundedLat = parseFloat(lat.toFixed(8));
-            const roundedLng = parseFloat(lng.toFixed(8));
+            const roundedLat = lat !== null ? parseFloat(lat.toFixed(8)) : null;
+            const roundedLng = lng !== null ? parseFloat(lng.toFixed(8)) : null;
 
             const existingDuplicate = gpsPoints.find(p => {
+                if (p.latitude == null || p.longitude == null) return false;
                 const pLat = parseFloat(p.latitude.toFixed(8));
                 const pLng = parseFloat(p.longitude.toFixed(8));
                 return pLat === roundedLat && pLng === roundedLng;
@@ -943,10 +948,11 @@
             if (distFromLast >= AUTO_CAPTURE_MIN_DISTANCE_M && (now - lastAutoCaptureTime) >= AUTO_CAPTURE_INTERVAL_MS) {
                 // CRITICAL FIX: Reject duplicate coordinates in auto-capture
                 // Use rounded coordinates (8 decimal places) for comparison
-                const roundedLat = parseFloat(lat.toFixed(8));
-                const roundedLng = parseFloat(lng.toFixed(8));
+                const roundedLat = lat !== null ? parseFloat(lat.toFixed(8)) : null;
+                const roundedLng = lng !== null ? parseFloat(lng.toFixed(8)) : null;
 
                 const existingDuplicate = gpsPoints.find(p => {
+                    if (p.latitude == null || p.longitude == null) return false;
                     const pLat = parseFloat(p.latitude.toFixed(8));
                     const pLng = parseFloat(p.longitude.toFixed(8));
                     return pLat === roundedLat && pLng === roundedLng;
