@@ -1,5 +1,6 @@
 package za.co.taloms.parcel.application.dto;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 
@@ -7,6 +8,7 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class BoundaryPointDto {
 
     private Integer sequence;
