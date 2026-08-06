@@ -169,7 +169,6 @@ public class ParcelServiceImpl implements ParcelService {
 
         // Save all boundaries
         boundaryRepository.saveAll(boundaries);
-        saved.setBoundaries(boundaries);
         entityManager.flush();
 
         log.info("Parcel created: {} with {} boundary points ({} unique + 1 closure)",
@@ -345,7 +344,6 @@ public class ParcelServiceImpl implements ParcelService {
         parcel.setCaptureMode(request.getCaptureMode() != null ? request.getCaptureMode() : CaptureMode.MANUAL_TAP);
         parcel.setVillage(village);
         parcel.setNotes(request.getNotes());
-        parcel.setBoundaries(boundaries);
 
         var saved = parcelRepository.save(parcel);
         entityManager.flush();
