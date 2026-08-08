@@ -53,6 +53,12 @@ public class Parcel {
     @Column(name = "perimeter_m")
     private Double perimeterM;
 
+    @Column(name = "chief_name", length = 150)
+    private String chiefName;
+
+    @Column(name = "headman_name", length = 150)
+    private String headmanName;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "village_id", nullable = false)
     private Village village;

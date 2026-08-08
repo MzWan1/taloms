@@ -35,5 +35,11 @@ public class ParcelRequest {
 
     @Builder.Default
     private ParcelType parcelType = ParcelType.RESIDENTIAL;
+
+    @Size(max = 150, message = "Chief name must not exceed 150 characters")
+    private String chiefName;
+
+    @Size(max = 150, message = "Headman name must not exceed 150 characters")
+    private String headmanName;
 }
 

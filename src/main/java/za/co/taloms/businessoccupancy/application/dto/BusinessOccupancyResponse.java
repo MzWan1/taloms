@@ -29,6 +29,8 @@ public class BusinessOccupancyResponse {
     private Long ptoId;
     private String ptoNumber;
     private String ptoHolderName;
+    private Long householdId;
+    private String householdHeadName;
     private String operatingHours;
     private Integer employeesCount;
     private BusinessStatus status;

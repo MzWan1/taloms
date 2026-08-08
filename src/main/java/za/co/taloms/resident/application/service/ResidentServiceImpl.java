@@ -8,6 +8,7 @@ import za.co.taloms.common.BusinessValidationException;
 import za.co.taloms.common.DuplicateRecordException;
 import za.co.taloms.common.ResourceNotFoundException;
 import za.co.taloms.household.domain.repository.HouseholdRepositoryPort;
+import za.co.taloms.businessoccupancy.domain.repository.BusinessOccupancyRepositoryPort;
 import za.co.taloms.resident.application.dto.ResidentRequest;
 import za.co.taloms.resident.application.dto.ResidentResponse;
 import za.co.taloms.resident.domain.entity.Gender;
@@ -27,6 +28,7 @@ public class ResidentServiceImpl implements ResidentService {
 
     private final ResidentRepositoryPort residentRepository;
     private final HouseholdRepositoryPort householdRepository;
+    private final BusinessOccupancyRepositoryPort businessOccupancyRepository;
 
     @Override
     public ResidentResponse createResident(ResidentRequest request, String createdBy) {
@@ -56,6 +58,7 @@ public class ResidentServiceImpl implements ResidentService {
                 .contactPhone(request.getContactPhone())
                 .contactEmail(request.getContactEmail())
                 .household(household)
+                .business(request.getBusinessId() != null ? businessOccupancyRepository.findById(request.getBusinessId()).orElse(null) : null)
                 .active(true)
                 .notes(request.getNotes())
                 .createdBy(createdBy)
@@ -92,6 +95,7 @@ public class ResidentServiceImpl implements ResidentService {
         resident.setContactPhone(request.getContactPhone());
         resident.setContactEmail(request.getContactEmail());
         resident.setHousehold(household);
+        resident.setBusiness(request.getBusinessId() != null ? businessOccupancyRepository.findById(request.getBusinessId()).orElse(null) : null);
         resident.setNotes(request.getNotes());
 
         var saved = residentRepository.save(resident);
@@ -251,6 +255,8 @@ public class ResidentServiceImpl implements ResidentService {
                 .householdId(resident.getHousehold() != null ? resident.getHousehold().getId() : null)
                 .householdHeadName(resident.getHousehold() != null ?
                         resident.getHousehold().getHouseholdHeadName() : null)
+                .businessId(resident.getBusiness() != null ? resident.getBusiness().getId() : null)
+                .businessName(resident.getBusiness() != null ? resident.getBusiness().getBusinessName() : null)
                 .standNumber(resident.getHousehold() != null && resident.getHousehold().getParcel() != null ?
                         resident.getHousehold().getParcel().getStandNumber() : null)
                 .villageName(resident.getHousehold() != null && resident.getHousehold().getParcel() != null &&

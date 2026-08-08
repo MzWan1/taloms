@@ -1,0 +1,371 @@
+package za.co.taloms;
+
+import lombok.extern.slf4j.Slf4j;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.web.client.RestTemplateBuilder;
+import org.springframework.http.*;
+import org.springframework.test.context.ActiveProfiles;
+import za.co.taloms.security.application.dto.LoginRequest;
+
+import java.util.Map;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+@Slf4j
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
+@ActiveProfiles("test")
+class E2ERestTest {
+
+    @Autowired
+    private RestTemplateBuilder restTemplateBuilder;
+
+    private String baseUrl;
+    private org.springframework.web.client.RestTemplate restTemplate;
+
+    private String login() {
+        var loginReq = LoginRequest.builder()
+                .username("admin")
+                .password("Admin@1234")
+                .build();
+
+        var headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        var entity = new HttpEntity<>(loginReq, headers);
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> response = restTemplate.postForObject(
+                "/api/auth/login", entity, Map.class);
+
+        assertThat(response).isNotNull();
+        assertThat(response.get("success")).isEqualTo(true);
+
+        @SuppressWarnings("unchecked")
+        Map<String, Object> data = (Map<String, Object>) response.get("data");
+        String token = (String) data.get("accessToken");
+        log.info("JWT token obtained: {}...", token.substring(0, Math.min(20, token.length())));
+        return token;
+    }
+
+    @Test
+    void testEndToEndRestFlow() {
+        String baseUrl = "http://localhost:" + port;
+        restTemplate = restTemplateBuilder.rootUri(baseUrl).build();
+        log.info("Base URL: {}", baseUrl);
+
+        // Login
+        String token = login();
+
+        var authHeaders = new HttpHeaders();
+        authHeaders.setBearerAuth(token);
+        authHeaders.setContentType(MediaType.APPLICATION_JSON);
+
+        // 1. Create Traditional Authority
+        log.info("--- Step 1: Create Traditional Authority ---");
+        var authorityBody = Map.of(
+                "authorityName", "Bloemfontein Traditional Council",
+                "chiefName", "Chief Mokoena",
+                "headmanName", "Headman Dlamini",
+                "contactPhone", "+27555123456",
+                "contactEmail", "chief@btcouncil.org.za",
+                "physicalAddress", "123 Main Street, Bloemfontein",
+                "region", "Free State"
+        );
+        var authorityResp = restTemplate.postForEntity(
+                "/api/traditional-authorities", new HttpEntity<>(authorityBody, authHeaders), Map.class);
+        assertThat(authorityResp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        Long authorityId = ((Number) ((Map) authorityResp.getBody().get("data")).get("id")).longValue();
+        log.info("Created TA: ID={}", authorityId);
+
+        // 2. Create Village
+        log.info("--- Step 2: Create Village ---");
+        var villageBody = Map.of(
+                "villageName", "Botanical Gardens Village",
+                "region", "Free State",
+                "headmanName", "Headman Dlamini",
+                "description", "Near the botanical gardens",
+                "traditionalAuthorityId", authorityId
+        );
+        var villageResp = restTemplate.postForEntity(
+                "/api/villages", new HttpEntity<>(villageBody, authHeaders), Map.class);
+        assertThat(villageResp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        Long villageId = ((Number) ((Map) villageResp.getBody().get("data")).get("id")).longValue();
+        log.info("Created Village: ID={}", villageId);
+
+        // 3. Create 2 Parcels
+        log.info("--- Step 3: Create 2 Parcels ---");
+        var boundaries1 = List.of(
+                Map.of("sequence", 1, "latitude", -28.0, "longitude", 26.0),
+                Map.of("sequence", 2, "latitude", -28.0, "longitude", 26.1),
+                Map.of("sequence", 3, "latitude", -27.9, "longitude", 26.1),
+                Map.of("sequence", 4, "latitude", -27.9, "longitude", 26.0)
+        );
+        var parcel1Body = Map.of(
+                "standNumber", "STAND-001",
+                "villageId", villageId,
+                "boundaries", boundaries1,
+                "notes", "Household parcel"
+        );
+        var parcel1Resp = restTemplate.postForEntity(
+                "/api/parcels", new HttpEntity<>(parcel1Body, authHeaders), Map.class);
+        assertThat(parcel1Resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        Long parcel1Id = ((Number) ((Map) parcel1Resp.getBody().get("data")).get("id")).longValue();
+        log.info("Created Parcel 1: ID={}", parcel1Id);
+
+        var boundaries2 = List.of(
+                Map.of("sequence", 1, "latitude", -28.1, "longitude", 26.2),
+                Map.of("sequence", 2, "latitude", -28.1, "longitude", 26.3),
+                Map.of("sequence", 3, "latitude", -28.0, "longitude", 26.3),
+                Map.of("sequence", 4, "latitude", -28.0, "longitude", 26.2)
+        );
+        var parcel2Body = Map.of(
+                "standNumber", "STAND-002",
+                "villageId", villageId,
+                "boundaries", boundaries2,
+                "notes", "Business parcel"
+        );
+        var parcel2Resp = restTemplate.postForEntity(
+                "/api/parcels", new HttpEntity<>(parcel2Body, authHeaders), Map.class);
+        assertThat(parcel2Resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        Long parcel2Id = ((Number) ((Map) parcel2Resp.getBody().get("data")).get("id")).longValue();
+        log.info("Created Parcel 2: ID={}", parcel2Id);
+
+        // 4. Create PTO for Household Parcel (RESIDENTIAL)
+        log.info("--- Step 4: Create PTO for Household Parcel ---");
+        var pto1Body = Map.of(
+                "ptoHolderName", "Thabo Mokoena",
+                "idNumber", "8001015009017",
+                "contactPhone", "+27712345678",
+                "contactEmail", "thabo.mokoena@example.com",
+                "purpose", "RESIDENTIAL",
+                "issueDate", "2024-01-15",
+                "villageId", villageId,
+                "traditionalAuthorityId", authorityId,
+                "parcelId", parcel1Id,
+                "standNumber", "STAND-001",
+                "parcelNumber", ((Map) parcel1Resp.getBody().get("data")).get("parcelNumber"),
+                "standArea", 1500.0,
+                "surveyReference", "SURV-2024-001"
+        );
+        var pto1Resp = restTemplate.postForEntity(
+                "/api/ptos", new HttpEntity<>(pto1Body, authHeaders), Map.class);
+        assertThat(pto1Resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        Long pto1Id = ((Number) ((Map) pto1Resp.getBody().get("data")).get("id")).longValue();
+        String pto1Number = (String) ((Map) pto1Resp.getBody().get("data")).get("ptoNumber");
+        log.info("Created PTO 1 (PENDING): ID={}, Number={}", pto1Id, pto1Number);
+
+        // 5. Upload documents for PTO 1 and approve
+        log.info("--- Step 5: Upload docs and approve PTO 1 ---");
+        uploadDocument(authHeaders, pto1Id, "ID_COPY");
+        uploadDocument(authHeaders, pto1Id, "TA_ALLOCATION_LETTER");
+        uploadDocument(authHeaders, pto1Id, "SITE_SKETCH");
+
+        var approve1Body = Map.of(
+                "notes", "Approved for residential use",
+                "ipAddress", "127.0.0.1",
+                "userAgent", "E2ERestTest"
+        );
+        var approve1Resp = restTemplate.exchange(
+                "/api/ptos/" + pto1Id + "/approve",
+                HttpMethod.PATCH,
+                new HttpEntity<>(approve1Body, authHeaders),
+                Map.class);
+        assertThat(approve1Resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        log.info("Approved PTO 1: Status={}",
+                ((Map) approve1Resp.getBody().get("data")).get("status"));
+
+        // 6. Create PTO for Business Parcel (BUSINESS)
+        log.info("--- Step 6: Create PTO for Business Parcel ---");
+        var pto2Body = Map.of(
+                "ptoHolderName", "Sipho Dlamini",
+                "idNumber", "7505153012018",
+                "contactPhone", "+27823456789",
+                "contactEmail", "sipho.dlamini@example.com",
+                "purpose", "BUSINESS",
+                "issueDate", "2024-01-15",
+                "villageId", villageId,
+                "traditionalAuthorityId", authorityId,
+                "parcelId", parcel2Id,
+                "standNumber", "STAND-002",
+                "parcelNumber", ((Map) parcel2Resp.getBody().get("data")).get("parcelNumber"),
+                "standArea", 2000.0,
+                "surveyReference", "SURV-2024-002"
+        );
+        var pto2Resp = restTemplate.postForEntity(
+                "/api/ptos", new HttpEntity<>(pto2Body, authHeaders), Map.class);
+        assertThat(pto2Resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        Long pto2Id = ((Number) ((Map) pto2Resp.getBody().get("data")).get("id")).longValue();
+        String pto2Number = (String) ((Map) pto2Resp.getBody().get("data")).get("ptoNumber");
+        log.info("Created PTO 2 (PENDING): ID={}, Number={}", pto2Id, pto2Number);
+
+        // 7. Upload documents for PTO 2 and approve
+        log.info("--- Step 7: Upload docs and approve PTO 2 ---");
+        uploadDocument(authHeaders, pto2Id, "ID_COPY");
+        uploadDocument(authHeaders, pto2Id, "TA_ALLOCATION_LETTER");
+        uploadDocument(authHeaders, pto2Id, "SITE_SKETCH");
+        uploadDocument(authHeaders, pto2Id, "COMMUNITY_RESOLUTION");
+
+        var approve2Body = Map.of(
+                "notes", "Approved for business use",
+                "ipAddress", "127.0.0.1",
+                "userAgent", "E2ERestTest"
+        );
+        var approve2Resp = restTemplate.exchange(
+                "/api/ptos/" + pto2Id + "/approve",
+                HttpMethod.PATCH,
+                new HttpEntity<>(approve2Body, authHeaders),
+                Map.class);
+        assertThat(approve2Resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        log.info("Approved PTO 2: Status={}",
+                ((Map) approve2Resp.getBody().get("data")).get("status"));
+
+        // 8. Create Household (linked to PTO 1)
+        log.info("--- Step 8: Create Household ---");
+        var householdBody = Map.of(
+                "householdHeadName", "Thabo Mokoena",
+                "householdHeadIdNumber", "8001015009017",
+                "contactPhone", "+27712345678",
+                "contactEmail", "thabo.mokoena@example.com",
+                "parcelId", parcel1Id,
+                "ptoId", pto1Id,
+                "registrationDate", "2024-01-20",
+                "notes", "Mokoena family household"
+        );
+        var householdResp = restTemplate.postForEntity(
+                "/api/households", new HttpEntity<>(householdBody, authHeaders), Map.class);
+        assertThat(householdResp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        Long householdId = ((Number) ((Map) householdResp.getBody().get("data")).get("id")).longValue();
+        log.info("Created Household: ID={}, Head=Thabo Mokoena, Parcel={}, PTO={}",
+                householdId, parcel1Id, pto1Id);
+
+        // 9. Create 2 Residents (household members)
+        log.info("--- Step 9: Create 2 Residents ---");
+        var resident1Body = Map.of(
+                "fullName", "Thabo Mokoena",
+                "idNumber", "8001015009017",
+                "dateOfBirth", "1980-01-01",
+                "gender", "MALE",
+                "relationshipType", "HOUSEHOLD_HEAD",
+                "occupation", "Engineer",
+                "contactPhone", "+27712345678",
+                "contactEmail", "thabo.mokoena@example.com",
+                "householdId", householdId,
+                "notes", "Household head"
+        );
+        var resident1Resp = restTemplate.postForEntity(
+                "/api/residents", new HttpEntity<>(resident1Body, authHeaders), Map.class);
+        assertThat(resident1Resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        Long resident1Id = ((Number) ((Map) resident1Resp.getBody().get("data")).get("id")).longValue();
+        log.info("Created Resident 1: ID={}, Name=Thabo Mokoena, Household={}", resident1Id, householdId);
+
+        var resident2Body = Map.of(
+                "fullName", "Sarah Mokoena",
+                "idNumber", "8503221056012",
+                "dateOfBirth", "1985-03-22",
+                "gender", "FEMALE",
+                "relationshipType", "SPOUSE",
+                "occupation", "Teacher",
+                "contactPhone", "+27723456789",
+                "contactEmail", "sarah.mokoena@example.com",
+                "householdId", householdId,
+                "notes", "Spouse"
+        );
+        var resident2Resp = restTemplate.postForEntity(
+                "/api/residents", new HttpEntity<>(resident2Body, authHeaders), Map.class);
+        assertThat(resident2Resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        Long resident2Id = ((Number) ((Map) resident2Resp.getBody().get("data")).get("id")).longValue();
+        log.info("Created Resident 2: ID={}, Name=Sarah Mokoena, Household={}", resident2Id, householdId);
+
+        // 10. Create Business (linked to PTO 2)
+        log.info("--- Step 10: Create Business ---");
+        var businessBody = Map.of(
+                "businessName", "Mokoena Electronics Shop",
+                "registrationNumber", "REG-2024-001",
+                "businessType", "RETAIL",
+                "ownerName", "Sipho Dlamini",
+                "ownerIdNumber", "7505153012018",
+                "contactPhone", "+27823456789",
+                "contactEmail", "sipho.dlamini@example.com",
+                "parcelId", parcel2Id,
+                "ptoId", pto2Id,
+                "operatingHours", "Mon-Fri 8:00-18:00",
+                "employeesCount", 3,
+                "notes", "Electronics retail store"
+        );
+        var businessResp = restTemplate.postForEntity(
+                "/api/business-occupancies", new HttpEntity<>(businessBody, authHeaders), Map.class);
+        assertThat(businessResp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        Long businessId = ((Number) ((Map) businessResp.getBody().get("data")).get("id")).longValue();
+        log.info("Created Business: ID={}, Name=Mokoena Electronics, Parcel={}, PTO={}",
+                businessId, parcel2Id, pto2Id);
+
+        // 11. Create Household without PTO
+        log.info("--- Step 11: Create Household without PTO ---");
+        var boundaries3 = List.of(
+                Map.of("sequence", 1, "latitude", -28.2, "longitude", 26.4),
+                Map.of("sequence", 2, "latitude", -28.2, "longitude", 26.5),
+                Map.of("sequence", 3, "latitude", -28.1, "longitude", 26.5),
+                Map.of("sequence", 4, "latitude", -28.1, "longitude", 26.4)
+        );
+        var parcel3Body = Map.of(
+                "standNumber", "STAND-003",
+                "villageId", villageId,
+                "boundaries", boundaries3,
+                "notes", "Household parcel without PTO"
+        );
+        var parcel3Resp = restTemplate.postForEntity(
+                "/api/parcels", new HttpEntity<>(parcel3Body, authHeaders), Map.class);
+        assertThat(parcel3Resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        Long parcel3Id = ((Number) ((Map) parcel3Resp.getBody().get("data")).get("id")).longValue();
+
+        var household2Body = Map.of(
+                "householdHeadName", "Lebo Nkosi",
+                "householdHeadIdNumber", "7802023014015",
+                "contactPhone", "+27634567890",
+                "contactEmail", "lebo.nkosi@example.com",
+                "parcelId", parcel3Id,
+                "registrationDate", "2024-01-20",
+                "notes", "Household without PTO"
+        );
+        var household2Resp = restTemplate.postForEntity(
+                "/api/households", new HttpEntity<>(household2Body, authHeaders), Map.class);
+        assertThat(household2Resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        Long household2Id = ((Number) ((Map) household2Resp.getBody().get("data")).get("id")).longValue();
+        log.info("Created Household (no PTO): ID={}, Head=Lebo Nkosi, Parcel={}, PTO=null",
+                household2Id, parcel3Id);
+
+        log.info("═══════════════════════════════════════════════════════════════");
+        log.info("SUMMARY");
+        log.info("═══════════════════════════════════════════════════════════════");
+        log.info("Traditional Authority: ID={}", authorityId);
+        log.info("Village: ID={}", villageId);
+        log.info("Parcel 1: ID={} (household)", parcel1Id);
+        log.info("Parcel 2: ID={} (business)", parcel2Id);
+        log.info("Parcel 3: ID={} (household no PTO)", parcel3Id);
+        log.info("PTO 1: ID={}, Number={}, Status=ACTIVE (RESIDENTIAL)", pto1Id, pto1Number);
+        log.info("PTO 2: ID={}, Number={}, Status=ACTIVE (BUSINESS)", pto2Id, pto2Number);
+        log.info("Household 1: ID={}, Head=Thabo Mokoena, Parcel={}, PTO={}", householdId, parcel1Id, pto1Id);
+        log.info("Household 2: ID={}, Head=Lebo Nkosi, Parcel={}, PTO=null", household2Id, parcel3Id);
+        log.info("Resident 1: ID={}, Name=Thabo Mokoena, Household={}", resident1Id, householdId);
+        log.info("Resident 2: ID={}, Name=Sarah Mokoena, Household={}", resident2Id, householdId);
+        log.info("Business: ID={}, Name=Mokoena Electronics, Parcel={}, PTO={}", businessId, parcel2Id, pto2Id);
+        log.info("═══════════════════════════════════════════════════════════════");
+        log.info("END-TO-END REST FLOW TEST PASSED!");
+        log.info("═══════════════════════════════════════════════════════════════");
+    }
+
+    private void uploadDocument(HttpHeaders authHeaders, Long ptoId, String docType) {
+        var docBody = Map.of(
+                "documentType", docType,
+                "entityType", "PTO",
+                "entityId", ptoId,
+                "description", "Mock " + docType + " document",
+                "notes", "Uploaded by E2E test"
+        );
+        var resp = restTemplate.postForEntity(
+                "/api/documents/upload", new HttpEntity<>(docBody, authHeaders), Map.class);
+        assertThat(resp.getStatusCode()).isEqualTo(HttpStatus.OK);
+        log.info("Uploaded document {} for PTO {}", docType, ptoId);
+    }
+}

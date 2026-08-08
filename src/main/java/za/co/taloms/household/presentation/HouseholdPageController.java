@@ -15,6 +15,7 @@ import za.co.taloms.parcel.application.service.ParcelService;
 import za.co.taloms.parcel.domain.entity.ParcelStatus;
 import za.co.taloms.pto.application.service.PTOService;
 import za.co.taloms.pto.domain.entity.PTOStatus;
+import za.co.taloms.resident.application.service.ResidentService;
 import za.co.taloms.traditionalauthority.application.service.TraditionalAuthorityService;
 import za.co.taloms.traditionalauthority.application.service.VillageService;
 
@@ -35,6 +36,7 @@ public class HouseholdPageController {
     private final PTOService ptoService;
     private final TraditionalAuthorityService authorityService;
     private final VillageService villageService;
+    private final ResidentService residentService;
 
     private String escapeHtml(String input) {
         if (input == null) return "";
@@ -87,6 +89,71 @@ public class HouseholdPageController {
         sb.append("<style>.household-avatar{width:36px;height:36px;background:#D6E4F0;color:#1B3A6B;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;flex-shrink:0;}</style>");
         sb.append("<script src='https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js'></script>");
         sb.append("</body></html>");
+        return sb.toString();
+    }
+
+    private String buildPtoDynamicScript() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("<script>");
+        sb.append("var ptoFieldContainer = document.getElementById('ptoFieldContainer');");
+        sb.append("var noPtoGuidance = document.getElementById('noPtoGuidance');");
+        sb.append("var ptoSelect = document.getElementById('ptoId');");
+        sb.append("var formEl = document.querySelector('form#householdForm');");
+        sb.append("function refreshPtoSelect() {");
+        sb.append("  if (!ptoSelect) {");
+        sb.append("    ptoSelect = document.createElement('select');");
+        sb.append("    ptoSelect.id = 'ptoId'; ptoSelect.name = 'ptoId'; ptoSelect.className = 'form-select';");
+        sb.append("    ptoSelect.innerHTML = '<option value=\"\">— Select Parcel First —</option>';");
+        sb.append("    if (!ptoFieldContainer) {");
+        sb.append("      var container = document.createElement('div');");
+        sb.append("      container.id = 'ptoFieldContainer'; container.className = 'col-12';");
+        sb.append("      container.innerHTML = '<label for=\"ptoId\" class=\"form-label\">PTO</label><div class=\"input-group\"><span class=\"input-group-text\"><i class=\"bi bi-file-earmark-text\"></i></span></div>';");
+        sb.append("      container.querySelector('div').appendChild(ptoSelect);");
+        sb.append("      var ft = document.createElement('div'); ft.className = 'form-text';");
+        sb.append("      ft.textContent = 'Link this household to an existing ACTIVE PTO on the selected parcel';");
+        sb.append("      container.appendChild(ft);");
+        sb.append("      ptoFieldContainer = container;");
+        sb.append("      if (formEl) formEl.appendChild(container);");
+        sb.append("    } else {");
+        sb.append("      var ig = ptoFieldContainer.querySelector('.input-group');");
+        sb.append("      if (ig) ig.appendChild(ptoSelect);");
+        sb.append("    }");
+        sb.append("  }");
+        sb.append("}");
+        sb.append("document.getElementById('parcelId').addEventListener('change', function() {");
+        sb.append("  refreshPtoSelect();");
+        sb.append("  ptoSelect.innerHTML = '<option value=\"\">— Select Parcel First —</option>';");
+        sb.append("  if (ptoFieldContainer) ptoFieldContainer.style.display = 'none';");
+        sb.append("  if (noPtoGuidance) noPtoGuidance.style.display = 'none';");
+        sb.append("  if (!this.value) return;");
+        sb.append("  fetch('/api/ptos/parcel/' + this.value)");
+        sb.append("  .then(function(r) { return r.json(); })");
+        sb.append("  .then(function(data) {");
+        sb.append("    var ptos = (data && data.data) ? data.data : [];");
+        sb.append("    var activePtos = ptos.filter(function(p) { return p.status === 'ACTIVE'; });");
+        sb.append("    if (activePtos.length > 0 && ptoFieldContainer) {");
+        sb.append("      ptoSelect.innerHTML = '<option value=\"\">— Select PTO —</option>';");
+        sb.append("      activePtos.forEach(function(pto) {");
+        sb.append("        var opt = document.createElement('option');");
+        sb.append("        opt.value = pto.id;");
+        sb.append("        opt.textContent = pto.ptoNumber + ' - ' + (pto.ptoHolderName || '');");
+        sb.append("        ptoSelect.appendChild(opt);");
+        sb.append("      });");
+        sb.append("      ptoFieldContainer.style.display = 'block';");
+        sb.append("    } else {");
+        sb.append("      if (noPtoGuidance) {");
+        sb.append("        noPtoGuidance.style.display = 'block';");
+        sb.append("      } else if (ptoFieldContainer) {");
+        sb.append("        ptoFieldContainer.style.display = 'none';");
+        sb.append("      }");
+        sb.append("    }");
+        sb.append("  })");
+        sb.append(".catch(function() {");
+        sb.append("  if (noPtoGuidance) noPtoGuidance.style.display = 'block';");
+        sb.append("  if (ptoFieldContainer) ptoFieldContainer.style.display = 'none';");
+        sb.append("});");
+        sb.append("});");
+        sb.append("</script>");
         return sb.toString();
     }
 
@@ -274,9 +341,9 @@ public class HouseholdPageController {
                 var allParcels = parcelService.findAll();
                 if (allParcels != null && !allParcels.isEmpty()) {
                     availableParcels = allParcels.stream()
-                            .filter(p -> p.getStatus() == ParcelStatus.AVAILABLE)
+                            .filter(p -> p.getStatus() == ParcelStatus.AVAILABLE || p.getStatus() == ParcelStatus.ALLOCATED)
                             .collect(Collectors.toList());
-                    log.info("Found {} available parcels for household creation", availableParcels.size());
+                    log.info("Found {} parcels for household creation (AVAILABLE + ALLOCATED)", availableParcels.size());
                 }
             } catch (Throwable e) {
                 log.error("Error loading available parcels: {}", e.getMessage(), e);
@@ -399,29 +466,38 @@ public class HouseholdPageController {
             if (availableParcels.isEmpty()) {
                 sb.append("<div class='text-warning small mt-1'><i class='bi bi-exclamation-triangle me-1'></i>No available parcels found. Please create a parcel first.</div>");
             } else {
-                sb.append("<div class='form-text'>Select a parcel for this household (only available parcels are shown)</div>");
+                sb.append("<div class='form-text'>Select a parcel for this household (available and allocated parcels are shown)</div>");
             }
             sb.append("</div>");
 
-            if (activePtos != null && !activePtos.isEmpty()) {
-                sb.append("<div class='col-12'>");
+            // Build a map of parcelId -> list of active PTOs on that parcel for initial rendering
+            // (Used by dynamic JS to populate the PTO dropdown when a parcel is selected)
+
+            if (!activePtos.isEmpty()) {
+                // PTO field container — populated dynamically by JS based on selected parcel
+                sb.append("<div class='col-12' id='ptoFieldContainer'>");
                 sb.append("<label for='ptoId' class='form-label'>PTO</label>");
                 sb.append("<div class='input-group'>");
                 sb.append("<span class='input-group-text'><i class='bi bi-file-earmark-text'></i></span>");
                 sb.append("<select id='ptoId' name='ptoId' class='form-select'>");
-                sb.append("<option value=''>— Select PTO —</option>");
-                for (var pto : activePtos) {
-                    String text = pto.getPtoNumber() + " - " + (pto.getPtoHolderName() != null ? pto.getPtoHolderName() : "");
-                    sb.append("<option value='").append(pto.getId()).append("'");
-                    if (form.getPtoId() != null && form.getPtoId().equals(pto.getId())) {
-                        sb.append(" selected");
-                    }
-                    sb.append(">").append(escapeHtml(text)).append("</option>");
-                }
+                sb.append("<option value=''>— Select Parcel First —</option>");
                 sb.append("</select></div>");
-                sb.append("<div class='form-text'>Link this household to an existing PTO</div>");
+                sb.append("<div class='form-text'>Link this household to an existing ACTIVE PTO on the selected parcel</div>");
                 sb.append("</div>");
+            } else {
+                // No active PTOs — render empty container (JS will populate or create it as needed)
+                sb.append("<div class='col-12' id='ptoFieldContainer' style='display:none;'></div>");
             }
+
+            // No-PTO guidance (shown when no PTOs exist for the selected parcel)
+            sb.append("<div class='col-12' id='noPtoGuidance' style='display:none;'>");
+            sb.append("<div class='alert alert-info border-0 mb-0'>");
+            sb.append("<i class='bi bi-info-circle me-2'></i>");
+            sb.append("<strong>No active PTO for this parcel.</strong> ");
+            sb.append("<a href='/ptos/create' class='alert-link text-navy fw-semibold'>Create a PTO first</a> ");
+            sb.append("and have it approved before linking it to a household. ");
+            sb.append("You can still create this household and link a PTO later.");
+            sb.append("</div></div>");
 
             sb.append("<div class='col-12 col-md-6'>");
             sb.append("<label for='registrationDate' class='form-label'>Registration Date</label>");
@@ -445,6 +521,7 @@ public class HouseholdPageController {
 
             sb.append("</form></div></div></div>");
 
+            sb.append(buildPtoDynamicScript());
             sb.append(buildFooterHtml());
 
             return sb.toString();
@@ -484,7 +561,6 @@ public class HouseholdPageController {
     }
 
     @GetMapping("/{id}")
-    @ResponseBody
     public String detail(@PathVariable Long id, Model model) {
         try {
             var household = householdService.findById(id);
@@ -492,146 +568,14 @@ public class HouseholdPageController {
             model.addAttribute("pageTitle", "Household - " + (household.getHouseholdHeadName() != null ? household.getHouseholdHeadName() : "Unknown"));
             model.addAttribute("currentPage", "households");
 
-            StringBuilder sb = new StringBuilder();
-            sb.append("<!DOCTYPE html><html lang='en'><head>");
-            sb.append("<meta charset='UTF-8'>");
-            sb.append("<meta name='viewport' content='width=device-width, initial-scale=1.0'>");
-            sb.append("<title>").append(escapeHtml(household.getHouseholdHeadName() != null ? household.getHouseholdHeadName() : "Household")).append(" | TALOMS</title>");
-            sb.append("<link href='https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css' rel='stylesheet'>");
-            sb.append("<link href='https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css' rel='stylesheet'>");
-            sb.append("<link href='/css/taloms.css' rel='stylesheet'>");
-            sb.append("</head><body class='bg-light'>");
+            var residents = residentService.findByHouseholdId(id);
+            model.addAttribute("residents", residents);
 
-            sb.append(buildNavbarHtml("households"));
-
-            sb.append("<div class='container-fluid px-4 py-4'>");
-
-            sb.append("<div class='d-flex align-items-start justify-content-between mb-4 flex-wrap gap-3'>");
-            sb.append("<div>");
-            sb.append("<nav aria-label='breadcrumb'><ol class='breadcrumb mb-1 small'>");
-            sb.append("<li class='breadcrumb-item'><a href='/dashboard' class='text-muted text-decoration-none'>Dashboard</a></li>");
-            sb.append("<li class='breadcrumb-item'><a href='/households' class='text-muted text-decoration-none'>Households</a></li>");
-            sb.append("<li class='breadcrumb-item active'>").append(escapeHtml(household.getHouseholdHeadName() != null ? household.getHouseholdHeadName() : "Household")).append("</li>");
-            sb.append("</ol></nav>");
-            sb.append("<h4 class='fw-bold text-navy mb-0'>").append(escapeHtml(household.getHouseholdHeadName() != null ? household.getHouseholdHeadName() : "Household Head")).append("</h4>");
-            sb.append("<p class='text-muted small mb-0'>Parcel <strong>").append(escapeHtml(household.getStandNumber() != null ? household.getStandNumber() : "")).append("</strong> · <span>").append(escapeHtml(household.getVillageName() != null ? household.getVillageName() : "")).append("</span></p>");
-            sb.append("</div>");
-            sb.append("<div class='d-flex gap-2'>");
-            sb.append("<a href='/households' class='btn btn-outline-secondary px-3'><i class='bi bi-arrow-left me-1'></i>Back</a>");
-            sb.append("<a href='/households/").append(household.getId()).append("/edit' class='btn btn-outline-primary px-3'><i class='bi bi-pencil me-1'></i>Edit</a>");
-            sb.append("</div></div>");
-
-            sb.append("<div class='card border-0 shadow-sm mb-4'>");
-            sb.append("<div class='card-body p-4'>");
-            sb.append("<div class='d-flex align-items-center justify-content-between flex-wrap gap-3'>");
-            sb.append("<div class='d-flex align-items-center gap-4'>");
-            sb.append("<div class='household-hero-avatar' style='width:64px;height:64px;background:#D6E4F0;border-radius:16px;display:flex;align-items:center;justify-content:center;flex-shrink:0;'>");
-            sb.append("<i class='bi bi-people fs-2 text-navy'></i>");
-            sb.append("</div>");
-            sb.append("<div>");
-            sb.append("<div class='d-flex align-items-center gap-3 flex-wrap mb-1'>");
-            sb.append("<h5 class='fw-bold text-navy mb-0'>").append(escapeHtml(household.getHouseholdHeadName() != null ? household.getHouseholdHeadName() : "Name")).append("</h5>");
-            if (Boolean.TRUE.equals(household.getActive())) {
-                sb.append("<span class='badge bg-success fs-6 px-3'>Active</span>");
-            } else {
-                sb.append("<span class='badge bg-secondary fs-6 px-3'>Inactive</span>");
-            }
-            sb.append("</div>");
-            sb.append("<div class='text-muted small'>Registered on ");
-            if (household.getRegistrationDate() != null) {
-                sb.append(household.getRegistrationDate().toString());
-            } else {
-                sb.append("—");
-            }
-            sb.append(" <span>by <strong>").append(escapeHtml(household.getCreatedBy() != null ? household.getCreatedBy() : "admin")).append("</strong></span></div>");
-            sb.append("</div></div>");
-            sb.append("</div></div></div></div>");
-
-            sb.append("<div class='row g-4'>");
-            sb.append("<div class='col-12 col-lg-7'>");
-
-            sb.append("<div class='card border-0 shadow-sm mb-4'>");
-            sb.append("<div class='card-header bg-white border-bottom py-3'>");
-            sb.append("<h6 class='fw-bold text-navy mb-0'><i class='bi bi-person me-2'></i>Household Head Details</h6>");
-            sb.append("</div>");
-            sb.append("<div class='card-body p-0'>");
-            sb.append("<ul class='list-group list-group-flush'>");
-
-            sb.append("<li class='list-group-item px-4 py-3'><div class='row'><div class='col-5 col-md-4 text-muted small fw-semibold'>Full Name</div><div class='col-7 col-md-8 fw-semibold'>").append(escapeHtml(household.getHouseholdHeadName() != null ? household.getHouseholdHeadName() : "Name")).append("</div></div></li>");
-            sb.append("<li class='list-group-item px-4 py-3'><div class='row'><div class='col-5 col-md-4 text-muted small fw-semibold'>ID Number</div><div class='col-7 col-md-8'><code>").append(escapeHtml(household.getHouseholdHeadIdNumber() != null ? household.getHouseholdHeadIdNumber() : "ID")).append("</code></div></div></li>");
-            if (household.getContactPhone() != null) {
-                sb.append("<li class='list-group-item px-4 py-3'><div class='row'><div class='col-5 col-md-4 text-muted small fw-semibold'>Phone</div><div class='col-7 col-md-8'>").append(escapeHtml(household.getContactPhone())).append("</div></div></li>");
-            }
-            if (household.getContactEmail() != null) {
-                sb.append("<li class='list-group-item px-4 py-3'><div class='row'><div class='col-5 col-md-4 text-muted small fw-semibold'>Email</div><div class='col-7 col-md-8'><a href='mailto:").append(escapeHtml(household.getContactEmail())).append("' class='text-navy text-decoration-none'>").append(escapeHtml(household.getContactEmail())).append("</a></div></div></li>");
-            }
-            sb.append("<li class='list-group-item px-4 py-3'><div class='row'><div class='col-5 col-md-4 text-muted small fw-semibold'>Status</div><div class='col-7 col-md-8'>");
-            if (Boolean.TRUE.equals(household.getActive())) {
-                sb.append("<span class='badge bg-success'>Active</span>");
-            } else {
-                sb.append("<span class='badge bg-secondary'>Inactive</span>");
-            }
-            sb.append("</div></div></li>");
-            sb.append("<li class='list-group-item px-4 py-3'><div class='row'><div class='col-5 col-md-4 text-muted small fw-semibold'>Registration Date</div><div class='col-7 col-md-8'>");
-            if (household.getRegistrationDate() != null) {
-                sb.append(household.getRegistrationDate().toString());
-            } else {
-                sb.append("—");
-            }
-            sb.append("</div></div></li>");
-            if (household.getNotes() != null) {
-                sb.append("<li class='list-group-item px-4 py-3'><div class='row'><div class='col-5 col-md-4 text-muted small fw-semibold'>Notes</div><div class='col-7 col-md-8 small'>").append(escapeHtml(household.getNotes())).append("</div></div></li>");
-            }
-            sb.append("</ul></div></div>");
-
-            sb.append("<div class='card border-0 shadow-sm'>");
-            sb.append("<div class='card-header bg-white border-bottom py-3'>");
-            sb.append("<h6 class='fw-bold text-navy mb-0'><i class='bi bi-geo-alt me-2'></i>Location</h6>");
-            sb.append("</div>");
-            sb.append("<div class='card-body p-0'>");
-            sb.append("<ul class='list-group list-group-flush'>");
-
-            sb.append("<li class='list-group-item px-4 py-3'><div class='row'><div class='col-5 col-md-4 text-muted small fw-semibold'>Parcel</div><div class='col-7 col-md-8'><a href='/parcels/").append(household.getParcelId()).append("' class='text-navy text-decoration-none'>").append(escapeHtml((household.getStandNumber() != null ? household.getStandNumber() : "") + " (" + (household.getParcelNumber() != null ? household.getParcelNumber() : "") + ")")).append("</a></div></div></li>");
-            sb.append("<li class='list-group-item px-4 py-3'><div class='row'><div class='col-5 col-md-4 text-muted small fw-semibold'>Village</div><div class='col-7 col-md-8'>").append(escapeHtml(household.getVillageName() != null ? household.getVillageName() : "")).append("</div></div></li>");
-            sb.append("<li class='list-group-item px-4 py-3'><div class='row'><div class='col-5 col-md-4 text-muted small fw-semibold'>Traditional Authority</div><div class='col-7 col-md-8'>").append(escapeHtml(household.getAuthorityName() != null ? household.getAuthorityName() : "")).append("</div></div></li>");
-            if (household.getPtoNumber() != null) {
-                sb.append("<li class='list-group-item px-4 py-3'><div class='row'><div class='col-5 col-md-4 text-muted small fw-semibold'>PTO</div><div class='col-7 col-md-8'><a href='/ptos/").append(household.getPtoId()).append("' class='text-navy text-decoration-none'>").append(escapeHtml(household.getPtoNumber())).append("</a>");
-                if (household.getPtoHolderName() != null) {
-                    sb.append(" <span class='text-muted small'>— ").append(escapeHtml(household.getPtoHolderName())).append("</span>");
-                }
-                sb.append("</div></div></li>");
-            }
-            sb.append("</ul></div></div>");
-            sb.append("</div>");
-
-            sb.append("<div class='col-12 col-lg-5'>");
-            sb.append("<div class='card border-0 shadow-sm'>");
-            sb.append("<div class='card-header bg-white border-bottom py-3'>");
-            sb.append("<h6 class='fw-bold text-navy mb-0'><i class='bi bi-lightning me-2'></i>Actions</h6>");
-            sb.append("</div>");
-            sb.append("<div class='card-body d-grid gap-2 p-3'>");
-            if (Boolean.TRUE.equals(household.getActive())) {
-                sb.append("<form action='/households/").append(household.getId()).append("/deactivate' method='post'>");
-                sb.append("<button type='submit' class='btn btn-outline-danger w-100 text-start'><i class='bi bi-x-circle me-2'></i>Deactivate Household</button>");
-                sb.append("</form>");
-            } else {
-                sb.append("<form action='/households/").append(household.getId()).append("/activate' method='post'>");
-                sb.append("<button type='submit' class='btn btn-outline-success w-100 text-start'><i class='bi bi-check-circle me-2'></i>Activate Household</button>");
-                sb.append("</form>");
-            }
-            sb.append("<a href='/households/").append(household.getId()).append("/edit' class='btn btn-outline-primary text-start'><i class='bi bi-pencil me-2'></i>Edit Household</a>");
-            sb.append("<a href='/households' class='btn btn-outline-secondary text-start btn-sm'><i class='bi bi-list-ul me-2'></i>Back to Household List</a>");
-            sb.append("</div></div>");
-            sb.append("</div>");
-            sb.append("</div>");
-            sb.append("</div>");
-
-            sb.append(buildFooterHtml());
-
-            return sb.toString();
+            return "households/detail";
         } catch (Throwable e) {
             log.error("Error loading household detail: {}", e.getMessage(), e);
-            return "<html><body><h1>Error loading household</h1><p>" + e.getClass().getSimpleName() + " - " + e.getMessage() + "</p><a href='/households'>Back</a></body></html>";
+            model.addAttribute("errorMessage", "Error loading household: " + e.getMessage());
+            return "error";
         }
     }
 
@@ -662,10 +606,10 @@ public class HouseholdPageController {
                 var allParcels = parcelService.findAll();
                 if (allParcels != null && !allParcels.isEmpty()) {
                     availableParcels = allParcels.stream()
-                            .filter(p -> p.getStatus() == ParcelStatus.AVAILABLE ||
+                            .filter(p -> (p.getStatus() == ParcelStatus.AVAILABLE || p.getStatus() == ParcelStatus.ALLOCATED) ||
                                     p.getId().equals(household.getParcelId()))
                             .collect(Collectors.toList());
-                    log.info("Found {} available parcels for household edit", availableParcels.size());
+                    log.info("Found {} parcels for household edit (AVAILABLE + ALLOCATED)", availableParcels.size());
                 }
             } catch (Throwable e) {
                 log.error("Error loading available parcels: {}", e.getMessage(), e);
@@ -788,16 +732,17 @@ public class HouseholdPageController {
             if (availableParcels.isEmpty()) {
                 sb.append("<div class='text-warning small mt-1'><i class='bi bi-exclamation-triangle me-1'></i>No available parcels found. Please create a parcel first.</div>");
             } else {
-                sb.append("<div class='form-text'>Select a parcel for this household</div>");
+                sb.append("<div class='form-text'>Select a parcel for this household (available and allocated parcels are shown)</div>");
             }
             sb.append("</div>");
 
-            if (activePtos != null && !activePtos.isEmpty()) {
-                sb.append("<div class='col-12'>");
-                sb.append("<label for='ptoId' class='form-label'>PTO</label>");
-                sb.append("<div class='input-group'>");
-                sb.append("<span class='input-group-text'><i class='bi bi-file-earmark-text'></i></span>");
-                sb.append("<select id='ptoId' name='ptoId' class='form-select'>");
+            // PTO field — dynamically populated by JS based on selected parcel
+            sb.append("<div class='col-12' id='ptoFieldContainer'>");
+            sb.append("<label for='ptoId' class='form-label'>PTO</label>");
+            sb.append("<div class='input-group'>");
+            sb.append("<span class='input-group-text'><i class='bi bi-file-earmark-text'></i></span>");
+            sb.append("<select id='ptoId' name='ptoId' class='form-select'>");
+            if (!activePtos.isEmpty()) {
                 sb.append("<option value=''>— Select PTO —</option>");
                 for (var pto : activePtos) {
                     String text = pto.getPtoNumber() + " - " + (pto.getPtoHolderName() != null ? pto.getPtoHolderName() : "");
@@ -807,9 +752,21 @@ public class HouseholdPageController {
                     }
                     sb.append(">").append(escapeHtml(text)).append("</option>");
                 }
-                sb.append("</select></div>");
-                sb.append("</div>");
+            } else {
+                sb.append("<option value=''>— No PTOs available —</option>");
             }
+            sb.append("</select></div>");
+            sb.append("<div class='form-text'>Link this household to an existing ACTIVE PTO on the selected parcel</div>");
+            sb.append("</div>");
+
+            // No-PTO guidance (hidden by default, shown when no PTOs match selected parcel)
+            sb.append("<div class='col-12' id='noPtoGuidance' style='display:none;'>");
+            sb.append("<div class='alert alert-info border-0 mb-0'>");
+            sb.append("<i class='bi bi-info-circle me-2'></i>");
+            sb.append("<strong>No active PTO for this parcel.</strong> ");
+            sb.append("<a href='/ptos/create' class='alert-link text-navy fw-semibold'>Create a PTO first</a> ");
+            sb.append("and have it approved before linking it to a household.");
+            sb.append("</div></div>");
 
             sb.append("<div class='col-12 col-md-6'>");
             sb.append("<label for='registrationDate' class='form-label'>Registration Date</label>");
@@ -833,6 +790,7 @@ public class HouseholdPageController {
 
             sb.append("</form></div></div></div>");
 
+            sb.append(buildPtoDynamicScript());
             sb.append(buildFooterHtml());
 
             return sb.toString();

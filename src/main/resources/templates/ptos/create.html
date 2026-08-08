@@ -58,21 +58,21 @@
       <div class="card border-0 shadow-sm mb-4 border-start border-4 border-success">
         <div class="card-body p-3">
           <div class="d-flex align-items-center gap-3 flex-wrap">
-            <div class="d-flex align-items-center gap-2">
-              <span class="badge bg-success"><i class="bi bi-check"></i></span>
-              <small>Authority Exists</small>
+            <div class="d-flex align-items-center gap-2" id="badgeAuthority">
+              <span class="badge bg-light text-muted" id="badgeAuthorityIcon">○</span>
+              <small class="text-muted" id="badgeAuthorityText">Authority Exists</small>
             </div>
-            <div class="d-flex align-items-center gap-2">
-              <span class="badge bg-success"><i class="bi bi-check"></i></span>
-              <small>Village Exists</small>
+            <div class="d-flex align-items-center gap-2" id="badgeVillage">
+              <span class="badge bg-light text-muted" id="badgeVillageIcon">○</span>
+              <small class="text-muted" id="badgeVillageText">Village Exists</small>
             </div>
-            <div class="d-flex align-items-center gap-2">
-              <span class="badge bg-success"><i class="bi bi-check"></i></span>
-              <small>Parcel Exists</small>
+            <div class="d-flex align-items-center gap-2" id="badgeParcel">
+              <span class="badge bg-light text-muted" id="badgeParcelIcon">○</span>
+              <small class="text-muted" id="badgeParcelText">Parcel Selected</small>
             </div>
-            <div class="d-flex align-items-center gap-2">
-              <span class="badge bg-navy">●</span>
-              <small class="fw-semibold text-navy">Issue PTO</small>
+            <div class="d-flex align-items-center gap-2 opacity-50" id="stepIssue">
+              <span class="badge bg-light text-muted">○</span>
+              <small class="text-muted">Issue PTO</small>
             </div>
             <div class="d-flex align-items-center gap-2 opacity-50">
               <span class="badge bg-light text-muted">○</span>
@@ -117,7 +117,10 @@
                                 th:text="${'Stand ' + p.standNumber + ' (' + p.parcelNumber + ')'}"
                                 th:data-village="${p.villageName}"
                                 th:data-authority="${p.authorityName}"
-                                th:data-village-id="${p.villageId}">
+                                th:data-village-id="${p.villageId}"
+                                th:data-area="${p.areaM2}"
+                                th:data-headman="${p.headmanName}"
+                                th:data-chief="${p.chiefName}">
                         </option>
                       </select>
                     </div>
@@ -286,103 +289,16 @@
               </div>
             </div>
 
-            <!-- Step 4: Allocation Metadata -->
-            <div class="card border-0 shadow-sm mb-4">
-              <div class="card-header bg-white border-bottom py-3">
-                <h6 class="fw-bold text-navy mb-0">
-                  <span class="badge bg-navy rounded-circle me-2">4</span>
-                  <i class="bi bi-diagram-3 me-2"></i>
-                  Traditional Authority Allocation Details
-                </h6>
-              </div>
-              <div class="card-body p-4">
-                <div class="row g-3">
-                  <div class="col-12">
-                    <label for="allocatedBy" class="form-label">
-                      Allocated By (Headman / Chief Name) <span class="text-danger">*</span>
-                    </label>
-                    <div class="input-group">
-                      <span class="input-group-text"><i class="bi bi-person-badge"></i></span>
-                      <input type="text"
-                             id="allocatedBy"
-                             name="allocatedBy"
-                             class="form-control"
-                             placeholder="e.g. Headman J. Mahlangu"
-                             required>
-                    </div>
-                  </div>
-                  <div class="col-12 col-md-6">
-                    <label for="allocationDate" class="form-label">
-                      Allocation Date <span class="text-danger">*</span>
-                    </label>
-                    <div class="input-group">
-                      <span class="input-group-text"><i class="bi bi-calendar-check"></i></span>
-                      <input type="date"
-                             id="allocationDate"
-                             name="allocationDate"
-                             class="form-control"
-                             required>
-                    </div>
-                  </div>
-                  <div class="col-12 col-md-6">
-                    <label for="standArea" class="form-label">Stand Area (m²)</label>
-                    <div class="input-group">
-                      <span class="input-group-text"><i class="bi bi-rulers"></i></span>
-                      <input type="number"
-                             id="standArea"
-                             name="standArea"
-                             class="form-control"
-                             placeholder="e.g. 300"
-                             step="0.01"
-                             min="0">
-                    </div>
-                  </div>
-                  <div class="col-12">
-                    <label for="surveyReference" class="form-label">Surveyor General Reference</label>
-                    <div class="input-group">
-                      <span class="input-group-text"><i class="bi bi-map"></i></span>
-                      <input type="text"
-                             id="surveyReference"
-                             name="surveyReference"
-                             class="form-control"
-                             placeholder="e.g. SG Diagram 8977/1999">
-                    </div>
-                  </div>
-                  <div class="col-12">
-                    <label for="boundaryDescription" class="form-label">Boundary Description</label>
-                    <textarea id="boundaryDescription"
-                              name="boundaryDescription"
-                              class="form-control"
-                              rows="2"
-                              placeholder="Beacons, fences, natural features..."></textarea>
-                  </div>
-                  <div class="col-12 col-md-6">
-                    <label for="allocationFeeReceipt" class="form-label">Allocation Fee Receipt Ref</label>
-                    <input type="text"
-                           id="allocationFeeReceipt"
-                           name="allocationFeeReceipt"
-                           class="form-control"
-                           placeholder="Receipt / reference number">
-                  </div>
-                  <div class="col-12 col-md-6">
-                    <label for="taRecommendationRef" class="form-label">TA Recommendation Ref</label>
-                    <input type="text"
-                           id="taRecommendationRef"
-                           name="taRecommendationRef"
-                           class="form-control"
-                           placeholder="TA letter reference">
-                  </div>
-                  <div class="col-12">
-                    <div class="form-check">
-                      <input class="form-check-input" type="checkbox" id="communityResolutionRequired" name="communityResolutionRequired" value="true">
-                      <label class="form-check-label" for="communityResolutionRequired">
-                        Community resolution required (Agricultural / Business PTOs)
-                      </label>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <!-- Allocation details are auto-populated from the selected parcel's village/authority -->
+
+            <input type="hidden" id="allocatedBy" name="allocatedBy">
+            <input type="hidden" id="allocationDate" name="allocationDate">
+            <input type="hidden" id="standArea" name="standArea">
+            <input type="hidden" id="surveyReference" name="surveyReference">
+            <input type="hidden" id="boundaryDescription" name="boundaryDescription">
+            <input type="hidden" id="allocationFeeReceipt" name="allocationFeeReceipt">
+            <input type="hidden" id="taRecommendationRef" name="taRecommendationRef">
+            <input type="hidden" id="communityResolutionRequired" name="communityResolutionRequired" value="false">
 
             <!-- Step 5: Supporting Document Upload (Required) -->
             <div class="card border-0 shadow-sm mb-4">
@@ -544,12 +460,61 @@
         document.getElementById('displayVillage').textContent = village;
         document.getElementById('displayAuthority').textContent = authority;
         summaryVillage.textContent = village;
+
+        const area = selected.dataset.area;
+        const standAreaInput = document.getElementById('standArea');
+        if (standAreaInput && area && area !== 'null' && area !== '') {
+          standAreaInput.value = parseFloat(area).toFixed(2);
+        }
+
+        const headman = selected.dataset.headman || '';
+        const allocatedByInput = document.getElementById('allocatedBy');
+        if (allocatedByInput && headman) {
+          allocatedByInput.value = headman;
+        }
+
+        const allocationDateInput = document.getElementById('allocationDate');
+        if (allocationDateInput && !allocationDateInput.value) {
+          allocationDateInput.value = new Date().toISOString().split('T')[0];
+        }
+
+        setBadgeCompleted('badgeAuthority', 'Authority Exists');
+        setBadgeCompleted('badgeVillage', 'Village Exists');
+        setBadgeCompleted('badgeParcel', 'Parcel Selected');
       } else {
         details.style.display = 'none';
         summaryParcel.textContent = '—';
         summaryVillage.textContent = '—';
+
+        const standAreaInput = document.getElementById('standArea');
+        if (standAreaInput) standAreaInput.value = '';
+
+        const allocatedByInput = document.getElementById('allocatedBy');
+        if (allocatedByInput) allocatedByInput.value = '';
+
+        setBadgePending('badgeAuthority', 'Authority Exists');
+        setBadgePending('badgeVillage', 'Village Exists');
+        setBadgePending('badgeParcel', 'Parcel Selected');
       }
     });
+
+    function setBadgeCompleted(prefix, text) {
+      const icon = document.getElementById(prefix + 'Icon');
+      const label = document.getElementById(prefix + 'Text');
+      icon.className = 'badge bg-success';
+      icon.innerHTML = '<i class="bi bi-check"></i>';
+      label.className = 'fw-semibold text-success';
+      label.textContent = text;
+    }
+
+    function setBadgePending(prefix, text) {
+      const icon = document.getElementById(prefix + 'Icon');
+      const label = document.getElementById(prefix + 'Text');
+      icon.className = 'badge bg-light text-muted';
+      icon.innerHTML = '○';
+      label.className = 'text-muted';
+      label.textContent = text;
+    }
 
     document.getElementById('ptoHolderName').addEventListener('input', function() {
       document.getElementById('summaryHolder').textContent = this.value || '—';

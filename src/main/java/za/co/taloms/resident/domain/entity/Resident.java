@@ -3,6 +3,7 @@ package za.co.taloms.resident.domain.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import za.co.taloms.household.domain.entity.Household;
+import za.co.taloms.businessoccupancy.domain.entity.BusinessOccupancy;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -48,6 +49,10 @@ public class Resident {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "household_id", nullable = false)
     private Household household;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "business_id")
+    private BusinessOccupancy business;
 
     @Column(name = "active")
     @Builder.Default

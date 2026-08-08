@@ -12,6 +12,7 @@ import za.co.taloms.businessoccupancy.application.dto.BusinessOccupancyRequest;
 import za.co.taloms.businessoccupancy.application.service.BusinessOccupancyService;
 import za.co.taloms.businessoccupancy.domain.entity.BusinessStatus;
 import za.co.taloms.businessoccupancy.domain.entity.BusinessType;
+import za.co.taloms.household.application.service.HouseholdService;
 import za.co.taloms.parcel.application.service.ParcelService;
 import za.co.taloms.parcel.domain.entity.ParcelStatus;
 import za.co.taloms.pto.application.service.PTOService;
@@ -29,6 +30,7 @@ public class BusinessOccupancyPageController {
     private final ParcelService parcelService;
     private final PTOService ptoService;
     private final TraditionalAuthorityService authorityService;
+    private final HouseholdService householdService;
 
     @GetMapping
     public String list(Model model) {
@@ -70,16 +72,25 @@ public class BusinessOccupancyPageController {
                         .build());
             }
 
-            // Get available parcels (Available status)
+            // Get parcels that are AVAILABLE or ALLOCATED (ALLOCATED means a PTO has been approved)
             var availableParcels = parcelService.findByStatus(ParcelStatus.AVAILABLE);
+            var allocatedParcels = parcelService.findByStatus(ParcelStatus.ALLOCATED);
+            if (allocatedParcels != null) {
+                availableParcels.addAll(allocatedParcels);
+            }
 
             // Get active PTOs for dropdown
             var activePtos = ptoService.findByStatus(PTOStatus.ACTIVE);
             log.info("Loaded {} active PTOs for business create form", activePtos.size());
 
+            // Get active households for linkage
+            var availableHouseholds = householdService.findAll();
+            log.info("Loaded {} households for business create form", availableHouseholds.size());
+
             model.addAttribute("authorities", authorities);
             model.addAttribute("availableParcels", availableParcels);
             model.addAttribute("activePtos", activePtos);
+            model.addAttribute("availableHouseholds", availableHouseholds);
             model.addAttribute("types", BusinessType.values());
             model.addAttribute("statuses", BusinessStatus.values());
             model.addAttribute("pageTitle", "Create Business Occupancy");
@@ -151,6 +162,7 @@ public class BusinessOccupancyPageController {
                     .contactEmail(business.getContactEmail())
                     .parcelId(business.getParcelId())
                     .ptoId(business.getPtoId())
+                    .householdId(business.getHouseholdId())
                     .operatingHours(business.getOperatingHours())
                     .employeesCount(business.getEmployeesCount())
                     .notes(business.getNotes())
@@ -158,13 +170,19 @@ public class BusinessOccupancyPageController {
 
             var authorities = authorityService.findAllActive();
             var availableParcels = parcelService.findByStatus(ParcelStatus.AVAILABLE);
+            var allocatedParcels = parcelService.findByStatus(ParcelStatus.ALLOCATED);
+            if (allocatedParcels != null) {
+                availableParcels.addAll(allocatedParcels);
+            }
             var activePtos = ptoService.findByStatus(PTOStatus.ACTIVE);
+            var availableHouseholds = householdService.findAll();
 
             model.addAttribute("business", business);
             model.addAttribute("form", form);
             model.addAttribute("authorities", authorities);
             model.addAttribute("availableParcels", availableParcels);
             model.addAttribute("activePtos", activePtos);
+            model.addAttribute("availableHouseholds", availableHouseholds);
             model.addAttribute("types", BusinessType.values());
             model.addAttribute("statuses", BusinessStatus.values());
             model.addAttribute("pageTitle", "Edit Business");

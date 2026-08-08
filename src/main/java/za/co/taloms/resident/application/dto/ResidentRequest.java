@@ -45,6 +45,8 @@ public class ResidentRequest {
     @NotNull(message = "Household is required")
     private Long householdId;
 
+    private Long businessId;
+
     private String notes;
 }
 

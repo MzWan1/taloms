@@ -10,6 +10,11 @@ import za.co.taloms.common.BusinessValidationException;
 import za.co.taloms.document.application.service.DocumentService;
 import za.co.taloms.document.domain.entity.DocumentType;
 import za.co.taloms.document.domain.entity.EntityType;
+import za.co.taloms.household.application.service.HouseholdService;
+import za.co.taloms.household.application.dto.HouseholdRequest;
+import za.co.taloms.household.application.dto.HouseholdResponse;
+import za.co.taloms.businessoccupancy.application.service.BusinessOccupancyService;
+import za.co.taloms.businessoccupancy.application.dto.BusinessOccupancyResponse;
 import za.co.taloms.parcel.domain.entity.Parcel;
 import za.co.taloms.parcel.domain.entity.ParcelStatus;
 import za.co.taloms.parcel.domain.repository.ParcelRepositoryPort;
@@ -48,6 +53,8 @@ class PTOServiceTest {
     @Mock private ApplicationEventPublisher eventPublisher;
     @Mock private DocumentService documentService;
     @Mock private PTOApprovalSignatureRepositoryPort signatureRepository;
+    @Mock private HouseholdService householdService;
+    @Mock private BusinessOccupancyService businessOccupancyService;
 
     private PTOServiceImpl service;
 
@@ -55,13 +62,16 @@ class PTOServiceTest {
     void setUp() {
         service = new PTOServiceImpl(
                 ptoRepository, parcelRepository, numberGenerator,
-                authorityRepository, villageRepository, eventPublisher, documentService, signatureRepository);
+                authorityRepository, villageRepository, eventPublisher, documentService, signatureRepository,
+                householdService, businessOccupancyService);
 
         lenient().when(numberGenerator.generate()).thenReturn("PTO-2026-00001");
         lenient().when(ptoRepository.existsByPtoNumber(anyString())).thenReturn(false);
+        lenient().when(householdService.hasActiveHousehold(anyLong())).thenReturn(false);
+        lenient().when(businessOccupancyService.existsByParcelId(anyLong())).thenReturn(false);
     }
 
-    private PTORequest buildValidRequest(Long parcelId, Long authorityId, Long villageId) {
+    private PTORequest buildValidRequest(Long parcelId) {
         return PTORequest.builder()
                 .ptoHolderName("Sipho Dlamini")
                 .idNumber("9001010000001")
@@ -71,8 +81,6 @@ class PTOServiceTest {
                 .parcelId(parcelId)
                 .standNumber("10")
                 .parcelNumber("PAR-001")
-                .villageId(villageId)
-                .traditionalAuthorityId(authorityId)
                 .allocatedBy("Headman Mahlangu")
                 .allocationDate(java.time.LocalDate.of(2026, 7, 20))
                 .standArea(300.0)
@@ -103,23 +111,19 @@ class PTOServiceTest {
 
     @Test
     void shouldCreatePTOWithMetadata() {
-        Long authorityId = 1L;
-        Long villageId = 2L;
         Long parcelId = 3L;
 
         var authority = new TraditionalAuthority();
-        authority.setId(authorityId);
+        authority.setId(1L);
         authority.setAuthorityName("Rambuda TA");
 
-        var village = buildVillage(villageId, authorityId);
+        var village = buildVillage(2L, 1L);
         var parcel = buildParcel(parcelId, village, "10", ParcelStatus.AVAILABLE);
 
-        when(authorityRepository.findById(authorityId)).thenReturn(Optional.of(authority));
-        when(villageRepository.findById(villageId)).thenReturn(Optional.of(village));
         when(parcelRepository.findById(parcelId)).thenReturn(Optional.of(parcel));
         when(ptoRepository.save(any(PTO.class))).thenAnswer(i -> i.getArgument(0));
 
-        var request = buildValidRequest(parcelId, authorityId, villageId);
+        var request = buildValidRequest(parcelId);
         var response = service.createPTO(request, "data.capturer");
 
         assertNotNull(response);
@@ -133,26 +137,22 @@ class PTOServiceTest {
 
     @Test
     void shouldRecreateWhenPtoNumberExists() {
-        Long authorityId = 1L;
-        Long villageId = 2L;
         Long parcelId = 3L;
 
         var authority = new TraditionalAuthority();
-        authority.setId(authorityId);
+        authority.setId(1L);
         authority.setAuthorityName("Rambuda TA");
 
-        var village = buildVillage(villageId, authorityId);
+        var village = buildVillage(2L, 1L);
         var parcel = buildParcel(parcelId, village, "10", ParcelStatus.AVAILABLE);
 
-        when(authorityRepository.findById(authorityId)).thenReturn(Optional.of(authority));
-        when(villageRepository.findById(villageId)).thenReturn(Optional.of(village));
         when(parcelRepository.findById(parcelId)).thenReturn(Optional.of(parcel));
         when(numberGenerator.generate()).thenReturn("PTO-2026-00001", "PTO-2026-00002");
         when(ptoRepository.existsByPtoNumber("PTO-2026-00001")).thenReturn(true);
         when(ptoRepository.existsByPtoNumber("PTO-2026-00002")).thenReturn(false);
         when(ptoRepository.save(any(PTO.class))).thenAnswer(i -> i.getArgument(0));
 
-        var request = buildValidRequest(parcelId, authorityId, villageId);
+        var request = buildValidRequest(parcelId);
         var response = service.createPTO(request, "data.capturer");
 
         assertEquals("PTO-2026-00002", response.getPtoNumber());
@@ -192,6 +192,14 @@ class PTOServiceTest {
                 .thenReturn(List.of());
         when(ptoRepository.save(any(PTO.class))).thenAnswer(i -> i.getArgument(0));
         when(parcelRepository.save(any(Parcel.class))).thenAnswer(i -> i.getArgument(0));
+        when(householdService.createHousehold(any(HouseholdRequest.class), anyString()))
+                .thenAnswer(i -> HouseholdResponse.builder()
+                        .id(100L)
+                        .householdHeadName(pto.getPtoHolderName())
+                        .householdHeadIdNumber(pto.getIdNumber())
+                        .parcelId(pto.getParcel().getId())
+                        .ptoId(pto.getId())
+                        .build());
 
         var response = service.approvePTO(ptoId, new PTOApprovalRequest(), "admin");
 
@@ -201,20 +209,16 @@ class PTOServiceTest {
 
     @Test
     void shouldFailWhenParcelNotAvailable() {
-        Long authorityId = 1L;
-        Long villageId = 2L;
         Long parcelId = 3L;
 
         var authority = new TraditionalAuthority();
-        authority.setId(authorityId);
-        var village = buildVillage(villageId, authorityId);
+        authority.setId(1L);
+        var village = buildVillage(2L, 1L);
         var parcel = buildParcel(parcelId, village, "10", ParcelStatus.ALLOCATED);
 
-        when(authorityRepository.findById(authorityId)).thenReturn(Optional.of(authority));
-        when(villageRepository.findById(villageId)).thenReturn(Optional.of(village));
         when(parcelRepository.findById(parcelId)).thenReturn(Optional.of(parcel));
 
-        var request = buildValidRequest(parcelId, authorityId, villageId);
+        var request = buildValidRequest(parcelId);
         var ex = assertThrows(BusinessValidationException.class,
                 () -> service.createPTO(request, "land.officer"));
 
@@ -222,40 +226,14 @@ class PTOServiceTest {
     }
 
     @Test
-    void shouldFailWhenVillageDoesNotBelongToAuthority() {
-        Long authorityId = 1L;
-        Long wrongAuthorityId = 99L;
-        Long villageId = 2L;
-        Long parcelId = 3L;
-
-        var authority = new TraditionalAuthority();
-        authority.setId(authorityId);
-        var village = buildVillage(villageId, wrongAuthorityId);
-        var parcel = buildParcel(parcelId, village, "10", ParcelStatus.AVAILABLE);
-
-        when(authorityRepository.findById(authorityId)).thenReturn(Optional.of(authority));
-        when(villageRepository.findById(villageId)).thenReturn(Optional.of(village));
-
-        var request = buildValidRequest(parcelId, authorityId, villageId);
-        var ex = assertThrows(BusinessValidationException.class,
-                () -> service.createPTO(request, "land.officer"));
-
-        assertTrue(ex.getMessage().contains("does not belong to"));
-    }
-
-    @Test
     void shouldSetCommunityResolutionForBusiness() {
-        Long authorityId = 1L;
-        Long villageId = 2L;
         Long parcelId = 3L;
 
         var authority = new TraditionalAuthority();
-        authority.setId(authorityId);
-        var village = buildVillage(villageId, authorityId);
+        authority.setId(1L);
+        var village = buildVillage(2L, 1L);
         var parcel = buildParcel(parcelId, village, "10", ParcelStatus.AVAILABLE);
 
-        when(authorityRepository.findById(authorityId)).thenReturn(Optional.of(authority));
-        when(villageRepository.findById(villageId)).thenReturn(Optional.of(village));
         when(parcelRepository.findById(parcelId)).thenReturn(Optional.of(parcel));
         when(ptoRepository.save(any(PTO.class))).thenAnswer(i -> i.getArgument(0));
 
@@ -267,8 +245,6 @@ class PTOServiceTest {
                 .parcelId(parcelId)
                 .standNumber("10")
                 .parcelNumber("PAR-001")
-                .villageId(villageId)
-                .traditionalAuthorityId(authorityId)
                 .communityResolutionRequired(true)
                 .build();
 

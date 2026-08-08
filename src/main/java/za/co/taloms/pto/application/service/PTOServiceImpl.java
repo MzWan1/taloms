@@ -20,6 +20,13 @@ import za.co.taloms.pto.domain.event.*;
 import za.co.taloms.pto.domain.repository.PTORepositoryPort;
 import za.co.taloms.traditionalauthority.domain.repository.TraditionalAuthorityRepositoryPort;
 import za.co.taloms.traditionalauthority.domain.repository.VillageRepositoryPort;
+import za.co.taloms.household.application.service.HouseholdService;
+import za.co.taloms.household.application.dto.HouseholdRequest;
+import za.co.taloms.businessoccupancy.application.service.BusinessOccupancyService;
+import za.co.taloms.businessoccupancy.application.dto.BusinessOccupancyRequest;
+import za.co.taloms.businessoccupancy.domain.entity.BusinessType;
+import za.co.taloms.businessoccupancy.domain.entity.BusinessStatus;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -38,35 +45,31 @@ public class PTOServiceImpl implements PTOService {
     private final ApplicationEventPublisher eventPublisher;
     private final DocumentService documentService;
     private final PTOApprovalSignatureRepositoryPort signatureRepository;
+    private final HouseholdService householdService;
+    private final BusinessOccupancyService businessOccupancyService;
 
     @Override
     public PTOResponse createPTO(PTORequest request, String createdBy) {
-        // ===== VALIDATION 1: Traditional Authority must exist =====
-        var authority = authorityRepository.findById(request.getTraditionalAuthorityId())
-                .orElseThrow(() -> new ResourceNotFoundException(
-                        "Traditional Authority", request.getTraditionalAuthorityId()));
-
-        // ===== VALIDATION 2: Village must exist AND belong to the Authority =====
-        var village = villageRepository.findById(request.getVillageId())
-                .orElseThrow(() -> new ResourceNotFoundException("Village", request.getVillageId()));
-
-        if (!village.getTraditionalAuthority().getId().equals(authority.getId())) {
-            throw new BusinessValidationException(
-                    "Village '" + village.getVillageName() +
-                            "' does not belong to Traditional Authority '" + authority.getAuthorityName() + "'");
-        }
-
-        // ===== VALIDATION 3: Parcel must exist in this village =====
+        // ===== VALIDATION 1: Parcel must exist =====
         var parcel = parcelRepository.findById(request.getParcelId())
                 .orElseThrow(() -> new ResourceNotFoundException("Parcel", request.getParcelId()));
 
-        if (parcel.getVillage() == null || !parcel.getVillage().getId().equals(village.getId())) {
+        // ===== DERIVE: Village and Traditional Authority from Parcel =====
+        // The parcel determines the village, which determines the authority.
+        // These should NOT be manually supplied by the client on creation.
+        var village = parcel.getVillage();
+        if (village == null) {
             throw new BusinessValidationException(
-                    "Parcel " + parcel.getParcelNumber() +
-                            " does not belong to village '" + village.getVillageName() + "'");
+                    "Parcel " + parcel.getParcelNumber() + " is not assigned to any village.");
         }
 
-        // ===== VALIDATION 4: Stand number must match =====
+        var authority = village.getTraditionalAuthority();
+        if (authority == null) {
+            throw new BusinessValidationException(
+                    "Village '" + village.getVillageName() + "' is not assigned to any Traditional Authority.");
+        }
+
+        // ===== VALIDATION 2: Stand number must match =====
         if (!parcel.getStandNumber().equals(request.getStandNumber())) {
             throw new BusinessValidationException(
                     "Stand number mismatch. Parcel " + parcel.getParcelNumber() +
@@ -74,21 +77,28 @@ public class PTOServiceImpl implements PTOService {
                             "' but request specifies '" + request.getStandNumber() + "'");
         }
 
-        // ===== VALIDATION 5: Check if the parcel already has an ACTIVE PTO =====
+        // ===== VALIDATION 3: Parcel status must be AVAILABLE =====
+        if (!parcel.isAvailable()) {
+            throw new BusinessValidationException(
+                    "Parcel is not available for PTO allocation. Current status: " +
+                            parcel.getStatus().getDisplayName());
+        }
+
+        // ===== VALIDATION 4: Check if the parcel already has an ACTIVE PTO =====
         if (ptoRepository.existsByParcelIdAndStatus(request.getParcelId(), PTOStatus.ACTIVE)) {
             throw new BusinessValidationException(
                     "This parcel already has an ACTIVE PTO. Parcel: " + parcel.getParcelNumber() +
                             " - Stand: " + parcel.getStandNumber());
         }
 
-        // ===== VALIDATION 6: Check if the parcel already has a SUSPENDED PTO =====
+        // ===== VALIDATION 5: Check if the parcel already has a SUSPENDED PTO =====
         if (ptoRepository.existsByParcelIdAndStatus(request.getParcelId(), PTOStatus.SUSPENDED)) {
             throw new BusinessValidationException(
                     "This parcel has a SUSPENDED PTO. Please reactivate or revoke the existing PTO first. " +
                             "Parcel: " + parcel.getParcelNumber() + " - Stand: " + parcel.getStandNumber());
         }
 
-        // ===== VALIDATION 7: Check if this person already has an ACTIVE PTO on THIS parcel =====
+        // ===== VALIDATION 6: Check if this person already has an ACTIVE PTO on THIS parcel =====
         if (ptoRepository.existsByIdNumberAndParcelIdAndStatus(
                 request.getIdNumber(),
                 request.getParcelId(),
@@ -98,7 +108,7 @@ public class PTOServiceImpl implements PTOService {
                             "Parcel: " + parcel.getParcelNumber() + " - Stand: " + parcel.getStandNumber());
         }
 
-        // ===== VALIDATION 8: Check if this person already has a SUSPENDED PTO on THIS parcel =====
+        // ===== VALIDATION 7: Check if this person already has a SUSPENDED PTO on THIS parcel =====
         if (ptoRepository.existsByIdNumberAndParcelIdAndStatus(
                 request.getIdNumber(),
                 request.getParcelId(),
@@ -107,14 +117,7 @@ public class PTOServiceImpl implements PTOService {
                     "This person has a SUSPENDED PTO on this parcel. Please reactivate or revoke it first.");
         }
 
-        // ===== VALIDATION 9: Check if the parcel status is AVAILABLE =====
-        if (!parcel.isAvailable()) {
-            throw new BusinessValidationException(
-                    "Parcel is not available for PTO allocation. Current status: " +
-                            parcel.getStatus().getDisplayName());
-        }
-
-        // ===== VALIDATION 10: Community resolution required for AGRICULTURAL / BUSINESS =====
+        // ===== VALIDATION 8: Community resolution required for AGRICULTURAL / BUSINESS =====
         boolean resolutionRequired = request.getCommunityResolutionRequired() != null
                 && request.getCommunityResolutionRequired()
                 && (request.getPurpose() != null
@@ -218,6 +221,55 @@ public class PTOServiceImpl implements PTOService {
             parcel.setStatus(za.co.taloms.parcel.domain.entity.ParcelStatus.ALLOCATED);
             parcel.setPto(saved);
             parcelRepository.save(parcel);
+        }
+
+        // ===== AUTO-CREATE HOUSEHOLD =====
+        Long autoCreatedHouseholdId = null;
+        if (saved.getParcel() != null && !householdService.hasActiveHousehold(saved.getParcel().getId())) {
+            var householdRequest = HouseholdRequest.builder()
+                    .householdHeadName(saved.getPtoHolderName())
+                    .householdHeadIdNumber(saved.getIdNumber())
+                    .contactPhone(saved.getContactPhone())
+                    .contactEmail(saved.getContactEmail())
+                    .parcelId(saved.getParcel().getId())
+                    .ptoId(saved.getId())
+                    .registrationDate(LocalDate.now())
+                    .notes("Auto-created from PTO approval: " + saved.getPtoNumber())
+                    .build();
+
+            var household = householdService.createHousehold(householdRequest, approvedBy);
+            autoCreatedHouseholdId = household.getId();
+            eventPublisher.publishEvent(new za.co.taloms.household.domain.event.HouseholdCreatedEvent(
+                    this, household.getId(), household.getHouseholdHeadName(),
+                    saved.getParcel().getId(), saved.getId(), approvedBy, java.time.LocalDateTime.now()));
+            log.info("Auto-created household {} for PTO {}", household.getId(), saved.getPtoNumber());
+        }
+
+        // ===== AUTO-CREATE BUSINESS (for BUSINESS PTOs) =====
+        if (saved.getParcel() != null
+                && saved.getPurpose() == PTOPurpose.BUSINESS
+                && !businessOccupancyService.existsByParcelId(saved.getParcel().getId())) {
+            var householdOnParcel = householdService.findActiveByParcelId(saved.getParcel().getId());
+            var businessRequest = BusinessOccupancyRequest.builder()
+                    .businessName(saved.getPtoHolderName() + " (Business)")
+                    .ownerName(saved.getPtoHolderName())
+                    .ownerIdNumber(saved.getIdNumber())
+                    .contactPhone(saved.getContactPhone())
+                    .contactEmail(saved.getContactEmail())
+                    .parcelId(saved.getParcel().getId())
+                    .ptoId(saved.getId())
+                    .householdId(householdOnParcel != null ? householdOnParcel.getId() : autoCreatedHouseholdId)
+                    .businessType(BusinessType.OTHER.name())
+                    .employeesCount(0)
+                    .notes("Auto-created from BUSINESS PTO approval: " + saved.getPtoNumber())
+                    .build();
+
+            var business = businessOccupancyService.createOccupancy(businessRequest, approvedBy);
+            eventPublisher.publishEvent(new za.co.taloms.businessoccupancy.domain.event.BusinessOccupancyCreatedEvent(
+                    this, business.getId(), business.getBusinessName(),
+                    business.getOwnerName(), saved.getParcel().getId(), saved.getId(),
+                    approvedBy, java.time.LocalDateTime.now()));
+            log.info("Auto-created business {} for PTO {} (linked to household {})", business.getId(), saved.getPtoNumber(), businessRequest.getHouseholdId());
         }
 
         eventPublisher.publishEvent(new PTOApprovedEvent(

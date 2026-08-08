@@ -15,6 +15,7 @@ import za.co.taloms.businessoccupancy.domain.entity.BusinessType;
 import za.co.taloms.businessoccupancy.domain.repository.BusinessOccupancyRepositoryPort;
 import za.co.taloms.parcel.domain.entity.ParcelStatus;
 import za.co.taloms.parcel.domain.repository.ParcelRepositoryPort;
+import za.co.taloms.pto.domain.entity.PTO;
 import za.co.taloms.pto.domain.entity.PTOStatus;
 import za.co.taloms.pto.domain.repository.PTORepositoryPort;
 import java.util.List;
@@ -29,6 +30,7 @@ public class BusinessOccupancyServiceImpl implements BusinessOccupancyService {
     private final BusinessOccupancyRepositoryPort businessRepository;
     private final ParcelRepositoryPort parcelRepository;
     private final PTORepositoryPort ptoRepository;
+    private final za.co.taloms.household.domain.repository.HouseholdRepositoryPort householdRepository;
 
     @Override
     public BusinessOccupancyResponse createOccupancy(BusinessOccupancyRequest request, String createdBy) {
@@ -36,27 +38,24 @@ public class BusinessOccupancyServiceImpl implements BusinessOccupancyService {
         var parcel = parcelRepository.findById(request.getParcelId())
                 .orElseThrow(() -> new ResourceNotFoundException("Parcel", request.getParcelId()));
 
-        // ===== VALIDATION 1: PTO is required =====
-        if (request.getPtoId() == null) {
-            throw new BusinessValidationException(
-                    "PTO is required to register a business occupancy.");
-        }
+        // ===== VALIDATION 1: PTO is optional — if provided, it must exist and be ACTIVE =====
+        PTO pto = null;
+        if (request.getPtoId() != null) {
+            pto = ptoRepository.findById(request.getPtoId())
+                    .orElseThrow(() -> new ResourceNotFoundException("PTO", request.getPtoId()));
 
-        // ===== VALIDATION 2: PTO must exist and be ACTIVE =====
-        var pto = ptoRepository.findById(request.getPtoId())
-                .orElseThrow(() -> new ResourceNotFoundException("PTO", request.getPtoId()));
+            if (pto.getStatus() != PTOStatus.ACTIVE) {
+                throw new BusinessValidationException(
+                        "Cannot register business: PTO " + pto.getPtoNumber() +
+                                " is not ACTIVE. Current status: " + pto.getStatus().getDisplayName());
+            }
 
-        if (pto.getStatus() != PTOStatus.ACTIVE) {
-            throw new BusinessValidationException(
-                    "Cannot register business: PTO " + pto.getPtoNumber() +
-                            " is not ACTIVE. Current status: " + pto.getStatus().getDisplayName());
-        }
-
-        // ===== VALIDATION 3: PTO must belong to the same parcel =====
-        if (pto.getParcel() == null || !pto.getParcel().getId().equals(parcel.getId())) {
-            throw new BusinessValidationException(
-                    "PTO " + pto.getPtoNumber() +
-                            " does not belong to parcel " + parcel.getParcelNumber() + " (" + parcel.getStandNumber() + ")");
+            // ===== VALIDATION 2: PTO must belong to the same parcel =====
+            if (pto.getParcel() == null || !pto.getParcel().getId().equals(parcel.getId())) {
+                throw new BusinessValidationException(
+                        "PTO " + pto.getPtoNumber() +
+                                " does not belong to parcel " + parcel.getParcelNumber() + " (" + parcel.getStandNumber() + ")");
+            }
         }
 
         // Check if parcel already has a business
@@ -83,6 +82,7 @@ public class BusinessOccupancyServiceImpl implements BusinessOccupancyService {
                 .contactEmail(request.getContactEmail())
                 .parcel(parcel)
                 .pto(pto)
+                .household(request.getHouseholdId() != null ? householdRepository.findById(request.getHouseholdId()).orElse(null) : null)
                 .operatingHours(request.getOperatingHours())
                 .employeesCount(request.getEmployeesCount() != null ? request.getEmployeesCount() : 0)
                 .status(BusinessStatus.PENDING)
@@ -106,26 +106,23 @@ public class BusinessOccupancyServiceImpl implements BusinessOccupancyService {
         var parcel = parcelRepository.findById(request.getParcelId())
                 .orElseThrow(() -> new ResourceNotFoundException("Parcel", request.getParcelId()));
 
-        // ===== VALIDATION: PTO is required =====
-        if (request.getPtoId() == null) {
-            throw new BusinessValidationException(
-                    "PTO is required for business occupancy.");
-        }
+        // ===== VALIDATION: PTO is optional — if provided, it must exist and be ACTIVE =====
+        PTO pto = null;
+        if (request.getPtoId() != null) {
+            pto = ptoRepository.findById(request.getPtoId())
+                    .orElseThrow(() -> new ResourceNotFoundException("PTO", request.getPtoId()));
 
-        // ===== VALIDATION: PTO must be ACTIVE =====
-        var pto = ptoRepository.findById(request.getPtoId())
-                .orElseThrow(() -> new ResourceNotFoundException("PTO", request.getPtoId()));
+            if (pto.getStatus() != PTOStatus.ACTIVE) {
+                throw new BusinessValidationException(
+                        "PTO " + pto.getPtoNumber() +
+                                " is not ACTIVE. Current status: " + pto.getStatus().getDisplayName());
+            }
 
-        if (pto.getStatus() != PTOStatus.ACTIVE) {
-            throw new BusinessValidationException(
-                    "PTO " + pto.getPtoNumber() +
-                            " is not ACTIVE. Current status: " + pto.getStatus().getDisplayName());
-        }
-
-        if (pto.getParcel() == null || !pto.getParcel().getId().equals(parcel.getId())) {
-            throw new BusinessValidationException(
-                    "PTO " + pto.getPtoNumber() +
-                            " does not belong to parcel " + parcel.getParcelNumber() + " (" + parcel.getStandNumber() + ")");
+            if (pto.getParcel() == null || !pto.getParcel().getId().equals(parcel.getId())) {
+                throw new BusinessValidationException(
+                        "PTO " + pto.getPtoNumber() +
+                                " does not belong to parcel " + parcel.getParcelNumber() + " (" + parcel.getStandNumber() + ")");
+            }
         }
 
         // Check if registration number is being changed and if it's already used
@@ -146,6 +143,7 @@ public class BusinessOccupancyServiceImpl implements BusinessOccupancyService {
         occupancy.setContactEmail(request.getContactEmail());
         occupancy.setParcel(parcel);
         occupancy.setPto(pto);
+        occupancy.setHousehold(request.getHouseholdId() != null ? householdRepository.findById(request.getHouseholdId()).orElse(null) : null);
         occupancy.setOperatingHours(request.getOperatingHours());
         occupancy.setEmployeesCount(request.getEmployeesCount() != null ? request.getEmployeesCount() : 0);
         occupancy.setNotes(request.getNotes());
@@ -319,6 +317,8 @@ public class BusinessOccupancyServiceImpl implements BusinessOccupancyService {
                 .ptoId(occupancy.getPto() != null ? occupancy.getPto().getId() : null)
                 .ptoNumber(occupancy.getPto() != null ? occupancy.getPto().getPtoNumber() : null)
                 .ptoHolderName(occupancy.getPto() != null ? occupancy.getPto().getPtoHolderName() : null)
+                .householdId(occupancy.getHousehold() != null ? occupancy.getHousehold().getId() : null)
+                .householdHeadName(occupancy.getHousehold() != null ? occupancy.getHousehold().getHouseholdHeadName() : null)
                 .operatingHours(occupancy.getOperatingHours())
                 .employeesCount(occupancy.getEmployeesCount())
                 .status(occupancy.getStatus())

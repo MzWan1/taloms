@@ -40,10 +40,10 @@ public class PTORequest {
 
     private String notes;
 
-    @NotNull(message = "Village is required")
+    // Derived from parcel on creation; required for updates/moves
     private Long villageId;
 
-    @NotNull(message = "Traditional Authority is required")
+    // Derived from parcel on creation; required for updates/moves
     private Long traditionalAuthorityId;
 
     @NotNull(message = "Parcel is required")

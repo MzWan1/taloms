@@ -27,6 +27,8 @@ public class ResidentResponse {
     private String contactEmail;
     private Long householdId;
     private String householdHeadName;
+    private Long businessId;
+    private String businessName;
     private String standNumber;
     private String villageName;
     private String authorityName;

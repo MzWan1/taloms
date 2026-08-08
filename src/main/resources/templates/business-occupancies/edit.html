@@ -229,21 +229,56 @@
                                         </div>
                                     </div>
 
-                                    <!-- PTO -->
-                                    <div class="col-12 col-md-6">
+                                    <!-- PTO (conditionally shown — populated dynamically based on selected parcel) -->
+                                    <div class="col-12 col-md-6" id="ptoFieldContainer" th:classappend="${activePtos == null or activePtos.empty ? 'd-none' : ''}">
                                         <label for="ptoId" class="form-label">
-                                            PTO <span class="text-danger">*</span>
+                                            PTO
                                         </label>
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="bi bi-file-earmark-text"></i></span>
-                                            <select id="ptoId" name="ptoId" class="form-select" required>
-                                                <option th:each="pto : ${ptos}"
+                                            <select id="ptoId" name="ptoId" class="form-select">
+                                                <option th:each="pto : ${activePtos}"
                                                         th:value="${pto.id}"
                                                         th:text="${pto.ptoNumber + ' - ' + pto.ptoHolderName}"
                                                         th:selected="${pto.id == form.ptoId}">
                                                 </option>
                                             </select>
                                         </div>
+                                        <div class="form-text">Link this business to an existing ACTIVE PTO on the selected parcel</div>
+                                    </div>
+
+                                    <!-- Household Link -->
+                                    <div class="col-12 col-md-6">
+                                        <label for="householdId" class="form-label">
+                                            Household
+                                            <span class="optional-badge">Optional</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="bi bi-people"></i></span>
+                                            <select id="householdId" name="householdId" class="form-select">
+                                                <option value="">— Select Household —</option>
+                                                <option th:each="h : ${availableHouseholds}"
+                                                        th:value="${h.id}"
+                                                        th:text="${h.householdHeadName + ' (Stand ' + (h.standNumber != null ? h.standNumber : '') + ')'}"
+                                                        th:selected="${h.id == form.householdId}">
+                                                </option>
+                                            </select>
+                                        </div>
+                                        <div class="form-text">
+                                            <i class="bi bi-info-circle me-1"></i>
+                                            Link this business to the household that operates it
+                                        </div>
+                                    </div>
+
+                                    <!-- No PTO guidance (shown when no PTOs match selected parcel) -->
+                                    <div class="col-12 col-md-6" id="noPtoGuidance" style="display:none;">
+                                        <div class="alert alert-info border-0 mb-0">
+                                            <i class="bi bi-info-circle me-2"></i>
+                                            <strong>No active PTO for this parcel.</strong>
+                                            A PTO must be created and approved before it can be linked to a business.
+                                            <a href="/ptos/create" class="alert-link text-navy fw-semibold">Create a PTO first</a>.
+                                        </div>
+                                    </div>
                                     </div>
 
                                     <!-- Notes -->
@@ -318,6 +353,61 @@
             this.value = '+27' + v.substring(1);
         }
     });
+
+    // ── Dynamic PTO filtering based on selected parcel ────────────────────
+    var activePtosData = /*[[${activePtos}]]*/ [];
+    var ptoFieldContainer = document.getElementById('ptoFieldContainer');
+    var noPtoGuidance = document.getElementById('noPtoGuidance');
+    var ptoSelect = document.getElementById('ptoId');
+
+    function filterPtoByParcel(parcelId) {
+        if (!ptoSelect) return;
+        ptoSelect.innerHTML = '';
+
+        if (!parcelId) {
+            if (ptoFieldContainer) ptoFieldContainer.style.display = 'none';
+            if (noPtoGuidance) noPtoGuidance.style.display = 'none';
+            return;
+        }
+
+        var parcelPtos = activePtosData.filter(function(p) {
+            return p.parcelId == parcelId && p.status === 'ACTIVE';
+        });
+
+        if (parcelPtos.length > 0) {
+            var placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.textContent = '— Select PTO —';
+            ptoSelect.appendChild(placeholder);
+            parcelPtos.forEach(function(pto) {
+                var opt = document.createElement('option');
+                opt.value = pto.id;
+                opt.textContent = pto.ptoNumber + ' - ' + (pto.ptoHolderName || '');
+                if (pto.id == /*[[${form.ptoId}]]*/ '') {
+                    opt.selected = true;
+                }
+                ptoSelect.appendChild(opt);
+            });
+            if (ptoFieldContainer) ptoFieldContainer.style.display = 'block';
+            if (noPtoGuidance) noPtoGuidance.style.display = 'none';
+        } else {
+            if (ptoFieldContainer) ptoFieldContainer.style.display = 'none';
+            if (noPtoGuidance) noPtoGuidance.style.display = 'block';
+        }
+    }
+
+    if (document.getElementById('parcelId')) {
+        document.getElementById('parcelId').addEventListener('change', function() {
+            filterPtoByParcel(this.value);
+        });
+        var defaultParcel = document.getElementById('parcelId').value;
+        if (defaultParcel) {
+            filterPtoByParcel(defaultParcel);
+        } else if (ptoFieldContainer) {
+            ptoFieldContainer.style.display = 'none';
+        }
+    }
+});
 </script>
 </body>
 </html>

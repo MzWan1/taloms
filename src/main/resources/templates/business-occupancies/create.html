@@ -313,14 +313,14 @@
                                         <div class="form-text">Only available parcels can be selected</div>
                                     </div>
 
-                                    <!-- PTO -->
-                                    <div class="col-12">
+                                    <!-- PTO (conditionally shown — populated dynamically based on selected parcel) -->
+                                    <div class="col-12" id="ptoFieldContainer" th:classappend="${activePtos == null or activePtos.empty ? 'd-none' : ''}">
                                         <label for="ptoId" class="form-label">
-                                            PTO <span class="required-star">*</span>
+                                            PTO
                                         </label>
                                         <div class="input-group">
                                             <span class="input-group-text"><i class="bi bi-file-earmark-text"></i></span>
-                                            <select id="ptoId" name="ptoId" class="form-select" required>
+                                            <select id="ptoId" name="ptoId" class="form-select">
                                                 <option value="">— Select PTO —</option>
                                                 <option th:each="pto : ${activePtos}"
                                                         th:value="${pto.id}"
@@ -328,7 +328,39 @@
                                                 </option>
                                             </select>
                                         </div>
-                                        <div class="form-text">The PTO holder must be the business owner</div>
+                                        <div class="form-text">Link this business to an existing ACTIVE PTO on the selected parcel</div>
+                                    </div>
+
+                                    <!-- No PTO guidance (shown when no PTOs match selected parcel) -->
+                                    <div class="col-12" id="noPtoGuidance" style="display:none;">
+                                        <div class="alert alert-info border-0 mb-0">
+                                            <i class="bi bi-info-circle me-2"></i>
+                                            <strong>No active PTO for this parcel.</strong>
+                                            A PTO must be created and approved before it can be linked to a business.
+                                            <a href="/ptos/create" class="alert-link text-navy fw-semibold">Create a PTO first</a>.
+                                        </div>
+                                    </div>
+
+                                    <!-- Household Link -->
+                                    <div class="col-12">
+                                        <label for="householdId" class="form-label">
+                                            Household
+                                            <span class="optional-badge">Optional</span>
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text"><i class="bi bi-people"></i></span>
+                                            <select id="householdId" name="householdId" class="form-select">
+                                                <option value="">— Select Household —</option>
+                                                <option th:each="h : ${availableHouseholds}"
+                                                        th:value="${h.id}"
+                                                        th:text="${h.householdHeadName + ' (Stand ' + (h.standNumber != null ? h.standNumber : '') + ')'}">
+                                                </option>
+                                            </select>
+                                        </div>
+                                        <div class="form-text">
+                                            <i class="bi bi-info-circle me-1"></i>
+                                            Link this business to the household that operates it on this parcel
+                                        </div>
                                     </div>
 
                                     <!-- Notes -->
@@ -691,9 +723,8 @@
         const hasOwner = document.getElementById('ownerName').value.trim() !== '';
         const hasId = document.getElementById('ownerIdNumber').value.trim().length === 13;
         const hasParcel = document.getElementById('parcelId').value !== '';
-        const hasPto = document.getElementById('ptoId').value !== '';
 
-        const isValid = hasIdCopy && hasName && hasOwner && hasId && hasParcel && hasPto;
+        const isValid = hasIdCopy && hasName && hasOwner && hasId && hasParcel;
 
         btn.disabled = !isValid;
 
@@ -706,7 +737,6 @@
             if (!hasOwner) missing.push('Owner Name');
             if (!hasId) missing.push('Valid SA ID');
             if (!hasParcel) missing.push('Parcel');
-            if (!hasPto) missing.push('PTO');
             msg.innerHTML = '<span class="text-muted">Please complete: ' + missing.join(', ') + '</span>';
         }
     }
@@ -737,7 +767,53 @@
     });
     document.getElementById('ownerIdNumber').addEventListener('input', updateSubmitButton);
     document.getElementById('parcelId').addEventListener('change', updateSubmitButton);
-    document.getElementById('ptoId').addEventListener('change', updateSubmitButton);
+
+    // ── Dynamic PTO filtering based on selected parcel ────────────────────
+    var activePtosData = /*[[${activePtos}]]*/ [];
+    var ptoFieldContainer = document.getElementById('ptoFieldContainer');
+    var noPtoGuidance = document.getElementById('noPtoGuidance');
+    var ptoSelect = document.getElementById('ptoId');
+
+    function filterPtoByParcel(parcelId) {
+        if (!ptoSelect) return;
+        ptoSelect.innerHTML = '<option value="">— Select PTO —</option>';
+
+        if (!parcelId) {
+            if (ptoFieldContainer) ptoFieldContainer.style.display = 'none';
+            if (noPtoGuidance) noPtoGuidance.style.display = 'none';
+            return;
+        }
+
+        var parcelPtos = activePtosData.filter(function(p) {
+            return p.parcelId == parcelId && p.status === 'ACTIVE';
+        });
+
+        if (parcelPtos.length > 0) {
+            parcelPtos.forEach(function(pto) {
+                var opt = document.createElement('option');
+                opt.value = pto.id;
+                opt.textContent = pto.ptoNumber + ' - ' + (pto.ptoHolderName || '');
+                ptoSelect.appendChild(opt);
+            });
+            if (ptoFieldContainer) ptoFieldContainer.style.display = 'block';
+            if (noPtoGuidance) noPtoGuidance.style.display = 'none';
+        } else {
+            if (ptoFieldContainer) ptoFieldContainer.style.display = 'none';
+            if (noPtoGuidance) noPtoGuidance.style.display = 'block';
+        }
+    }
+
+    if (document.getElementById('parcelId')) {
+        document.getElementById('parcelId').addEventListener('change', function() {
+            filterPtoByParcel(this.value);
+        });
+        var defaultParcel = document.getElementById('parcelId').value;
+        if (defaultParcel) {
+            filterPtoByParcel(defaultParcel);
+        } else if (ptoFieldContainer) {
+            ptoFieldContainer.style.display = 'none';
+        }
+    }
 
     // ── Update business name in summary ─────────────────────────────────
     document.getElementById('businessName').addEventListener('input', function() {
@@ -753,8 +829,7 @@
         }
         return true;
     });
-
-    console.log('Business registration ready. Please upload the required documents.');
+});
 </script>
 </body>
 </html>

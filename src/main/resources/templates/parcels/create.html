@@ -263,6 +263,26 @@
                                         <option value="">— Select Authority First —</option>
                                     </select>
                                 </div>
+                                <div id="villageInfo" class="mt-2" style="display:none;">
+                                    <div class="alert alert-light border py-2 px-3 small mb-0">
+                                        <div class="d-flex flex-wrap gap-3">
+                                            <span class="text-muted">
+                                                <i class="bi bi-houses me-1"></i>
+                                                Village: <strong id="infoVillageName" class="text-navy">—</strong>
+                                            </span>
+                                            <span class="text-muted">
+                                                <i class="bi bi-person-badge me-1"></i>
+                                                Headman: <strong id="infoHeadman" class="text-navy">—</strong>
+                                            </span>
+                                            <span class="text-muted">
+                                                <i class="bi bi-building me-1"></i>
+                                                Chief: <strong id="infoChief" class="text-navy">—</strong>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <input type="hidden" id="chiefName" name="chiefName">
+                                <input type="hidden" id="headmanName" name="headmanName">
                             </div>
 
                             <!-- Notes -->
@@ -499,6 +519,7 @@
 
         if (!authorityId) {
             villageSelect.innerHTML = '<option value="">— Select Authority First —</option>';
+            document.getElementById('villageInfo').style.display = 'none';
             return;
         }
 
@@ -513,6 +534,7 @@
                 villageSelect.innerHTML = '<option value="">— Select Village —</option>';
                 if (!villages || villages.length === 0) {
                     villageSelect.innerHTML = '<option value="">No villages for this authority</option>';
+                    document.getElementById('villageInfo').style.display = 'none';
                     return;
                 }
                 villages.sort((a, b) => a.villageName.localeCompare(b.villageName));
@@ -520,13 +542,41 @@
                     const opt = document.createElement('option');
                     opt.value = v.id;
                     opt.textContent = v.villageName;
+                    opt.dataset.headman = v.headmanName || '—';
+                    opt.dataset.chief = v.chiefName || '—';
+                    opt.dataset.villageName = v.villageName || '—';
                     villageSelect.appendChild(opt);
                 });
+                document.getElementById('villageInfo').style.display = 'none';
             })
             .catch(err => {
                 console.error('Error loading villages:', err);
                 villageSelect.innerHTML = '<option value="">Error loading villages</option>';
+                document.getElementById('villageInfo').style.display = 'none';
             });
+    });
+
+    document.getElementById('villageId').addEventListener('change', function() {
+        const selected = this.options[this.selectedIndex];
+        const infoDiv = document.getElementById('villageInfo');
+
+        if (this.value) {
+            const villageName = selected.dataset.villageName || selected.textContent;
+            const headman = selected.dataset.headman || '—';
+            const chief = selected.dataset.chief || '—';
+
+            document.getElementById('infoVillageName').textContent = villageName;
+            document.getElementById('infoHeadman').textContent = headman;
+            document.getElementById('infoChief').textContent = chief;
+            infoDiv.style.display = 'block';
+
+            document.getElementById('headmanName').value = headman === '—' ? '' : headman;
+            document.getElementById('chiefName').value = chief === '—' ? '' : chief;
+        } else {
+            infoDiv.style.display = 'none';
+            document.getElementById('headmanName').value = '';
+            document.getElementById('chiefName').value = '';
+        }
     });
 
     // ── CRITICAL FIX: Force Fresh GPS with Multiple Strategies ──────────
@@ -1510,7 +1560,7 @@ accuracyClass = 'accuracy-poor';
                         break;
                     }
                 }
-            }
+            ``
         }
     });
 

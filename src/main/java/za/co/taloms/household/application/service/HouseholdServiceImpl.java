@@ -12,6 +12,7 @@ import za.co.taloms.household.application.dto.HouseholdResponse;
 import za.co.taloms.household.domain.entity.Household;
 import za.co.taloms.household.domain.repository.HouseholdRepositoryPort;
 import za.co.taloms.parcel.domain.repository.ParcelRepositoryPort;
+import za.co.taloms.pto.domain.entity.PTO;
 import za.co.taloms.pto.domain.entity.PTOStatus;
 import za.co.taloms.pto.domain.repository.PTORepositoryPort;
 import java.time.LocalDate;
@@ -37,27 +38,24 @@ public class HouseholdServiceImpl implements HouseholdService {
         var parcel = parcelRepository.findById(request.getParcelId())
                 .orElseThrow(() -> new ResourceNotFoundException("Parcel", request.getParcelId()));
 
-        // ===== VALIDATION 1: PTO is required =====
-        if (request.getPtoId() == null) {
-            throw new BusinessValidationException(
-                    "PTO is required to register a household.");
-        }
+        // ===== VALIDATION 1: PTO is optional — if provided, it must exist and be ACTIVE =====
+        PTO pto = null;
+        if (request.getPtoId() != null) {
+            pto = ptoRepository.findById(request.getPtoId())
+                    .orElseThrow(() -> new ResourceNotFoundException("PTO", request.getPtoId()));
 
-        // ===== VALIDATION 2: PTO must exist and be ACTIVE =====
-        var pto = ptoRepository.findById(request.getPtoId())
-                .orElseThrow(() -> new ResourceNotFoundException("PTO", request.getPtoId()));
+            if (pto.getStatus() != PTOStatus.ACTIVE) {
+                throw new BusinessValidationException(
+                        "Cannot register household: PTO " + pto.getPtoNumber() +
+                                " is not ACTIVE. Current status: " + pto.getStatus().getDisplayName());
+            }
 
-        if (pto.getStatus() != PTOStatus.ACTIVE) {
-            throw new BusinessValidationException(
-                    "Cannot register household: PTO " + pto.getPtoNumber() +
-                            " is not ACTIVE. Current status: " + pto.getStatus().getDisplayName());
-        }
-
-        // ===== VALIDATION 3: PTO must belong to the same parcel =====
-        if (pto.getParcel() == null || !pto.getParcel().getId().equals(parcel.getId())) {
-            throw new BusinessValidationException(
-                    "PTO " + pto.getPtoNumber() +
-                            " does not belong to parcel " + parcel.getParcelNumber() + " (" + parcel.getStandNumber() + ")");
+            // ===== VALIDATION 2: PTO must belong to the same parcel =====
+            if (pto.getParcel() == null || !pto.getParcel().getId().equals(parcel.getId())) {
+                throw new BusinessValidationException(
+                        "PTO " + pto.getPtoNumber() +
+                                " does not belong to parcel " + parcel.getParcelNumber() + " (" + parcel.getStandNumber() + ")");
+            }
         }
 
         // Check if parcel already has an active household
@@ -97,27 +95,24 @@ public class HouseholdServiceImpl implements HouseholdService {
         var parcel = parcelRepository.findById(request.getParcelId())
                 .orElseThrow(() -> new ResourceNotFoundException("Parcel", request.getParcelId()));
 
-        // ===== VALIDATION 1: PTO is required =====
-        if (request.getPtoId() == null) {
-            throw new BusinessValidationException(
-                    "PTO is required for household registration.");
-        }
+        // ===== VALIDATION 1: PTO is optional — if provided, it must exist and be ACTIVE =====
+        PTO pto = null;
+        if (request.getPtoId() != null) {
+            pto = ptoRepository.findById(request.getPtoId())
+                    .orElseThrow(() -> new ResourceNotFoundException("PTO", request.getPtoId()));
 
-        // ===== VALIDATION 2: PTO must be ACTIVE =====
-        var pto = ptoRepository.findById(request.getPtoId())
-                .orElseThrow(() -> new ResourceNotFoundException("PTO", request.getPtoId()));
+            if (pto.getStatus() != PTOStatus.ACTIVE) {
+                throw new BusinessValidationException(
+                        "PTO " + pto.getPtoNumber() +
+                                " is not ACTIVE. Current status: " + pto.getStatus().getDisplayName());
+            }
 
-        if (pto.getStatus() != PTOStatus.ACTIVE) {
-            throw new BusinessValidationException(
-                    "PTO " + pto.getPtoNumber() +
-                            " is not ACTIVE. Current status: " + pto.getStatus().getDisplayName());
-        }
-
-        // ===== VALIDATION 3: PTO must belong to the same parcel =====
-        if (pto.getParcel() == null || !pto.getParcel().getId().equals(parcel.getId())) {
-            throw new BusinessValidationException(
-                    "PTO " + pto.getPtoNumber() +
-                            " does not belong to parcel " + parcel.getParcelNumber() + " (" + parcel.getStandNumber() + ")");
+            // ===== VALIDATION 2: PTO must belong to the same parcel =====
+            if (pto.getParcel() == null || !pto.getParcel().getId().equals(parcel.getId())) {
+                throw new BusinessValidationException(
+                        "PTO " + pto.getPtoNumber() +
+                                " does not belong to parcel " + parcel.getParcelNumber() + " (" + parcel.getStandNumber() + ")");
+            }
         }
 
         // Check if another active household exists on this parcel (excluding this one)

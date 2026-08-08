@@ -140,6 +140,8 @@
                   id="residentForm"
                   novalidate>
 
+                <input type="hidden" id="sourceHouseholdId" th:value="${form.householdId}">
+
                 <div class="row g-4">
 
                     <!-- LEFT -->
@@ -739,6 +741,26 @@
         }
         return true;
     });
+
+    // ── Pre-select household when coming from household page ────────────
+    (function() {
+        var hiddenInput = document.getElementById('sourceHouseholdId');
+        var householdSelect = document.getElementById('householdId');
+        var form = document.getElementById('residentForm');
+        if (hiddenInput && householdSelect && hiddenInput.value) {
+            householdSelect.value = hiddenInput.value;
+            householdSelect.disabled = true;
+            if (form) {
+                form.action = '/residents/household/' + hiddenInput.value + '/create';
+            }
+            var summary = document.getElementById('summaryHousehold');
+            if (summary) {
+                var selectedOpt = householdSelect.options[householdSelect.selectedIndex];
+                summary.textContent = selectedOpt ? selectedOpt.text : '—';
+            }
+            updateSubmitButton();
+        }
+    })();
 
     console.log('Resident registration ready. Please upload the required documents.');
 </script>

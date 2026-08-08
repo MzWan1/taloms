@@ -162,8 +162,8 @@
                                 </div>
                             </div>
 
-                            <!-- PTO -->
-                            <div class="col-12" th:if="${activePtos != null and !activePtos.isEmpty()}">
+                            <!-- PTO (conditionally shown — populated dynamically based on selected parcel) -->
+                            <div class="col-12" id="ptoFieldContainer" th:classappend="${activePtos == null or activePtos.empty ? 'd-none' : ''}">
                                 <label for="ptoId" class="form-label">PTO</label>
                                 <div class="input-group">
                                     <span class="input-group-text">
@@ -179,7 +179,17 @@
                                         </option>
                                     </select>
                                 </div>
-                                <div class="form-text">Link this household to an existing PTO</div>
+                                <div class="form-text">Link this household to an existing ACTIVE PTO on the selected parcel</div>
+                            </div>
+
+                            <!-- No PTO guidance (shown when no PTOs match selected parcel) -->
+                            <div class="col-12" id="noPtoGuidance" style="display:none;">
+                                <div class="alert alert-info border-0 mb-0">
+                                    <i class="bi bi-info-circle me-2"></i>
+                                    <strong>No active PTO for this parcel.</strong>
+                                    A PTO must be created and approved before it can be linked to a household.
+                                    <a href="/ptos/create" class="alert-link text-navy fw-semibold">Create a PTO first</a> and have it approved.
+                                </div>
                             </div>
 
                             <!-- Registration Date -->
@@ -270,6 +280,54 @@
             this.value = '+27' + v.substring(1);
         }
     });
+
+    // ── Dynamic PTO filtering based on selected parcel ────────────────────
+    var activePtosData = /*[[${activePtos}]]*/ [];
+    var ptoFieldContainer = document.getElementById('ptoFieldContainer');
+    var noPtoGuidance = document.getElementById('noPtoGuidance');
+    var ptoSelect = document.getElementById('ptoId');
+
+    function filterPtoByParcel(parcelId) {
+        if (!ptoSelect) return;
+        ptoSelect.innerHTML = '<option value="">— Select PTO —</option>';
+
+        if (!parcelId) {
+            if (ptoFieldContainer) ptoFieldContainer.style.display = 'none';
+            if (noPtoGuidance) noPtoGuidance.style.display = 'none';
+            return;
+        }
+
+        var parcelPtos = activePtosData.filter(function(p) {
+            return p.parcelId == parcelId && p.status === 'ACTIVE';
+        });
+
+        if (parcelPtos.length > 0) {
+            parcelPtos.forEach(function(pto) {
+                var opt = document.createElement('option');
+                opt.value = pto.id;
+                opt.textContent = pto.ptoNumber + ' - ' + (pto.ptoHolderName || '');
+                ptoSelect.appendChild(opt);
+            });
+            if (ptoFieldContainer) ptoFieldContainer.style.display = 'block';
+            if (noPtoGuidance) noPtoGuidance.style.display = 'none';
+        } else {
+            if (ptoFieldContainer) ptoFieldContainer.style.display = 'none';
+            if (noPtoGuidance) noPtoGuidance.style.display = 'block';
+        }
+    }
+
+    document.getElementById('parcelId').addEventListener('change', function () {
+        filterPtoByParcel(this.value);
+    });
+
+    // Initialize: filter by default parcel if already selected
+    var defaultParcel = document.getElementById('parcelId').value;
+    if (defaultParcel) {
+        filterPtoByParcel(defaultParcel);
+    } else if (ptoFieldContainer) {
+        ptoFieldContainer.style.display = 'none';
+    }
+});
 </script>
 </body>
 </html>

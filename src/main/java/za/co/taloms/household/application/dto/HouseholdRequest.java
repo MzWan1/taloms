@@ -30,10 +30,9 @@ public class HouseholdRequest {
     @jakarta.validation.constraints.Email(message = "Enter a valid email address")
     private String contactEmail;
 
-    @NotNull(message = "Parcel is required")
+     @NotNull(message = "Parcel is required")
     private Long parcelId;
 
-    @NotNull(message = "PTO is required")
     private Long ptoId;
 
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)

@@ -64,6 +64,11 @@ public class PTORestController {
         return ResponseEntity.ok(ApiResponse.success(ptoService.findByVillage(villageId), "PTOs retrieved successfully"));
     }
 
+    @GetMapping("/parcel/{parcelId}")
+    public ResponseEntity<ApiResponse<List<PTOResponse>>> getByParcel(@PathVariable Long parcelId) {
+        return ResponseEntity.ok(ApiResponse.success(ptoService.findByParcel(parcelId), "PTOs retrieved successfully"));
+    }
+
     @PostMapping("/search")
     public ResponseEntity<ApiResponse<List<PTOResponse>>> search(@RequestBody PTOSearchCriteria criteria) {
         return ResponseEntity.ok(ApiResponse.success(ptoService.search(criteria), "Search completed"));

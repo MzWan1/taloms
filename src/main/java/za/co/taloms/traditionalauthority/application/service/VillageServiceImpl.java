@@ -155,6 +155,7 @@ public class VillageServiceImpl implements VillageService {
                 .villageName(v.getVillageName())
                 .region(v.getRegion())
                 .headmanName(v.getHeadmanName())
+                .chiefName(v.getTraditionalAuthority() != null ? v.getTraditionalAuthority().getChiefName() : null)
                 .description(v.getDescription())
                 .active(v.getActive())
                 .traditionalAuthorityId(

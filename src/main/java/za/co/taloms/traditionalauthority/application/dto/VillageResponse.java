@@ -9,6 +9,7 @@ public class VillageResponse {
     private String        villageName;
     private String        region;
     private String        headmanName;
+    private String        chiefName;
     private String        description;
     private Boolean       active;
     private Long          traditionalAuthorityId;

@@ -134,6 +134,10 @@ public class ParcelServiceImpl implements ParcelService {
         log.info("Calculated area: {} m², perimeter: {} m", areaM2, perimeterM);
 
         // Create parcel entity
+        var chiefName = village.getTraditionalAuthority() != null
+                ? village.getTraditionalAuthority().getChiefName() : null;
+        var headmanName = village.getHeadmanName();
+
         var parcel = Parcel.builder()
                 .parcelNumber(generateParcelNumber())
                 .standNumber(request.getStandNumber())
@@ -146,6 +150,8 @@ public class ParcelServiceImpl implements ParcelService {
                 .perimeterM(perimeterM)
                 .captureMode(request.getCaptureMode() != null ? request.getCaptureMode() : CaptureMode.MANUAL_TAP)
                 .village(village)
+                .chiefName(chiefName)
+                .headmanName(headmanName)
                 .notes(request.getNotes())
                 .createdBy(createdBy)
                 .build();
@@ -589,6 +595,8 @@ public class ParcelServiceImpl implements ParcelService {
                 .boundaries(boundaryPoints)
                 .boundaryCount(boundaryPoints.size())
                 .captureMode(parcel.getCaptureMode())
+                .chiefName(parcel.getChiefName())
+                .headmanName(parcel.getHeadmanName())
                 .build();
     }
 }

@@ -36,5 +36,7 @@ public class ParcelResponse {
     private List<BoundaryPointDto> boundaries;
     private Integer boundaryCount;
     private CaptureMode captureMode;
+    private String chiefName;
+    private String headmanName;
 }
 

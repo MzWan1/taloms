@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import za.co.taloms.parcel.domain.entity.Parcel;
 import za.co.taloms.pto.domain.entity.PTO;
+import za.co.taloms.household.domain.entity.Household;
 import java.time.LocalDateTime;
 
 @Entity
@@ -48,6 +49,10 @@ public class BusinessOccupancy {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "pto_id", nullable = false)
     private PTO pto;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "household_id")
+    private Household household;
 
     @Column(name = "operating_hours", length = 200)
     private String operatingHours;

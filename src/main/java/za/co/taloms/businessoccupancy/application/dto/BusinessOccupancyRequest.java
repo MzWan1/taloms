@@ -41,8 +41,9 @@ public class BusinessOccupancyRequest {
     @NotNull(message = "Parcel is required")
     private Long parcelId;
 
-    @NotNull(message = "PTO is required")
     private Long ptoId;
+
+    private Long householdId;
 
     @Size(max = 200, message = "Operating hours must not exceed 200 characters")
     private String operatingHours;

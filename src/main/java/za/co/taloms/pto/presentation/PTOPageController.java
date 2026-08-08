@@ -156,14 +156,12 @@ public class PTOPageController {
                 ptoHolderName, idNumber, parcelId, purpose);
 
         try {
-            // Get the parcel to get village and authority
+            // Get the parcel to validate and populate stand/parcel details
             var parcel = parcelService.findById(parcelId);
             if (parcel == null) {
                 ra.addFlashAttribute("errorMessage", "❌ Parcel not found. Please select a valid parcel.");
                 return "redirect:/ptos/create";
             }
-
-            var village = villageService.findById(parcel.getVillageId());
 
             var request = PTORequest.builder()
                     .parcelId(parcelId)
@@ -177,8 +175,6 @@ public class PTOPageController {
                     .issueDate(LocalDate.parse(issueDate))
                     .expiryDate(expiryDate != null && !expiryDate.isBlank() ? LocalDate.parse(expiryDate) : null)
                     .notes(notes)
-                    .villageId(parcel.getVillageId())
-                    .traditionalAuthorityId(village != null ? village.getTraditionalAuthorityId() : null)
                     .allocatedBy(allocatedBy)
                     .allocationDate(allocationDate != null && !allocationDate.isBlank() ? LocalDate.parse(allocationDate) : null)
                     .standArea(standArea)

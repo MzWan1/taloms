@@ -49,24 +49,35 @@ public class ResidentPageController {
 
     @GetMapping("/create")
     public String createForm(Model model) {
+        return createFormForHousehold(null, model);
+    }
+
+    @GetMapping("/household/{householdId}/create")
+    public String createFormForHousehold(@PathVariable Long householdId, Model model) {
         try {
-            if (!model.containsAttribute("form")) {
-                model.addAttribute("form", ResidentRequest.builder()
+            ResidentRequest form;
+            if (model.containsAttribute("form")) {
+                form = (ResidentRequest) model.getAttribute("form");
+            } else {
+                form = ResidentRequest.builder()
                         .dateOfBirth(LocalDate.now().minusYears(18))
-                        .build());
+                        .householdId(householdId)
+                        .build();
             }
 
             // Get households for dropdown
             var households = householdService.findAll();
+            model.addAttribute("form", form);
             model.addAttribute("households", households);
             model.addAttribute("genders", Gender.values());
             model.addAttribute("relationshipTypes", RelationshipType.values());
-            model.addAttribute("pageTitle", "Create Resident");
+            model.addAttribute("pageTitle", householdId != null ? "Add Resident to Household" : "Create Resident");
             model.addAttribute("currentPage", "residents");
             return "residents/create";
         } catch (Exception e) {
             log.error("Error loading create resident form: {}", e.getMessage(), e);
             model.addAttribute("errorMessage", "Error loading form: " + e.getMessage());
+            model.addAttribute("form", ResidentRequest.builder().build());
             model.addAttribute("households", Collections.emptyList());
             model.addAttribute("genders", Gender.values());
             model.addAttribute("relationshipTypes", RelationshipType.values());
@@ -96,6 +107,31 @@ public class ResidentPageController {
             ra.addFlashAttribute("errorMessage", "❌ Error creating resident: " + e.getMessage());
             ra.addFlashAttribute("form", request);
             return "redirect:/residents/create";
+        }
+    }
+
+    @PostMapping("/household/{householdId}/create")
+    public String createForHousehold(
+            @PathVariable Long householdId,
+            @ModelAttribute ResidentRequest request,
+            @AuthenticationPrincipal UserDetails userDetails,
+            RedirectAttributes ra) {
+
+        log.info("Creating resident for household {} - Name: {}",
+                householdId, request.getFullName());
+
+        try {
+            request.setHouseholdId(householdId);
+            var response = residentService.createResident(request, userDetails.getUsername());
+            ra.addFlashAttribute("successMessage",
+                    "✅ Resident " + response.getFullName() + " added to household successfully.");
+            return "redirect:/households/" + householdId;
+
+        } catch (Exception e) {
+            log.error("Error creating resident for household: {}", e.getMessage(), e);
+            ra.addFlashAttribute("errorMessage", "❌ Error adding resident: " + e.getMessage());
+            ra.addFlashAttribute("form", request);
+            return "redirect:/residents/household/" + householdId + "/create";
         }
     }
 

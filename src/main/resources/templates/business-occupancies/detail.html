@@ -239,6 +239,16 @@
                                 </div>
                             </div>
                         </li>
+                        <li class="list-group-item px-4 py-3" th:if="${business.householdId != null}">
+                            <div class="row">
+                                <div class="col-5 col-md-4 text-muted small fw-semibold">Household</div>
+                                <div class="col-7 col-md-8">
+                                    <a th:href="@{/households/{id}(id=${business.householdId})}"
+                                       class="text-navy text-decoration-none"
+                                       th:text="${business.householdHeadName != null ? business.householdHeadName : 'Household ' + business.householdId}">Household</a>
+                                </div>
+                            </div>
+                        </li>
                     </ul>
                 </div>
             </div>
