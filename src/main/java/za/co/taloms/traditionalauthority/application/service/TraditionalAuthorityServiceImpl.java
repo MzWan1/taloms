@@ -95,23 +95,38 @@ public class TraditionalAuthorityServiceImpl
     @Transactional(readOnly = true)
     public List<TraditionalAuthorityResponse> findAll() {
         List<TraditionalAuthority> all = authorityRepository.findAll();
-        log.info("findAll() returned {} authorities", all.size());
-        return all.stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
+        log.info("findAll() raw query returned {} authorities", all.size());
+
+        List<TraditionalAuthorityResponse> result = new java.util.ArrayList<>();
+        for (TraditionalAuthority a : all) {
+            try {
+                result.add(toResponse(a));
+            } catch (Exception e) {
+                log.error("Failed to map authority id={} name='{}': {}",
+                        a.getId(), a.getAuthorityName(), e.getMessage(), e);
+            }
+        }
+        log.info("findAll() mapped {} of {} authorities to responses", result.size(), all.size());
+        return result;
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<TraditionalAuthorityResponse> findAllActive() {
         List<TraditionalAuthority> active = authorityRepository.findAllActive();
-        log.info("findAllActive() returned {} authorities", active.size());
-        if (active.isEmpty()) {
-            log.warn("No active authorities found. Check if active=true is set on traditional_authorities rows.");
+        log.info("findAllActive() raw query returned {} authorities", active.size());
+
+        List<TraditionalAuthorityResponse> result = new java.util.ArrayList<>();
+        for (TraditionalAuthority a : active) {
+            try {
+                result.add(toResponse(a));
+            } catch (Exception e) {
+                log.error("Failed to map active authority id={} name='{}': {}",
+                        a.getId(), a.getAuthorityName(), e.getMessage(), e);
+            }
         }
-        return active.stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
+        log.info("findAllActive() mapped {} of {} authorities to responses", result.size(), active.size());
+        return result;
     }
 
     @Override
@@ -120,12 +135,22 @@ public class TraditionalAuthorityServiceImpl
         if (name == null || name.trim().isEmpty()) {
             return findAll();
         }
-        return authorityRepository.findAll().stream()
+        List<TraditionalAuthority> filtered = authorityRepository.findAll().stream()
                 .filter(a -> a.getAuthorityName().toLowerCase().contains(name.trim().toLowerCase())
                         || (a.getChiefName() != null && a.getChiefName().toLowerCase().contains(name.trim().toLowerCase()))
                         || (a.getRegion() != null && a.getRegion().toLowerCase().contains(name.trim().toLowerCase())))
-                .map(this::toResponse)
-                .collect(Collectors.toList());
+                .toList();
+
+        List<TraditionalAuthorityResponse> result = new java.util.ArrayList<>();
+        for (TraditionalAuthority a : filtered) {
+            try {
+                result.add(toResponse(a));
+            } catch (Exception e) {
+                log.error("Failed to map searched authority id={} name='{}': {}",
+                        a.getId(), a.getAuthorityName(), e.getMessage(), e);
+            }
+        }
+        return result;
     }
 
     @Override

@@ -1,6 +1,7 @@
 package za.co.taloms.traditionalauthority.presentation;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -10,10 +11,12 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import za.co.taloms.traditionalauthority.application.dto.*;
 import za.co.taloms.traditionalauthority.application.service.*;
+import java.util.List;
 
 @Controller
 @RequestMapping("/authorities")
 @RequiredArgsConstructor
+@Slf4j
 public class TraditionalAuthorityPageController {
 
     private final TraditionalAuthorityService authorityService;
@@ -21,7 +24,9 @@ public class TraditionalAuthorityPageController {
 
     @GetMapping
     public String list(Model model) {
-        model.addAttribute("authorities", authorityService.findAll());
+        List<TraditionalAuthorityResponse> authorities = authorityService.findAll();
+        log.info("AuthoritiesPageController: model 'authorities' size = {}", authorities.size());
+        model.addAttribute("authorities", authorities);
         model.addAttribute("pageTitle",   "Traditional Authorities");
         model.addAttribute("currentPage", "authorities");
         return "authorities/list";
