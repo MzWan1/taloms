@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en"
-      xmlns:th="http://www.thymeleaf.org"
-      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+      xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -744,18 +743,18 @@
 
     // ── Pre-select household when coming from household page ────────────
     (function() {
-        var hiddenInput = document.getElementById('sourceHouseholdId');
-        var householdSelect = document.getElementById('householdId');
-        var form = document.getElementById('residentForm');
+        const hiddenInput = document.getElementById('sourceHouseholdId');
+        const householdSelect = document.getElementById('householdId');
+        const form = document.getElementById('residentForm');
         if (hiddenInput && householdSelect && hiddenInput.value) {
             householdSelect.value = hiddenInput.value;
             householdSelect.disabled = true;
             if (form) {
                 form.action = '/residents/household/' + hiddenInput.value + '/create';
             }
-            var summary = document.getElementById('summaryHousehold');
+            const summary = document.getElementById('summaryHousehold');
             if (summary) {
-                var selectedOpt = householdSelect.options[householdSelect.selectedIndex];
+                const selectedOpt = householdSelect.options[householdSelect.selectedIndex];
                 summary.textContent = selectedOpt ? selectedOpt.text : '—';
             }
             updateSubmitButton();

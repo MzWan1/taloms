@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="en"
-      xmlns:th="http://www.thymeleaf.org"
-      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+      xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -355,10 +354,10 @@
     });
 
     // ── Dynamic PTO filtering based on selected parcel ────────────────────
-    var activePtosData = /*[[${activePtos}]]*/ [];
-    var ptoFieldContainer = document.getElementById('ptoFieldContainer');
-    var noPtoGuidance = document.getElementById('noPtoGuidance');
-    var ptoSelect = document.getElementById('ptoId');
+    const activePtosData = /*[[${activePtos}]]*/ [];
+    const ptoFieldContainer = document.getElementById('ptoFieldContainer');
+    const noPtoGuidance = document.getElementById('noPtoGuidance');
+    const ptoSelect = document.getElementById('ptoId');
 
     function filterPtoByParcel(parcelId) {
         if (!ptoSelect) return;
@@ -370,20 +369,20 @@
             return;
         }
 
-        var parcelPtos = activePtosData.filter(function(p) {
-            return p.parcelId == parcelId && p.status === 'ACTIVE';
+        const parcelPtos = activePtosData.filter(function(p) {
+            return p.parcelId === parcelId && p.status === 'ACTIVE';
         });
 
         if (parcelPtos.length > 0) {
-            var placeholder = document.createElement('option');
+            const placeholder = document.createElement('option');
             placeholder.value = '';
             placeholder.textContent = '— Select PTO —';
             ptoSelect.appendChild(placeholder);
             parcelPtos.forEach(function(pto) {
-                var opt = document.createElement('option');
+                const opt = document.createElement('option');
                 opt.value = pto.id;
                 opt.textContent = pto.ptoNumber + ' - ' + (pto.ptoHolderName || '');
-                if (pto.id == /*[[${form.ptoId}]]*/ '') {
+                if (pto.id === /*[[${form.ptoId}]]*/ '') {
                     opt.selected = true;
                 }
                 ptoSelect.appendChild(opt);
@@ -400,14 +399,13 @@
         document.getElementById('parcelId').addEventListener('change', function() {
             filterPtoByParcel(this.value);
         });
-        var defaultParcel = document.getElementById('parcelId').value;
+        const defaultParcel = document.getElementById('parcelId').value;
         if (defaultParcel) {
             filterPtoByParcel(defaultParcel);
         } else if (ptoFieldContainer) {
             ptoFieldContainer.style.display = 'none';
         }
-    }
-});
+}
 </script>
 </body>
 </html>
