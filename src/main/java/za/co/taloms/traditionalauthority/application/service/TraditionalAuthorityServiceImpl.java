@@ -154,6 +154,42 @@ public class TraditionalAuthorityServiceImpl
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<TraditionalAuthorityResponse> search(String search, String status) {
+        String searchTerm = search != null ? search.trim().toLowerCase() : "";
+        String statusFilter = status != null ? status.trim().toLowerCase() : "";
+
+        List<TraditionalAuthority> filtered = authorityRepository.findAll().stream()
+                .filter(a -> {
+                    boolean matchesSearch = searchTerm.isEmpty()
+                            || (a.getAuthorityName() != null
+                                && a.getAuthorityName().toLowerCase().contains(searchTerm))
+                            || (a.getChiefName() != null
+                                && a.getChiefName().toLowerCase().contains(searchTerm))
+                            || (a.getRegion() != null
+                                && a.getRegion().toLowerCase().contains(searchTerm));
+
+                    boolean matchesStatus = statusFilter.isEmpty()
+                            || ("active".equals(statusFilter) && Boolean.TRUE.equals(a.getActive()))
+                            || ("inactive".equals(statusFilter) && !Boolean.TRUE.equals(a.getActive()));
+
+                    return matchesSearch && matchesStatus;
+                })
+                .toList();
+
+        List<TraditionalAuthorityResponse> result = new java.util.ArrayList<>();
+        for (TraditionalAuthority a : filtered) {
+            try {
+                result.add(toResponse(a));
+            } catch (Exception e) {
+                log.error("Failed to map searched authority id={} name='{}': {}",
+                        a.getId(), a.getAuthorityName(), e.getMessage(), e);
+            }
+        }
+        return result;
+    }
+
+    @Override
     public void deactivate(Long id) {
         var authority = authorityRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(

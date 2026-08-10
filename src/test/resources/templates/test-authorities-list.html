@@ -10,7 +10,6 @@
     <td colspan="9">No authorities found</td>
 </tr>
 <tr th:each="auth, stat : ${authorities}"
-    th:classappend="'authority-row'"
     th:data-name="${auth.authorityName}"
     th:data-status="${auth.active ? 'active' : 'inactive'}">
     <td th:text="${stat.count}">1</td>

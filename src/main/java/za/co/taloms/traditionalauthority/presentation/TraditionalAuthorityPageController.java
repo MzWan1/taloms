@@ -23,10 +23,24 @@ public class TraditionalAuthorityPageController {
     private final VillageService              villageService;
 
     @GetMapping
-    public String list(Model model) {
-        List<TraditionalAuthorityResponse> authorities = authorityService.findAll();
+    public String list(Model model,
+                       @RequestParam(required = false) String search,
+                       @RequestParam(required = false) String status) {
+        List<TraditionalAuthorityResponse> authorities;
+
+        boolean hasFilters = (search != null && !search.isBlank())
+                          || (status != null && !status.isBlank());
+
+        if (hasFilters) {
+            authorities = authorityService.search(search, status);
+        } else {
+            authorities = authorityService.findAll();
+        }
+
         log.info("AuthoritiesPageController: model 'authorities' size = {}", authorities.size());
         model.addAttribute("authorities", authorities);
+        model.addAttribute("searchTerm", search);
+        model.addAttribute("selectedStatus", status);
         model.addAttribute("pageTitle",   "Traditional Authorities");
         model.addAttribute("currentPage", "authorities");
         return "authorities/list";
