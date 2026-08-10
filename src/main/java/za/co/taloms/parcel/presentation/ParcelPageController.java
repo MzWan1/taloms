@@ -173,6 +173,7 @@ public class ParcelPageController {
                     .notes(parcel.getNotes())
                     .boundaries(parcel.getBoundaries())
                     .captureMode(parcel.getCaptureMode())
+                    .boundariesJson(objectMapper.writeValueAsString(parcel.getBoundaries()))
                     .build();
 
             var authorities = authorityService.findAllActive();

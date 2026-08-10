@@ -3,6 +3,7 @@ package za.co.taloms.parcel.application.dto;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.*;
 import za.co.taloms.parcel.domain.entity.CaptureMode;
 import za.co.taloms.parcel.domain.entity.ParcelType;
@@ -41,5 +42,8 @@ public class ParcelRequest {
 
     @Size(max = 150, message = "Headman name must not exceed 150 characters")
     private String headmanName;
+
+    @JsonIgnore
+    private String boundariesJson;
 }
 
