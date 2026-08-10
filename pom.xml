@@ -221,6 +221,7 @@
                     <include>**/*.js</include>
                     <include>**/*.sql</include>
                     <include>**/*.xml</include>
+                    <include>**/*.ico</include>
                 </includes>
             </resource>
         </resources>

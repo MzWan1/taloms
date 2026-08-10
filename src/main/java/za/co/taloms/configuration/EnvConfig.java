@@ -21,7 +21,7 @@ public class EnvConfig {
     @Value("${DB_PASSWORD:taloms_pass}")
     private String dbPassword;
 
-    @Value("${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}")
+    @Value("${JWT_SECRET}")
     private String jwtSecret;
 
     @Value("${JWT_EXPIRATION:28800000}")
@@ -42,7 +42,7 @@ public class EnvConfig {
     @Value("${EMAIL_USERNAME:nkambulemm0@gmail.com}")
     private String emailUsername;
 
-    @Value("${EMAIL_PASSWORD:wqctcwnfglglqskn}")
+    @Value("${EMAIL_PASSWORD}")
     private String emailPassword;
 
     @Value("${EMAIL_FROM:nkambulemm0@gmail.com}")

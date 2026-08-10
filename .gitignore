@@ -55,3 +55,8 @@ Thumbs.db
 # Logs
 logs/
 *.log
+
+# Environment backups
+.env.backup
+.env.*
+!.env.example

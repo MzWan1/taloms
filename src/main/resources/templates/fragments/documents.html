@@ -67,7 +67,7 @@
                     <a th:href="@{'/api/documents/' + ${doc.id} + '/download'}" class="btn btn-sm btn-outline-success">
                         <i class="bi bi-download"></i>
                     </a>
-                    <button class="btn btn-sm btn-outline-danger" onclick="deleteDocument(${doc.id})">
+                    <button class="btn btn-sm btn-outline-danger" th:onclick="'deleteDocument(' + ${doc.id} + ')'">
                         <i class="bi bi-trash"></i>
                     </button>
                 </div>

@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import za.co.taloms.businessoccupancy.domain.entity.BusinessOccupancy;
+import za.co.taloms.businessoccupancy.domain.repository.BusinessOccupancyRepositoryPort;
 import za.co.taloms.common.BusinessValidationException;
 import za.co.taloms.common.ResourceNotFoundException;
 import za.co.taloms.document.application.dto.DocumentAccessLogResponse;
@@ -17,13 +19,22 @@ import za.co.taloms.document.domain.entity.DocumentType;
 import za.co.taloms.document.domain.entity.EntityType;
 import za.co.taloms.document.domain.repository.DocumentAccessLogRepositoryPort;
 import za.co.taloms.document.domain.repository.DocumentRepositoryPort;
+import za.co.taloms.household.domain.entity.Household;
+import za.co.taloms.household.domain.repository.HouseholdRepositoryPort;
+import za.co.taloms.parcel.domain.entity.Parcel;
+import za.co.taloms.parcel.domain.repository.ParcelRepositoryPort;
+import za.co.taloms.pto.domain.entity.PTO;
+import za.co.taloms.pto.domain.repository.PTORepositoryPort;
+import za.co.taloms.resident.domain.entity.Resident;
+import za.co.taloms.resident.domain.repository.ResidentRepositoryPort;
 
 import java.io.IOException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.List;
-import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -34,6 +45,11 @@ public class DocumentServiceImpl implements DocumentService {
 
     private final DocumentRepositoryPort documentRepository;
     private final DocumentAccessLogRepositoryPort accessLogRepository;
+    private final PTORepositoryPort ptoRepository;
+    private final ResidentRepositoryPort residentRepository;
+    private final HouseholdRepositoryPort householdRepository;
+    private final BusinessOccupancyRepositoryPort businessRepository;
+    private final ParcelRepositoryPort parcelRepository;
 
     @Value("${taloms.upload.max-size:20971520}")
     private long maxFileSize;
@@ -66,10 +82,10 @@ public class DocumentServiceImpl implements DocumentService {
         var entityType = EntityType.valueOf(request.getEntityType());
         var documentType = DocumentType.valueOf(request.getDocumentType());
 
-        // Generate unique filename
-        String originalFilename = file.getOriginalFilename();
-        String extension = getFileExtension(originalFilename);
-        String storedFilename = UUID.randomUUID().toString() + "." + extension;
+        // Generate filename in full_name_type_date format
+        String extension = getFileExtension(file.getOriginalFilename());
+        String storedFilename = generateStoredFilename(entityType, documentType, request.getEntityId(), extension);
+        String originalFilename = storedFilename;
 
         // Read file content into memory for database storage
         byte[] fileContent;
@@ -329,6 +345,56 @@ public class DocumentServiceImpl implements DocumentService {
             return "bin";
         }
         return filename.substring(filename.lastIndexOf(".") + 1).toLowerCase();
+    }
+
+    private String generateStoredFilename(EntityType entityType, DocumentType documentType, Long entityId, String extension) {
+        String fullName = resolveFullName(entityType, entityId);
+        String type = getDocumentTypeShortName(documentType);
+        String date = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE);
+        String base = fullName + "_" + type + "_" + date;
+        String filename = base + "." + extension;
+
+        // Ensure uniqueness in case of same entity/type/date collisions
+        int counter = 1;
+        while (documentRepository.findByStoredFilename(filename).isPresent()) {
+            filename = base + "_" + counter + "." + extension;
+            counter++;
+        }
+
+        return filename;
+    }
+
+    private String resolveFullName(EntityType entityType, Long entityId) {
+        String name = switch (entityType) {
+            case PTO -> ptoRepository.findById(entityId).map(PTO::getPtoHolderName).orElse("unknown");
+            case RESIDENT -> residentRepository.findById(entityId).map(Resident::getFullName).orElse("unknown");
+            case HOUSEHOLD -> householdRepository.findById(entityId).map(Household::getHouseholdHeadName).orElse("unknown");
+            case BUSINESS -> businessRepository.findById(entityId).map(BusinessOccupancy::getOwnerName).orElse("unknown");
+            case PARCEL -> parcelRepository.findById(entityId).map(Parcel::getParcelNumber).orElse("unknown");
+        };
+        return sanitizeName(name);
+    }
+
+    private String sanitizeName(String name) {
+        if (name == null || name.isBlank()) {
+            return "unknown";
+        }
+        return name.toLowerCase()
+                .replaceAll("[^a-z0-9]+", "_")
+                .replaceAll("^_+|_+$", "");
+    }
+
+    private String getDocumentTypeShortName(DocumentType documentType) {
+        return switch (documentType) {
+            case PTO_CERT -> "pto_cert";
+            case ID_COPY -> "id";
+            case SURVEY -> "survey";
+            case PHOTO -> "photo";
+            case OTHER -> "other";
+            case TA_ALLOCATION_LETTER -> "ta_allocation_letter";
+            case SITE_SKETCH -> "site_sketch";
+            case COMMUNITY_RESOLUTION -> "community_resolution";
+        };
     }
 
     private String calculateChecksum(byte[] content) {

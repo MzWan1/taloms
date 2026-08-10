@@ -288,7 +288,7 @@ logging.level.org.springframework.security=INFO
 logging.level.org.flywaydb=INFO
 
 # ── JWT ───────────────────────────────────────────────────────────────────────
-taloms.jwt.secret=404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+taloms.jwt.secret=${JWT_SECRET}
 taloms.jwt.expiration=28800000
 ```
 
