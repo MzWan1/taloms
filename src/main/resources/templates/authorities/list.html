@@ -179,6 +179,7 @@
             </td>
           </tr>
           <tr th:each="auth, stat : ${authorities}"
+              th:classappend="'authority-row'"
               th:data-name="${auth.authorityName}"
               th:data-status="${auth.active ? 'active' : 'inactive'}">
             <td class="px-4 text-muted small"
@@ -361,10 +362,31 @@
   const searchInput = document.getElementById('searchInput');
   const statusFilter = document.getElementById('statusFilter');
 
-  function resetFilters() {
-      if (searchInput) searchInput.value = '';
-      if (statusFilter) statusFilter.value = '';
-      filterTable();
+  function filterTable() {
+      if (!searchInput || !statusFilter) return;
+
+      const search = (searchInput.value || '').toLowerCase();
+      const status = (statusFilter.value || '').toLowerCase();
+      const rows = document.querySelectorAll(
+              '#authoritiesTable tbody tr.authority-row');
+
+      rows.forEach(row => {
+          const text = row.textContent.toLowerCase();
+          const rowStat = (row.dataset.status || '').toLowerCase();
+          const matchS = !search || text.includes(search);
+          const matchSt = !status || rowStat === status;
+          row.style.display = (matchS && matchSt) ? 'table-row' : 'none';
+      });
+
+      // Show/hide the empty-state row based on visible data rows
+      const emptyRow = document.querySelector('#authoritiesTable tbody tr.no-data');
+      if (emptyRow) {
+          let visibleCount = 0;
+          rows.forEach(row => {
+              if (row.style.display !== 'none') visibleCount++;
+          });
+          emptyRow.style.display = visibleCount === 0 ? '' : 'none';
+      }
   }
 
   if (searchInput) {
@@ -372,31 +394,6 @@
   }
   if (statusFilter) {
       statusFilter.addEventListener('change', filterTable);
-  }
-
-  document.addEventListener('DOMContentLoaded', resetFilters);
-
-  function filterTable() {
-      if (!searchInput || !statusFilter) return;
-
-      const search = (searchInput.value || '').toLowerCase();
-      const status = (statusFilter.value || '').toLowerCase();
-      const rows = document.querySelectorAll(
-              '#authoritiesTable tbody tr[data-name]');
-
-      rows.forEach(row => {
-          const text = row.textContent.toLowerCase();
-          const rowStat = (row.dataset.status || '').toLowerCase();
-          const matchS = !search || text.includes(search);
-          const matchSt = !status || rowStat === status;
-          row.style.display = (matchS && matchSt) ? '' : 'none';
-      });
-
-      // Show/hide the empty-state row based on visible data rows
-      const emptyRow = document.querySelector('#authoritiesTable tbody tr.no-data');
-      if (emptyRow) {
-          emptyRow.style.display = rows.length === 0 ? '' : 'none';
-      }
   }
 
   function clearFilters() {

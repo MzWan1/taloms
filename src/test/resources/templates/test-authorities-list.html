@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Test</title>
+</head>
+<body>
+<table id="authoritiesTable">
+<tbody>
+<tr th:if="${#lists.isEmpty(authorities)}" class="no-data">
+    <td colspan="9">No authorities found</td>
+</tr>
+<tr th:each="auth, stat : ${authorities}"
+    th:classappend="'authority-row'"
+    th:data-name="${auth.authorityName}"
+    th:data-status="${auth.active ? 'active' : 'inactive'}">
+    <td th:text="${stat.count}">1</td>
+    <td th:text="${auth.authorityName}">Name</td>
+    <td th:text="${auth.chiefName}">Chief</td>
+    <td th:text="${auth.region}">Region</td>
+    <td th:text="${auth.villageCount}">0</td>
+    <td th:text="${auth.active ? 'Active' : 'Inactive'}">Status</td>
+</tr>
+</tbody>
+</table>
+</body>
+</html>
