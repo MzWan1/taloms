@@ -80,7 +80,7 @@
     <div class="col-6 col-md-3">
       <div class="card border-0 shadow-sm text-center py-3">
         <div class="fw-bold fs-4 text-success"
-             th:text="${#lists.size(authorities.?[active == true])}">
+             th:text="${#lists.size(authorities.?[#this.active])}">
           0
         </div>
         <div class="small text-muted">Active</div>
@@ -89,7 +89,7 @@
     <div class="col-6 col-md-3">
       <div class="card border-0 shadow-sm text-center py-3">
         <div class="fw-bold fs-4 text-secondary"
-             th:text="${#lists.size(authorities.?[active == false])}">
+             th:text="${#lists.size(authorities.?[!#this.active])}">
           0
         </div>
         <div class="small text-muted">Inactive</div>
@@ -186,7 +186,9 @@
             <td>
               <div class="d-flex align-items-center gap-3">
                 <div class="authority-avatar"
-                     th:text="${#strings.substring(auth.authorityName,0,2).toUpperCase()}">
+                     th:text="${#strings.substring(
+                       auth.authorityName != null ? auth.authorityName : '',
+                       0, 2).toUpperCase()}">
                   TA
                 </div>
                 <div>
@@ -359,12 +361,20 @@
   const searchInput = document.getElementById('searchInput');
   const statusFilter = document.getElementById('statusFilter');
 
+  function resetFilters() {
+      if (searchInput) searchInput.value = '';
+      if (statusFilter) statusFilter.value = '';
+      filterTable();
+  }
+
   if (searchInput) {
       searchInput.addEventListener('input', filterTable);
   }
   if (statusFilter) {
       statusFilter.addEventListener('change', filterTable);
   }
+
+  document.addEventListener('DOMContentLoaded', resetFilters);
 
   function filterTable() {
       if (!searchInput || !statusFilter) return;
