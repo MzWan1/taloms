@@ -76,9 +76,12 @@ public interface PTOJpaRepository extends JpaRepository<PTO, Long> {
 
     @Query("""
             SELECT p FROM PTO p WHERE
-            (:holderName IS NULL OR LOWER(p.ptoHolderName) LIKE LOWER(CONCAT('%', :holderName, '%')))
-            AND (:idNumber IS NULL OR p.idNumber LIKE CONCAT('%', :idNumber, '%'))
-            AND (:ptoNumber IS NULL OR LOWER(p.ptoNumber) LIKE LOWER(CONCAT('%', :ptoNumber, '%')))
+            (CAST(:holderName AS String) IS NULL
+                OR LOWER(p.ptoHolderName) LIKE LOWER(CONCAT('%', CAST(:holderName AS String), '%')))
+            AND (CAST(:idNumber AS String) IS NULL
+                OR p.idNumber LIKE CONCAT('%', CAST(:idNumber AS String), '%'))
+            AND (CAST(:ptoNumber AS String) IS NULL
+                OR LOWER(p.ptoNumber) LIKE LOWER(CONCAT('%', CAST(:ptoNumber AS String), '%')))
             AND (:status IS NULL OR p.status = :status)
             AND (:purpose IS NULL OR p.purpose = :purpose)
             AND (:villageId IS NULL OR p.village.id = :villageId)

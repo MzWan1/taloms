@@ -12,6 +12,8 @@ public interface TraditionalAuthorityJpaRepository
 
     boolean existsByAuthorityNameAndIdNot(String authorityName, Long id);
 
+    boolean existsByHeadmanIdAndIdNot(Long headmanId, Long id);
+
     @Query("SELECT t FROM TraditionalAuthority t WHERE t.active = true ORDER BY t.authorityName")
     List<TraditionalAuthority> findAllActive();
 

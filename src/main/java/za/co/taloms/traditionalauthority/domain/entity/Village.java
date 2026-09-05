@@ -28,6 +28,9 @@ public class Village {
     @Column(name = "headman_name", length = 150)
     private String headmanName;
 
+    @Column(name = "headman_id")
+    private Long headmanId;
+
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 

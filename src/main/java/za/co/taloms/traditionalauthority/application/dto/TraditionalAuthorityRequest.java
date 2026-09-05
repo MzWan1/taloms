@@ -10,12 +10,10 @@ public class TraditionalAuthorityRequest {
     @Size(max = 150, message = "Authority name must not exceed 150 characters")
     private String authorityName;
 
-    @NotBlank(message = "Chief name is required")
-    @Size(max = 150, message = "Chief name must not exceed 150 characters")
-    private String chiefName;
+    @NotNull(message = "Chief is required")
+    private Long chiefId;
 
-    @Size(max = 150, message = "Headman name must not exceed 150 characters")
-    private String headmanName;
+    private Long headmanId;
 
     @Pattern(regexp = "^(\\+27|0)[0-9]{9}$",
             message = "Enter a valid South African phone number")

@@ -16,6 +16,8 @@ public class TraditionalAuthorityResponse {
     private Boolean       active;
     private long          villageCount;
     private String        createdBy;
+    private Long          chiefId;
+    private Long          headmanId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

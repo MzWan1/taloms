@@ -13,8 +13,7 @@ public class VillageRequest {
     @Size(max = 100, message = "Region must not exceed 100 characters")
     private String region;
 
-    @Size(max = 150, message = "Headman name must not exceed 150 characters")
-    private String headmanName;
+    private Long headmanId;
 
     private String description;
 

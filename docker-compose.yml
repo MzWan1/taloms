@@ -7,7 +7,7 @@ services:
     ports:
       - 8080:8080
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://taloms_db:5432/taloms_db
+      SPRING_DATASOURCE_URL: jdbc:postgresql://taloms_db:5433/taloms_db
       SPRING_DATASOURCE_USERNAME: taloms_user
       SPRING_DATASOURCE_PASSWORD: taloms_password
       SPRING_PROFILES_ACTIVE: dev
@@ -25,7 +25,7 @@ services:
       POSTGRES_USER: taloms_user
       POSTGRES_PASSWORD: taloms_password
     ports:
-      - 5432:5432
+      - 5433:5432
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:

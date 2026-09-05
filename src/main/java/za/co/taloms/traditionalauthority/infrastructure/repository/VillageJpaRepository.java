@@ -11,6 +11,8 @@ public interface VillageJpaRepository
 
     List<Village> findByTraditionalAuthorityId(Long authorityId);
 
+    List<Village> findByHeadmanId(Long headmanId);
+
     boolean existsByVillageNameAndTraditionalAuthorityId(
             String villageName, Long authorityId);
 

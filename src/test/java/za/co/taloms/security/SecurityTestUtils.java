@@ -20,23 +20,15 @@ public class SecurityTestUtils {
     }
 
     public static void authenticateAsAdmin() {
-        authenticateAs("admin", "ROLE_SYSTEM_ADMIN");
+        authenticateAs("admin", "ROLE_ADMIN");
     }
 
-    public static void authenticateAsTAAdmin() {
-        authenticateAs("ta_admin", "ROLE_TA_ADMINISTRATOR");
+    public static void authenticateAsChief() {
+        authenticateAs("chief", "ROLE_CHIEF");
     }
 
-    public static void authenticateAsLandOfficer() {
-        authenticateAs("land_officer", "ROLE_LAND_OFFICER");
-    }
-
-    public static void authenticateAsDataCapturer() {
-        authenticateAs("data_capturer", "ROLE_DATA_CAPTURER");
-    }
-
-    public static void authenticateAsReportViewer() {
-        authenticateAs("report_viewer", "ROLE_REPORT_VIEWER");
+    public static void authenticateAsHeadsman() {
+        authenticateAs("headsman", "ROLE_HEADSMAN");
     }
 
     public static void clearAuthentication() {

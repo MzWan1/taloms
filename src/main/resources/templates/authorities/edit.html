@@ -66,8 +66,8 @@
 
   <div class="row g-4">
 
-    <!-- LEFT — Edit Form -->
-    <div class="col-12 col-xl-7">
+    <!-- Edit Form -->
+    <div class="col-12">
       <form th:action="@{/authorities/{id}/edit(id=${authorityId})}"
             th:object="${form}"
             method="post">
@@ -212,7 +212,7 @@
 
         <!-- Status Controls -->
         <div class="card border-0 shadow-sm mb-4"
-             sec:authorize="hasRole('SYSTEM_ADMIN')">
+             sec:authorize="hasRole('ADMIN')">
           <div class="card-header bg-white border-bottom py-3">
             <h6 class="fw-bold text-navy mb-0">
               <i class="bi bi-gear me-2"></i>Authority Status
@@ -260,98 +260,6 @@
         </div>
 
       </form>
-    </div>
-
-    <!-- RIGHT — Villages Panel -->
-    <div class="col-12 col-xl-5">
-      <div class="card border-0 shadow-sm h-100">
-        <div class="card-header bg-white border-bottom py-3
-                            d-flex justify-content-between align-items-center">
-          <h6 class="fw-bold text-navy mb-0">
-            <i class="bi bi-houses me-2"></i>Villages
-            <span class="badge bg-navy ms-1"
-                  th:text="${villages != null ? #lists.size(villages) : 0}">0</span>
-          </h6>
-          <a th:href="@{/authorities/{id}/villages/create(id=${authorityId})}"
-             class="btn btn-navy btn-sm px-3">
-            <i class="bi bi-plus me-1"></i>Add Village
-          </a>
-        </div>
-
-        <div class="card-body p-0">
-
-          <!-- Empty state -->
-          <div th:if="${villages == null or villages.empty}"
-               class="text-center py-5 text-muted">
-            <i class="bi bi-houses display-5 d-block mb-2 opacity-25"></i>
-            <span class="fw-semibold small">No villages registered yet</span><br>
-            <small>Click "Add Village" to register the first village</small>
-          </div>
-
-          <!-- Village list -->
-          <div th:unless="${villages == null or villages.empty}"
-               class="list-group list-group-flush">
-            <div th:each="village : ${villages}"
-                 class="list-group-item px-4 py-3">
-              <div class="d-flex align-items-center justify-content-between gap-2">
-                <div class="d-flex align-items-center gap-3 flex-grow-1">
-                  <div class="village-avatar"
-                       th:text="${#strings.substring(village.villageName, 0, 2).toUpperCase()}">
-                    VL
-                  </div>
-                  <div>
-                    <div class="fw-semibold small"
-                         th:text="${village.villageName}">Village</div>
-                    <div class="text-muted" style="font-size:0.78rem">
-                                            <span th:if="${village.headmanName != null}"
-                                                  th:text="${village.headmanName}"></span>
-                      <span th:if="${village.region != null}"
-                            th:text="${' · ' + village.region}"></span>
-                    </div>
-                  </div>
-                </div>
-                <div class="d-flex align-items-center gap-2 flex-shrink-0">
-                                    <span th:if="${village.active}"
-                                          class="badge bg-success">Active</span>
-                  <span th:unless="${village.active}"
-                        class="badge bg-secondary">Inactive</span>
-
-                  <form th:if="${village.active}"
-                        th:action="@{/authorities/villages/{id}/deactivate(id=${village.id})}"
-                        method="post" class="d-inline m-0">
-                    <button type="submit"
-                            class="btn btn-outline-danger btn-sm"
-                            title="Deactivate">
-                      <i class="bi bi-x"></i>
-                    </button>
-                  </form>
-                  <form th:unless="${village.active}"
-                        th:action="@{/authorities/villages/{id}/activate(id=${village.id})}"
-                        method="post" class="d-inline m-0">
-                    <button type="submit"
-                            class="btn btn-outline-success btn-sm"
-                            title="Activate">
-                      <i class="bi bi-check"></i>
-                    </button>
-                  </form>
-                </div>
-              </div>
-              <div th:if="${village.description != null and !village.description.empty}"
-                   class="text-muted mt-1 ps-5"
-                   style="font-size:0.78rem"
-                   th:text="${village.description}">
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="card-footer bg-light border-0 py-2 px-4"
-             th:unless="${villages == null or villages.empty}">
-          <small class="text-muted"
-                 th:text="${authority.villageCount + ' village(s) registered'}">
-          </small>
-        </div>
-      </div>
     </div>
 
   </div>

@@ -80,5 +80,15 @@ public class UserRepositoryAdapter implements UserRepositoryPort {
     public List<Role> findAllRoles() {
         return roleJpaRepository.findAll();
     }
+
+        @Override
+    public List<User> searchByNameOrEmail(String query) {
+        return userJpaRepository.searchByNameOrEmail(query);
+    }
+
+    @Override
+    public List<User> searchByNameOrEmailAndAuthorityScope(String query, Long authorityId) {
+        return userJpaRepository.searchByNameOrEmailAndAuthorityScope(query, authorityId);
+    }
 }
 

@@ -9,7 +9,6 @@ import za.co.taloms.pto.domain.entity.PTO;
 import za.co.taloms.pto.domain.entity.PTOStatus;
 import za.co.taloms.pto.domain.event.PTOExpiredEvent;
 import za.co.taloms.pto.domain.repository.PTORepositoryPort;
-import za.co.taloms.reporting.application.service.PTOCertificatePdfGenerator;
 import java.time.LocalDate;
 
 @Slf4j
@@ -18,7 +17,6 @@ import java.time.LocalDate;
 public class PTOExpiryScheduler {
 
     private final PTORepositoryPort ptoRepository;
-    private final PTOCertificatePdfGenerator ptoCertificatePdfGenerator;
     private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     @Scheduled(cron = "0 0 1 * * *")

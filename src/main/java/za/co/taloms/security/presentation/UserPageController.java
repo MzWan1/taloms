@@ -9,16 +9,20 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import za.co.taloms.security.application.dto.*;
 import za.co.taloms.security.application.service.UserService;
 import za.co.taloms.security.infrastructure.repository.RoleJpaRepository;
+import za.co.taloms.traditionalauthority.application.dto.TraditionalAuthorityResponse;
+import za.co.taloms.traditionalauthority.application.service.TraditionalAuthorityService;
 import java.security.Principal;
+import java.util.List;
 
 @Controller
 @RequestMapping("/users")
 @RequiredArgsConstructor
-@PreAuthorize("hasRole('SYSTEM_ADMIN')")
+@PreAuthorize("hasRole('ADMIN')")
 public class UserPageController {
 
     private final UserService        userService;
     private final RoleJpaRepository  roleRepository;
+    private final TraditionalAuthorityService authorityService;
 
     @GetMapping
     public String listUsers(Model model) {
@@ -32,6 +36,7 @@ public class UserPageController {
     public String createUserForm(Model model) {
         model.addAttribute("userForm",  new UserCreateRequest());
         model.addAttribute("roles",     roleRepository.findAll());
+        model.addAttribute("authorities", authorityService.findAllActive());
         model.addAttribute("pageTitle", "Create User");
         model.addAttribute("currentPage","users");
         return "users/create";
@@ -59,11 +64,13 @@ public class UserPageController {
                 .fullName(user.getFullName())
                 .email(user.getEmail())
                 .roleName(user.getRoles().iterator().next())
+                .traditionalAuthorityId(user.getTraditionalAuthorityId())
                 .build();
         model.addAttribute("userForm",  req);
         model.addAttribute("userId",    id);
         model.addAttribute("user",      user);
         model.addAttribute("roles",     roleRepository.findAll());
+        model.addAttribute("authorities", authorityService.findAllActive());
         model.addAttribute("pageTitle", "Edit User");
         model.addAttribute("currentPage","users");
         return "users/edit";

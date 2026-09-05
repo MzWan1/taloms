@@ -18,14 +18,12 @@ import za.co.taloms.pto.domain.entity.PTOPurpose;
 import za.co.taloms.pto.domain.entity.PTOStatus;
 import za.co.taloms.pto.domain.event.*;
 import za.co.taloms.pto.domain.repository.PTORepositoryPort;
+import za.co.taloms.pto.domain.repository.PTORepositoryPort;
+import za.co.taloms.security.domain.entity.User;
+import za.co.taloms.security.domain.repository.UserRepositoryPort;
+import za.co.taloms.traditionalauthority.domain.repository.TraditionalAuthorityRepositoryPort;
 import za.co.taloms.traditionalauthority.domain.repository.TraditionalAuthorityRepositoryPort;
 import za.co.taloms.traditionalauthority.domain.repository.VillageRepositoryPort;
-import za.co.taloms.household.application.service.HouseholdService;
-import za.co.taloms.household.application.dto.HouseholdRequest;
-import za.co.taloms.businessoccupancy.application.service.BusinessOccupancyService;
-import za.co.taloms.businessoccupancy.application.dto.BusinessOccupancyRequest;
-import za.co.taloms.businessoccupancy.domain.entity.BusinessType;
-import za.co.taloms.businessoccupancy.domain.entity.BusinessStatus;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
@@ -45,8 +43,7 @@ public class PTOServiceImpl implements PTOService {
     private final ApplicationEventPublisher eventPublisher;
     private final DocumentService documentService;
     private final PTOApprovalSignatureRepositoryPort signatureRepository;
-    private final HouseholdService householdService;
-    private final BusinessOccupancyService businessOccupancyService;
+    private final UserRepositoryPort userRepository;
 
     @Override
     public PTOResponse createPTO(PTORequest request, String createdBy) {
@@ -180,6 +177,8 @@ public class PTOServiceImpl implements PTOService {
             throw new BusinessValidationException("PTO cannot be approved in status: " + pto.getStatus().getDisplayName());
         }
 
+        validateApprovalRights(pto, approvedBy);
+
         var missingDocs = documentService.getMissingRequiredDocumentTypes(EntityType.PTO, id);
         if (!missingDocs.isEmpty()) {
             throw new BusinessValidationException(
@@ -221,55 +220,6 @@ public class PTOServiceImpl implements PTOService {
             parcel.setStatus(za.co.taloms.parcel.domain.entity.ParcelStatus.ALLOCATED);
             parcel.setPto(saved);
             parcelRepository.save(parcel);
-        }
-
-        // ===== AUTO-CREATE HOUSEHOLD =====
-        Long autoCreatedHouseholdId = null;
-        if (saved.getParcel() != null && !householdService.hasActiveHousehold(saved.getParcel().getId())) {
-            var householdRequest = HouseholdRequest.builder()
-                    .householdHeadName(saved.getPtoHolderName())
-                    .householdHeadIdNumber(saved.getIdNumber())
-                    .contactPhone(saved.getContactPhone())
-                    .contactEmail(saved.getContactEmail())
-                    .parcelId(saved.getParcel().getId())
-                    .ptoId(saved.getId())
-                    .registrationDate(LocalDate.now())
-                    .notes("Auto-created from PTO approval: " + saved.getPtoNumber())
-                    .build();
-
-            var household = householdService.createHousehold(householdRequest, approvedBy);
-            autoCreatedHouseholdId = household.getId();
-            eventPublisher.publishEvent(new za.co.taloms.household.domain.event.HouseholdCreatedEvent(
-                    this, household.getId(), household.getHouseholdHeadName(),
-                    saved.getParcel().getId(), saved.getId(), approvedBy, java.time.LocalDateTime.now()));
-            log.info("Auto-created household {} for PTO {}", household.getId(), saved.getPtoNumber());
-        }
-
-        // ===== AUTO-CREATE BUSINESS (for BUSINESS PTOs) =====
-        if (saved.getParcel() != null
-                && saved.getPurpose() == PTOPurpose.BUSINESS
-                && !businessOccupancyService.existsByParcelId(saved.getParcel().getId())) {
-            var householdOnParcel = householdService.findActiveByParcelId(saved.getParcel().getId());
-            var businessRequest = BusinessOccupancyRequest.builder()
-                    .businessName(saved.getPtoHolderName() + " (Business)")
-                    .ownerName(saved.getPtoHolderName())
-                    .ownerIdNumber(saved.getIdNumber())
-                    .contactPhone(saved.getContactPhone())
-                    .contactEmail(saved.getContactEmail())
-                    .parcelId(saved.getParcel().getId())
-                    .ptoId(saved.getId())
-                    .householdId(householdOnParcel != null ? householdOnParcel.getId() : autoCreatedHouseholdId)
-                    .businessType(BusinessType.OTHER.name())
-                    .employeesCount(0)
-                    .notes("Auto-created from BUSINESS PTO approval: " + saved.getPtoNumber())
-                    .build();
-
-            var business = businessOccupancyService.createOccupancy(businessRequest, approvedBy);
-            eventPublisher.publishEvent(new za.co.taloms.businessoccupancy.domain.event.BusinessOccupancyCreatedEvent(
-                    this, business.getId(), business.getBusinessName(),
-                    business.getOwnerName(), saved.getParcel().getId(), saved.getId(),
-                    approvedBy, java.time.LocalDateTime.now()));
-            log.info("Auto-created business {} for PTO {} (linked to household {})", business.getId(), saved.getPtoNumber(), businessRequest.getHouseholdId());
         }
 
         eventPublisher.publishEvent(new PTOApprovedEvent(
@@ -662,6 +612,49 @@ public class PTOServiceImpl implements PTOService {
                 .deletedAt(p.getDeletedAt())
                 .deletedBy(p.getDeletedBy())
                 .build();
+    }
+
+    /**
+     * Approval ownership rule:
+     *  - Only a CHIEF may approve PTOs — never an admin or headsman.
+     *  - If the PTO was created by a CHIEF, only that same chief may approve it
+     *    (a chief may create and approve their own PTO).
+     *  - Otherwise (PTO created by an admin, or creator unknown/legacy),
+     *    any chief may approve it.
+     */
+    private void validateApprovalRights(PTO pto, String approver) {
+        if (pto.getCreatedBy() == null || pto.getCreatedBy().isBlank()) {
+            // Legacy data without a creator recorded — fall back to chief-only approval.
+            requireChiefApprover(approver, "a system record");
+            return;
+        }
+
+        var creator = userRepository.findByUsername(pto.getCreatedBy());
+        boolean creatorIsChief = creator.isPresent() && hasRole(creator.get(), "ROLE_CHIEF");
+
+        if (creatorIsChief) {
+            if (!pto.getCreatedBy().equals(approver)) {
+                throw new BusinessValidationException(
+                        "This PTO was created by chief '" + pto.getCreatedBy()
+                                + "'. Only that chief may approve it.");
+            }
+        } else {
+            requireChiefApprover(approver, "an administrator");
+        }
+    }
+
+    private void requireChiefApprover(String approver, String creatorDescription) {
+        var approverUser = userRepository.findByUsername(approver);
+        if (approverUser.isEmpty() || !hasRole(approverUser.get(), "ROLE_CHIEF")) {
+            throw new BusinessValidationException(
+                    "This PTO was created by " + creatorDescription
+                            + ". Only a chief may approve it.");
+        }
+    }
+
+    private boolean hasRole(User user, String roleName) {
+        return user.getRoles() != null
+                && user.getRoles().stream().anyMatch(r -> roleName.equals(r.getName()));
     }
 }
 

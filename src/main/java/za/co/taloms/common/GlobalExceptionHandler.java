@@ -78,6 +78,15 @@ public class GlobalExceptionHandler {
                 .body(ApiResponse.error("You do not have permission to perform this action"));
     }
 
+    @ExceptionHandler(SecurityException.class)
+    public ResponseEntity<ApiResponse<Void>> handleScopeViolation(
+            SecurityException ex) {
+        log.warn("Data-scope access denied: {}", ex.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(ApiResponse.error(ex.getMessage()));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ApiResponse<Void>> handleGeneral(Exception ex) {
         log.error("Unexpected error: ", ex);

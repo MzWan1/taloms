@@ -17,6 +17,7 @@ import za.co.taloms.parcel.application.dto.ParcelResponse;
 import za.co.taloms.parcel.application.service.ParcelService;
 import za.co.taloms.parcel.domain.entity.CaptureMode;
 import za.co.taloms.parcel.domain.entity.ParcelStatus;
+import za.co.taloms.security.application.service.AuthorityScopeService;
 import za.co.taloms.traditionalauthority.application.dto.TraditionalAuthorityResponse;
 import za.co.taloms.traditionalauthority.application.service.TraditionalAuthorityService;
 import za.co.taloms.traditionalauthority.application.service.VillageService;
@@ -24,6 +25,7 @@ import za.co.taloms.traditionalauthority.application.service.VillageService;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -35,18 +37,68 @@ public class ParcelPageController {
     private final ParcelService parcelService;
     private final TraditionalAuthorityService authorityService;
     private final VillageService villageService;
+    private final AuthorityScopeService scopeService;
     private final ObjectMapper objectMapper;
+
+    /** Returns the village IDs belonging to the current chief/headman's authority, or null if unrestricted. */
+    private Set<Long> scopedVillageIds() {
+        if (!scopeService.isCurrentUserChiefOrHeadsman()) {
+            return null; // unrestricted (admin etc.)
+        }
+        Long linkedAuthorityId = scopeService.getCurrentUserAuthorityId();
+        if (linkedAuthorityId == null) {
+            return Set.of(); // linked to nothing → sees nothing
+        }
+        return villageService.findByAuthority(linkedAuthorityId).stream()
+                .map(v -> v.getId())
+                .collect(Collectors.toSet());
+    }
+
+    /** Throws SecurityException if the given village is outside the current user's scope. */
+    private void requireVillageAccess(Long villageId) {
+        if (villageId == null) {
+            throw new SecurityException("A village must be selected.");
+        }
+        var village = villageService.findById(villageId);
+        if (village == null || village.getTraditionalAuthorityId() == null) {
+            throw new SecurityException("Village not found: " + villageId);
+        }
+        scopeService.requireAuthorityAccess(village.getTraditionalAuthorityId());
+    }
+
+    /** Throws SecurityException if the given parcel is outside the current user's scope. */
+    private void requireParcelAccess(Long parcelId) {
+        var parcel = parcelService.findById(parcelId);
+        requireVillageAccess(parcel.getVillageId());
+    }
 
     @GetMapping
     public String list(Model model) {
         try {
-            var parcels = parcelService.findAll();
+            Set<Long> allowedVillageIds = scopedVillageIds();
+
+            List<ParcelResponse> parcels = parcelService.findAll();
+            if (allowedVillageIds != null) {
+                // Chiefs/headsmen only see parcels in their authority's villages
+                parcels = parcels.stream()
+                        .filter(p -> p.getVillageId() != null
+                                && allowedVillageIds.contains(p.getVillageId()))
+                        .toList();
+            }
+
+            long availableCount = parcels.stream()
+                    .filter(p -> p.getStatus() == ParcelStatus.AVAILABLE).count();
+            long allocatedCount = parcels.stream()
+                    .filter(p -> p.getStatus() == ParcelStatus.ALLOCATED).count();
+            long disputedCount = parcels.stream()
+                    .filter(p -> p.getStatus() == ParcelStatus.DISPUTED).count();
+
             model.addAttribute("parcels", parcels);
             model.addAttribute("statuses", ParcelStatus.values());
-            model.addAttribute("totalCount", parcelService.countAll());
-            model.addAttribute("availableCount", parcelService.countByStatus(ParcelStatus.AVAILABLE));
-            model.addAttribute("allocatedCount", parcelService.countByStatus(ParcelStatus.ALLOCATED));
-            model.addAttribute("disputedCount", parcelService.countByStatus(ParcelStatus.DISPUTED));
+            model.addAttribute("totalCount", (long) parcels.size());
+            model.addAttribute("availableCount", availableCount);
+            model.addAttribute("allocatedCount", allocatedCount);
+            model.addAttribute("disputedCount", disputedCount);
             model.addAttribute("pageTitle", "Parcel Management");
             model.addAttribute("currentPage", "parcels");
             return "parcels/list";
@@ -68,10 +120,21 @@ public class ParcelPageController {
     @GetMapping("/create")
     public String createForm(Model model) {
         try {
-            List<TraditionalAuthorityResponse> authorities = authorityService.findAllActive();
+            List<TraditionalAuthorityResponse> authorities;
+            if (scopeService.isCurrentUserChiefOrHeadsman()) {
+                // Chiefs/headsmen can only create parcels in their own authority
+                Long linkedAuthorityId = scopeService.getCurrentUserAuthorityId();
+                authorities = linkedAuthorityId != null
+                        ? authorityService.findAllActive().stream()
+                            .filter(a -> linkedAuthorityId.equals(a.getId()))
+                            .toList()
+                        : Collections.emptyList();
+            } else {
+                authorities = authorityService.findAllActive();
+            }
             log.info("Loading parcel create form with {} active authorities", authorities.size());
 
-            if (authorities.isEmpty()) {
+            if (authorities.isEmpty() && !scopeService.isCurrentUserChiefOrHeadsman()) {
                 log.warn("No active authorities found for parcel creation form. Falling back to all authorities.");
                 authorities = authorityService.findAll();
                 if (!authorities.isEmpty()) {
@@ -113,6 +176,9 @@ public class ParcelPageController {
         log.info("Creating parcel");
 
         try {
+            // Validate the selected village belongs to the current user's authority
+            requireVillageAccess(request.getVillageId());
+
             // Parse the JSON boundaries
             List<BoundaryPointDto> boundaries = parseBoundariesJson(boundariesJson);
 
@@ -149,8 +215,13 @@ public class ParcelPageController {
     }
 
     @GetMapping("/{id}")
-    public String detail(@PathVariable Long id, Model model) {
+    public String detail(@PathVariable Long id, Model model, RedirectAttributes ra) {
         try {
+            // Chiefs/headsmen may only view parcels in their authority's villages
+            if (scopeService.isCurrentUserChiefOrHeadsman()) {
+                requireParcelAccess(id);
+            }
+
             var parcel = parcelService.findById(id);
             model.addAttribute("parcel", parcel);
             model.addAttribute("pageTitle", "Parcel " + parcel.getParcelNumber());
@@ -158,13 +229,19 @@ public class ParcelPageController {
             return "parcels/detail";
         } catch (Exception e) {
             log.error("Error loading parcel detail", e);
+            ra.addFlashAttribute("errorMessage", e.getMessage());
             return "redirect:/parcels";
         }
     }
 
     @GetMapping("/{id}/edit")
-    public String editForm(@PathVariable Long id, Model model) {
+    public String editForm(@PathVariable Long id, Model model, RedirectAttributes ra) {
         try {
+            // Chiefs/headsmen may only edit parcels in their authority's villages
+            if (scopeService.isCurrentUserChiefOrHeadsman()) {
+                requireParcelAccess(id);
+            }
+
             var parcel = parcelService.findById(id);
 
             var form = ParcelRequest.builder()
@@ -175,7 +252,17 @@ public class ParcelPageController {
                     .captureMode(parcel.getCaptureMode())
                     .build();
 
-            var authorities = authorityService.findAllActive();
+            List<TraditionalAuthorityResponse> authorities;
+            if (scopeService.isCurrentUserChiefOrHeadsman()) {
+                Long linkedAuthorityId = scopeService.getCurrentUserAuthorityId();
+                authorities = linkedAuthorityId != null
+                        ? authorityService.findAllActive().stream()
+                            .filter(a -> linkedAuthorityId.equals(a.getId()))
+                            .toList()
+                        : Collections.emptyList();
+            } else {
+                authorities = authorityService.findAllActive();
+            }
             var parcelVillage = villageService.findById(parcel.getVillageId());
             var villages = villageService.findByAuthority(
                     parcelVillage != null ? parcelVillage.getTraditionalAuthorityId() : null);
@@ -204,6 +291,9 @@ public class ParcelPageController {
             RedirectAttributes ra) {
 
         try {
+            // Validate the target village belongs to the current user's authority
+            requireVillageAccess(request.getVillageId());
+
             // Parse the JSON boundaries
             List<BoundaryPointDto> boundaries = parseBoundariesJson(boundariesJson);
 
@@ -240,6 +330,11 @@ public class ParcelPageController {
             RedirectAttributes ra) {
 
         try {
+            // Chiefs/headsmen may only change status of parcels in their authority
+            if (scopeService.isCurrentUserChiefOrHeadsman()) {
+                requireParcelAccess(id);
+            }
+
             var response = parcelService.updateStatus(id, status, userDetails.getUsername());
             ra.addFlashAttribute("successMessage",
                     "✅ Parcel status updated to " + status.getDisplayName() + ".");
@@ -253,6 +348,12 @@ public class ParcelPageController {
     @ResponseBody
     public Object getVillagesByAuthority(@PathVariable Long authorityId) {
         try {
+            // Chiefs/headsmen may only load villages of their linked authority
+            if (scopeService.isCurrentUserChiefOrHeadsman()
+                    && !scopeService.canAccessAuthority(authorityId)) {
+                return Collections.emptyList();
+            }
+
             log.info("Loading villages for authority ID: {}", authorityId);
             var villages = villageService.findByAuthority(authorityId).stream()
                     .filter(v -> v.getActive() == null || v.getActive())

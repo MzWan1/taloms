@@ -51,6 +51,7 @@ public class UserServiceImpl implements UserService {
                 .enabled(true)
                 .accountLocked(false)
                 .failedLoginAttempts(0)
+                .traditionalAuthorityId(request.getTraditionalAuthorityId())
                 .roles(new HashSet<>(Set.of(role)))
                 .build();
 
@@ -71,6 +72,7 @@ public class UserServiceImpl implements UserService {
 
         user.setFullName(request.getFullName());
         user.setEmail(request.getEmail());
+        user.setTraditionalAuthorityId(request.getTraditionalAuthorityId());
         user.setRoles(new HashSet<>(Set.of(role)));
 
         return toResponse(userRepository.save(user));
@@ -270,6 +272,7 @@ public class UserServiceImpl implements UserService {
                 .failedLoginAttempts(user.getFailedLoginAttempts())
                 .lastLoginAt(user.getLastLoginAt())
                 .createdAt(user.getCreatedAt())
+                .traditionalAuthorityId(user.getTraditionalAuthorityId())
                 .roles(roles)
                 .build();
     }

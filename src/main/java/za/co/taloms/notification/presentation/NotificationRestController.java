@@ -20,14 +20,14 @@ public class NotificationRestController {
     private final NotificationService notificationService;
 
     @GetMapping
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR','REPORT_VIEWER')")
+    @PreAuthorize("hasAnyRole('ADMIN','CHIEF')")
     public ResponseEntity<ApiResponse<List<Notification>>> getAll() {
         return ResponseEntity.ok(ApiResponse.success(notificationService.findAll(),
                 "Notifications retrieved successfully"));
     }
 
     @GetMapping("/entity/{entityType}/{entityId}")
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR','REPORT_VIEWER')")
+    @PreAuthorize("hasAnyRole('ADMIN','CHIEF')")
     public ResponseEntity<ApiResponse<List<Notification>>> getByEntity(
             @PathVariable String entityType, @PathVariable Long entityId) {
         return ResponseEntity.ok(ApiResponse.success(
@@ -36,7 +36,7 @@ public class NotificationRestController {
     }
 
     @GetMapping("/recipient/{recipient}")
-    @PreAuthorize("hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR')")
+    @PreAuthorize("hasAnyRole('ADMIN','CHIEF')")
     public ResponseEntity<ApiResponse<List<Notification>>> getByRecipient(@PathVariable String recipient) {
         return ResponseEntity.ok(ApiResponse.success(
                 notificationService.findByRecipient(recipient),
@@ -44,7 +44,7 @@ public class NotificationRestController {
     }
 
     @PostMapping("/process")
-    @PreAuthorize("hasRole('SYSTEM_ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> processPending() {
         notificationService.processPendingNotifications();
         return ResponseEntity.ok(ApiResponse.success(null, "Pending notifications processed"));

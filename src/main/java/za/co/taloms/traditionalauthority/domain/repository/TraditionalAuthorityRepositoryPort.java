@@ -11,6 +11,8 @@ public interface TraditionalAuthorityRepositoryPort {
     List<TraditionalAuthority> findAllActive();
     boolean existsByAuthorityName(String name);
     boolean existsByAuthorityNameAndIdNot(String name, Long id);
+    boolean existsByHeadmanIdAndIdNot(Long headmanId, Long excludeId);
+
     void delete(TraditionalAuthority authority);
 }
 

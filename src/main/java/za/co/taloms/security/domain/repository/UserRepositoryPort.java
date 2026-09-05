@@ -19,5 +19,20 @@ public interface UserRepositoryPort {
     long countAll();
     long countByActiveTrue();
     List<Role> findAllRoles();
+
+        /**
+     * Search users by full name or email (case-insensitive, partial match).
+     * Does not expose username.
+     */
+    List<User> searchByNameOrEmail(String query);
+
+    /**
+     * Search users by full name or email (case-insensitive, partial match),
+     * additionally filtered to those whose traditionalAuthorityId matches
+     * the given authority, or who are not linked to any authority.
+     * This is used for the headsman/chief picker so that users already
+     * serving under a different authority do not appear.
+     */
+    List<User> searchByNameOrEmailAndAuthorityScope(String query, Long authorityId);
 }
 

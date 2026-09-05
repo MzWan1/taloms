@@ -18,11 +18,13 @@ import za.co.taloms.pto.application.dto.*;
 import za.co.taloms.pto.application.service.PTOService;
 import za.co.taloms.pto.domain.entity.PTOPurpose;
 import za.co.taloms.pto.domain.entity.PTOStatus;
+import za.co.taloms.security.application.service.AuthorityScopeService;
 import za.co.taloms.traditionalauthority.application.service.TraditionalAuthorityService;
 import za.co.taloms.traditionalauthority.application.service.VillageService;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -36,6 +38,13 @@ public class PTOPageController {
     private final TraditionalAuthorityService authorityService;
     private final VillageService villageService;
     private final DocumentService documentService;
+    private final AuthorityScopeService scopeService;
+
+    /** Throws SecurityException if the PTO's authority is outside the current user's scope. */
+    private void requirePtoAccess(Long ptoId) {
+        var pto = ptoService.findById(ptoId);
+        scopeService.requireAuthorityAccess(pto.getTraditionalAuthorityId());
+    }
 
     @GetMapping
     public String list(Model model,
@@ -50,18 +59,43 @@ public class PTOPageController {
                 criteria.holderName(search);
             }
 
-            var ptos = (status != null && !status.isBlank())
+            // Chiefs/headsmen are scoped to their linked authority
+            boolean scopedUser = scopeService.isCurrentUserChiefOrHeadsman();
+            Long linkedAuthorityId = scopedUser
+                    ? scopeService.getCurrentUserAuthorityId() : null;
+            if (linkedAuthorityId != null) {
+                criteria.authorityId(linkedAuthorityId);
+            }
+
+            List<PTOResponse> ptos;
+            if (scopedUser && linkedAuthorityId == null) {
+                // Chief/headman not linked to any authority sees nothing
+                ptos = Collections.emptyList();
+            } else if ((status != null && !status.isBlank())
                     || (search != null && !search.isBlank())
-                    ? ptoService.search(criteria.build())
-                    : ptoService.findAll();
+                    || linkedAuthorityId != null) {
+                ptos = ptoService.search(criteria.build());
+            } else {
+                ptos = ptoService.findAll();
+            }
+
+            // Guard against authorities that ignore the criteria filter
+            if (linkedAuthorityId != null) {
+                ptos = ptos.stream()
+                        .filter(p -> linkedAuthorityId.equals(p.getTraditionalAuthorityId()))
+                        .toList();
+            }
 
             model.addAttribute("ptos", ptos);
             model.addAttribute("statuses", PTOStatus.values());
             model.addAttribute("purposes", PTOPurpose.values());
-            model.addAttribute("totalCount", ptoService.countAll());
-            model.addAttribute("pendingCount", ptoService.countByStatus(PTOStatus.PENDING));
-            model.addAttribute("activeCount", ptoService.countByStatus(PTOStatus.ACTIVE));
-            model.addAttribute("revokedCount", ptoService.countByStatus(PTOStatus.REVOKED));
+            model.addAttribute("totalCount", ptos.size());
+            model.addAttribute("pendingCount", ptos.stream()
+                    .filter(p -> p.getStatus() == PTOStatus.PENDING).count());
+            model.addAttribute("activeCount", ptos.stream()
+                    .filter(p -> p.getStatus() == PTOStatus.ACTIVE).count());
+            model.addAttribute("revokedCount", ptos.stream()
+                    .filter(p -> p.getStatus() == PTOStatus.REVOKED).count());
             model.addAttribute("selectedStatus", status);
             model.addAttribute("searchTerm", search);
             model.addAttribute("pageTitle", "PTO Management");
@@ -86,7 +120,18 @@ public class PTOPageController {
     @GetMapping("/create")
     public String createForm(Model model) {
         try {
-            var authorities = authorityService.findAllActive();
+            // Chiefs/headsmen can only create PTOs for their own authority
+            boolean scopedUser = scopeService.isCurrentUserChiefOrHeadsman();
+            Long linkedAuthorityId = scopedUser
+                    ? scopeService.getCurrentUserAuthorityId() : null;
+
+            var authorities = scopedUser
+                    ? (linkedAuthorityId != null
+                        ? authorityService.findAllActive().stream()
+                            .filter(a -> linkedAuthorityId.equals(a.getId()))
+                            .toList()
+                        : Collections.emptyList())
+                    : authorityService.findAllActive();
             log.info("Loaded {} active authorities for PTO create form", authorities.size());
 
             if (!model.containsAttribute("form")) {
@@ -95,13 +140,26 @@ public class PTOPageController {
                         .build());
             }
 
-            // Get available parcels for PTO
+            // Get available parcels for PTO (scoped to the user's authority)
+            Set<Long> allowedVillageIds = null;
+            if (scopedUser) {
+                allowedVillageIds = linkedAuthorityId != null
+                        ? villageService.findByAuthority(linkedAuthorityId).stream()
+                            .map(v -> v.getId())
+                            .collect(Collectors.toSet())
+                        : Set.of(); // linked to nothing → no parcels selectable
+            }
+            Set<Long> finalAllowedVillageIds = allowedVillageIds;
+
             List<za.co.taloms.parcel.application.dto.ParcelResponse> availableParcels = Collections.emptyList();
             try {
                 var allParcels = parcelService.findAll();
                 if (allParcels != null && !allParcels.isEmpty()) {
                     availableParcels = allParcels.stream()
                             .filter(p -> p != null && p.getStatus() == ParcelStatus.AVAILABLE)
+                            .filter(p -> finalAllowedVillageIds == null
+                                    || (p.getVillageId() != null
+                                        && finalAllowedVillageIds.contains(p.getVillageId())))
                             .collect(Collectors.toList());
                     log.info("Found {} available parcels for PTO creation", availableParcels.size());
                 }
@@ -161,6 +219,12 @@ public class PTOPageController {
             if (parcel == null) {
                 ra.addFlashAttribute("errorMessage", "❌ Parcel not found. Please select a valid parcel.");
                 return "redirect:/ptos/create";
+            }
+
+            // Chiefs/headsmen can only create PTOs for parcels in their own authority
+            if (scopeService.isCurrentUserChiefOrHeadsman()) {
+                var parcelVillage = villageService.findById(parcel.getVillageId());
+                scopeService.requireAuthorityAccess(parcelVillage.getTraditionalAuthorityId());
             }
 
             var request = PTORequest.builder()
@@ -258,8 +322,13 @@ public class PTOPageController {
     }
 
     @GetMapping("/{id}")
-    public String detail(@PathVariable Long id, Model model) {
+    public String detail(@PathVariable Long id, Model model, RedirectAttributes ra) {
         try {
+            // Chiefs/headsmen may only view PTOs of their own authority
+            if (scopeService.isCurrentUserChiefOrHeadsman()) {
+                requirePtoAccess(id);
+            }
+
             var pto = ptoService.findById(id);
             var documents = documentService.findByRelatedEntity(EntityType.PTO, id);
             model.addAttribute("pto", pto);
@@ -269,6 +338,7 @@ public class PTOPageController {
             return "ptos/detail";
         } catch (Exception e) {
             log.error("Error loading PTO detail: {}", e.getMessage(), e);
+            ra.addFlashAttribute("errorMessage", e.getMessage());
             return "redirect:/ptos";
         }
     }
@@ -280,6 +350,11 @@ public class PTOPageController {
             @AuthenticationPrincipal UserDetails userDetails,
             RedirectAttributes ra) {
         try {
+            // Chiefs may only approve PTOs of their own authority
+            if (scopeService.isCurrentUserChiefOrHeadsman()) {
+                requirePtoAccess(id);
+            }
+
             var request = PTOApprovalRequest.builder().notes(notes).build();
             var response = ptoService.approvePTO(id, request, userDetails.getUsername());
             ra.addFlashAttribute("successMessage", "✅ PTO " + response.getPtoNumber() + " approved successfully.");
@@ -296,6 +371,10 @@ public class PTOPageController {
             @AuthenticationPrincipal UserDetails userDetails,
             RedirectAttributes redirectAttributes) {
         try {
+            if (scopeService.isCurrentUserChiefOrHeadsman()) {
+                requirePtoAccess(id);
+            }
+
             var response = ptoService.suspendPTO(id, reason, userDetails.getUsername());
             redirectAttributes.addFlashAttribute("successMessage",
                     "✅ PTO " + response.getPtoNumber() + " suspended successfully.");
@@ -312,6 +391,10 @@ public class PTOPageController {
             @AuthenticationPrincipal UserDetails userDetails,
             RedirectAttributes redirectAttributes) {
         try {
+            if (scopeService.isCurrentUserChiefOrHeadsman()) {
+                requirePtoAccess(id);
+            }
+
             var response = ptoService.reactivatePTO(id, notes, userDetails.getUsername());
             redirectAttributes.addFlashAttribute("successMessage",
                     "✅ PTO " + response.getPtoNumber() + " reactivated successfully.");
@@ -328,6 +411,10 @@ public class PTOPageController {
             @AuthenticationPrincipal UserDetails userDetails,
             RedirectAttributes ra) {
         try {
+            if (scopeService.isCurrentUserChiefOrHeadsman()) {
+                requirePtoAccess(id);
+            }
+
             var request = PTORevokeRequest.builder().reason(reason).build();
             var response = ptoService.revokePTO(id, request, userDetails.getUsername());
             ra.addFlashAttribute("successMessage", "✅ PTO " + response.getPtoNumber() + " revoked successfully.");
@@ -343,6 +430,10 @@ public class PTOPageController {
             @RequestParam String reason,
             RedirectAttributes redirectAttributes) {
         try {
+            if (scopeService.isCurrentUserChiefOrHeadsman()) {
+                requirePtoAccess(id);
+            }
+
             ptoService.reinstate(id, reason);
             redirectAttributes.addFlashAttribute("successMessage", "✅ PTO reinstated successfully!");
         } catch (Exception e) {
@@ -352,8 +443,16 @@ public class PTOPageController {
     }
 
     @GetMapping("/by-authority/{authorityId}")
-    public String byAuthority(@PathVariable Long authorityId, Model model) {
+    public String byAuthority(@PathVariable Long authorityId, Model model, RedirectAttributes ra) {
         try {
+            // Chiefs/headsmen may only view PTOs of their own authority
+            if (scopeService.isCurrentUserChiefOrHeadsman()
+                    && !scopeService.canAccessAuthority(authorityId)) {
+                ra.addFlashAttribute("errorMessage",
+                        "You are not authorized to view these PTOs.");
+                return "redirect:/ptos";
+            }
+
             var authority = authorityService.findById(authorityId);
             model.addAttribute("ptos", ptoService.findByAuthority(authorityId));
             model.addAttribute("authority", authority);
@@ -372,6 +471,12 @@ public class PTOPageController {
     @ResponseBody
     public Object getVillagesByAuthority(@PathVariable Long authorityId) {
         try {
+            // Chiefs/headsmen may only load villages of their linked authority
+            if (scopeService.isCurrentUserChiefOrHeadsman()
+                    && !scopeService.canAccessAuthority(authorityId)) {
+                return Collections.emptyList();
+            }
+
             log.info("Loading villages for authority ID: {}", authorityId);
             var villages = villageService.findByAuthority(authorityId);
             log.info("Found {} villages for authority {}", villages.size(), authorityId);
@@ -383,8 +488,13 @@ public class PTOPageController {
     }
 
     @GetMapping("/{id}/edit")
-    public String editForm(@PathVariable Long id, Model model) {
+    public String editForm(@PathVariable Long id, Model model, RedirectAttributes ra) {
         try {
+            // Chiefs/headsmen may only edit PTOs of their own authority
+            if (scopeService.isCurrentUserChiefOrHeadsman()) {
+                requirePtoAccess(id);
+            }
+
             var pto = ptoService.findById(id);
 
             var form = PTORequest.builder()
@@ -453,6 +563,12 @@ public class PTOPageController {
             RedirectAttributes ra) {
 
         try {
+            // Chiefs/headsmen may only update PTOs of their own authority
+            if (scopeService.isCurrentUserChiefOrHeadsman()) {
+                requirePtoAccess(id);
+                scopeService.requireAuthorityAccess(Long.valueOf(traditionalAuthorityId));
+            }
+
             var request = PTORequest.builder()
                     .ptoHolderName(ptoHolderName)
                     .idNumber(idNumber)
@@ -537,6 +653,10 @@ public class PTOPageController {
             RedirectAttributes ra) {
 
         try {
+            if (scopeService.isCurrentUserChiefOrHeadsman()) {
+                requirePtoAccess(id);
+            }
+
             ptoService.deletePTO(id, userDetails.getUsername());
             ra.addFlashAttribute("successMessage", "✅ PTO deleted successfully. Record preserved for audit trail.");
             return "redirect:/ptos/deleted";
@@ -548,9 +668,21 @@ public class PTOPageController {
     }
 
     @GetMapping("/deleted")
-    public String deletedList(Model model) {
+    public String deletedList(Model model, RedirectAttributes ra) {
         try {
             var deletedPtos = ptoService.findDeleted();
+
+            // Chiefs/headsmen only see deleted PTOs of their own authority
+            boolean scopedUser = scopeService.isCurrentUserChiefOrHeadsman();
+            Long linkedAuthorityId = scopedUser
+                    ? scopeService.getCurrentUserAuthorityId() : null;
+            if (scopedUser) {
+                deletedPtos = deletedPtos.stream()
+                        .filter(p -> linkedAuthorityId != null
+                                && linkedAuthorityId.equals(p.getTraditionalAuthorityId()))
+                        .toList();
+            }
+
             model.addAttribute("ptos", deletedPtos);
             model.addAttribute("pageTitle", "Deleted PTOs");
             model.addAttribute("currentPage", "ptos");

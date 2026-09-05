@@ -15,6 +15,7 @@ public class UserResponse {
     private Integer       failedLoginAttempts;
     private LocalDateTime lastLoginAt;
     private LocalDateTime createdAt;
+    private Long          traditionalAuthorityId;
     private Set<String>   roles;
 }
 

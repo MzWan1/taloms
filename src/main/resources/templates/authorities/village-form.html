@@ -37,7 +37,7 @@
                            class="text-muted text-decoration-none">Authorities</a>
                     </li>
                     <li class="breadcrumb-item">
-                        <a th:href="@{/authorities/{id}/edit(id=${authority.id})}"
+                        <a th:href="@{/authorities/{id}(id=${authority.id})}"
                            class="text-muted text-decoration-none"
                            th:text="${authority.authorityName}">Authority</a>
                     </li>
@@ -52,7 +52,7 @@
                 <strong th:text="${authority.authorityName}">Authority</strong>
             </p>
         </div>
-        <a th:href="@{/authorities/{id}/edit(id=${authority.id})}"
+        <a th:href="@{/authorities/{id}(id=${authority.id})}"
            class="btn btn-outline-secondary px-3">
             <i class="bi bi-arrow-left me-1"></i>Back to Authority
         </a>
@@ -121,20 +121,30 @@
                             </div>
                         </div>
 
-                        <!-- Headman Name -->
-                        <div class="mb-3">
-                            <label for="headmanName" class="form-label">
-                                Headman / Induna Name
+                        <!-- Headman Selection -->
+                        <div class="mb-3 position-relative">
+                            <label for="headmanSearch" class="form-label">
+                                Headman / Induna
                             </label>
                             <div class="input-group">
                                 <span class="input-group-text">
                                     <i class="bi bi-person"></i>
                                 </span>
                                 <input type="text"
-                                       id="headmanName"
-                                       th:field="*{headmanName}"
+                                       id="headmanSearch"
                                        class="form-control"
-                                       placeholder="e.g. Headman Jonas Sithole">
+                                       placeholder="Type 3+ characters to search (name or email)..."
+                                       autocomplete="off">
+                                <input type="hidden"
+                                       id="headmanId"
+                                       th:field="*{headmanId}">
+                            </div>
+                            <div id="headmanResults" class="list-group position-absolute w-100 shadow-sm"
+                                 style="z-index: 1000; max-height: 200px; overflow-y: auto; display: none;">
+                            </div>
+                            <div id="headmanSelected" class="form-text text-success" style="display: none;">
+                                <i class="bi bi-check-circle me-1"></i>
+                                <span id="headmanSelectedName"></span>
                             </div>
                         </div>
 
@@ -169,7 +179,7 @@
 
                         <!-- Actions -->
                         <div class="d-flex gap-3 justify-content-end">
-                            <a th:href="@{/authorities/{id}/edit(id=${authority.id})}"
+                            <a th:href="@{/authorities/{id}(id=${authority.id})}"
                                class="btn btn-light px-4">
                                 <i class="bi bi-x me-1"></i>Cancel
                             </a>
@@ -198,5 +208,86 @@
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    // ── User search for Headman ──────────────────────────────────────────
+    function setupUserSearch(searchInputId, resultsDivId, selectedDivId,
+                             selectedNameSpanId, hiddenInputId, role) {
+        const searchInput = document.getElementById(searchInputId);
+        const resultsDiv = document.getElementById(resultsDivId);
+        const selectedDiv = document.getElementById(selectedDivId);
+        const selectedNameSpan = document.getElementById(selectedNameSpanId);
+        const hiddenInput = document.getElementById(hiddenInputId);
+        let debounceTimer;
+
+        searchInput.addEventListener('input', function () {
+            const query = this.value.trim();
+            clearTimeout(debounceTimer);
+
+            if (query.length < 3) {
+                resultsDiv.style.display = 'none';
+                return;
+            }
+
+            debounceTimer = setTimeout(() => {
+                let url = '/api/users/search?q=' + encodeURIComponent(query);
+                if (role) {
+                    url += '&role=' + encodeURIComponent(role);
+                }
+                fetch(url)
+                    .then(r => r.json())
+                    .then(data => {
+                        resultsDiv.innerHTML = '';
+                        if (data.data && data.data.length > 0) {
+                            data.data.forEach(user => {
+                                const item = document.createElement('button');
+                                item.type = 'button';
+                                item.className = 'list-group-item list-group-item-action';
+                                item.innerHTML = '<strong>' + user.fullName + '</strong>' +
+                                    '<br><small class="text-muted">' + user.email + '</small>';
+                                item.addEventListener('click', function () {
+                                    hiddenInput.value = user.id;
+                                    selectedNameSpan.textContent = user.fullName;
+                                    selectedDiv.style.display = 'block';
+                                    resultsDiv.style.display = 'none';
+                                    searchInput.value = '';
+                                    searchInput.disabled = true;
+                                });
+                                resultsDiv.appendChild(item);
+                            });
+                            resultsDiv.style.display = 'block';
+                        } else {
+                            resultsDiv.innerHTML = '<div class="list-group-item text-muted">' +
+                                'No users found</div>';
+                            resultsDiv.style.display = 'block';
+                        }
+                    })
+                    .catch(() => {
+                        resultsDiv.innerHTML = '<div class="list-group-item text-danger">' +
+                            'Search failed</div>';
+                        resultsDiv.style.display = 'block';
+                    });
+            }, 300);
+        });
+
+        // Close results when clicking outside
+        document.addEventListener('click', function (e) {
+            if (!searchInput.contains(e.target) && !resultsDiv.contains(e.target)) {
+                resultsDiv.style.display = 'none';
+            }
+        });
+
+        // Allow clearing selection
+        selectedDiv.addEventListener('dblclick', function () {
+            hiddenInput.value = '';
+            selectedDiv.style.display = 'none';
+            searchInput.disabled = false;
+            searchInput.focus();
+        });
+    }
+
+    // Setup search for Headman (only HEADSMAN-role users)
+    setupUserSearch('headmanSearch', 'headmanResults', 'headmanSelected',
+        'headmanSelectedName', 'headmanId', 'ROLE_HEADSMAN');
+</script>
 </body>
 </html>

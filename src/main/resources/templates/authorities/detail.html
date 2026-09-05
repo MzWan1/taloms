@@ -34,7 +34,7 @@
                         <i class="bi bi-building me-1"></i>Authorities
                     </a>
                 </li>
-                <li class="nav-item" sec:authorize="hasRole('SYSTEM_ADMIN')">
+                <li class="nav-item" sec:authorize="hasRole('ADMIN')">
                     <a class="nav-link" th:href="@{/users}">
                         <i class="bi bi-people me-1"></i>Users
                     </a>
@@ -85,7 +85,7 @@
             </a>
             <a th:href="@{/authorities/{id}/edit(id=${authority.id})}"
                class="btn btn-navy px-3 fw-semibold"
-               sec:authorize="hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR')">
+               sec:authorize="hasRole('ADMIN')">
                 <i class="bi bi-pencil me-1"></i>Edit
             </a>
         </div>
@@ -150,8 +150,10 @@
                 </div>
             </div>
 
-            <!-- Villages Table — uses villageRows (plain Map list, no Boolean eval) -->
-            <div class="card border-0 shadow-sm">
+            <!-- Villages Table — CHIEF-only → uses villageRows (plain Map list, no Boolean eval) -->
+            <div class="card border-0 shadow-sm"
+                 sec:authorize="hasRole('CHIEF')"
+                 th:if="${canAddVillages}">
                 <div class="card-header bg-white border-bottom py-3
                             d-flex justify-content-between align-items-center">
                     <h6 class="fw-bold text-navy mb-0">
@@ -159,8 +161,7 @@
                         <span class="badge bg-navy ms-1" th:text="${authority.villageCount}">0</span>
                     </h6>
                     <a th:href="@{/authorities/{id}/villages/create(id=${authority.id})}"
-                       class="btn btn-navy btn-sm px-3"
-                       sec:authorize="hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR')">
+                       class="btn btn-navy btn-sm px-3">
                         <i class="bi bi-plus me-1"></i>Add Village
                     </a>
                 </div>
@@ -288,34 +289,10 @@
                             </div>
                         </div>
                     </li>
-                </ul>
+                                </ul>
             </div>
 
-            <!-- Quick Actions -->
-            <div class="card border-0 shadow-sm"
-                 sec:authorize="hasAnyRole('SYSTEM_ADMIN','TA_ADMINISTRATOR')">
-                <div class="card-header bg-white border-bottom py-3">
-                    <h6 class="fw-bold text-navy mb-0">
-                        <i class="bi bi-lightning me-2"></i>Quick Actions
-                    </h6>
-                </div>
-                <div class="card-body d-grid gap-2 p-3">
-                    <a th:href="@{/authorities/{id}/edit(id=${authority.id})}"
-                       class="btn btn-outline-primary text-start btn-sm">
-                        <i class="bi bi-pencil me-2"></i>Edit Authority
-                    </a>
-                    <a th:href="@{/authorities/{id}/villages/create(id=${authority.id})}"
-                       class="btn btn-outline-success text-start btn-sm">
-                        <i class="bi bi-plus-circle me-2"></i>Add Village
-                    </a>
-                    <a href="#" class="btn btn-outline-info text-start btn-sm">
-                        <i class="bi bi-file-earmark-text me-2"></i>View PTOs
-                    </a>
-                    <a href="#" class="btn btn-outline-warning text-start btn-sm">
-                        <i class="bi bi-bar-chart me-2"></i>Generate Report
-                    </a>
-                </div>
-            </div>
+            
         </div>
     </div>
 </div>

@@ -11,10 +11,6 @@ import za.co.taloms.traditionalauthority.application.dto.TraditionalAuthorityRes
 import za.co.taloms.traditionalauthority.application.dto.VillageResponse;
 import za.co.taloms.parcel.application.service.ParcelService;
 import za.co.taloms.parcel.application.dto.ParcelResponse;
-import za.co.taloms.household.application.service.HouseholdService;
-import za.co.taloms.household.application.dto.HouseholdResponse;
-import za.co.taloms.businessoccupancy.application.service.BusinessOccupancyService;
-import za.co.taloms.businessoccupancy.application.dto.BusinessOccupancyResponse;
 import za.co.taloms.pto.application.service.PTOService;
 import za.co.taloms.pto.application.dto.PTOResponse;
 import za.co.taloms.pto.application.dto.PTOSearchCriteria;
@@ -28,8 +24,6 @@ public class GlobalSearchController {
     private final TraditionalAuthorityService authorityService;
     private final VillageService villageService;
     private final ParcelService parcelService;
-    private final HouseholdService householdService;
-    private final BusinessOccupancyService businessService;
     private final PTOService ptoService;
 
     @GetMapping
@@ -63,20 +57,6 @@ public class GlobalSearchController {
             result.setParcels(Collections.emptyList());
         }
 
-        // Search households
-        try {
-            result.setHouseholds(householdService.searchByName(query));
-        } catch (Exception e) {
-            result.setHouseholds(Collections.emptyList());
-        }
-
-        // Search businesses
-        try {
-            result.setBusinesses(businessService.searchByName(query));
-        } catch (Exception e) {
-            result.setBusinesses(Collections.emptyList());
-        }
-
         // Search PTOs
         try {
             var criteria = PTOSearchCriteria.builder()
@@ -106,18 +86,12 @@ public class GlobalSearchController {
     private List<ParcelResponse> parcels = Collections.emptyList();
     @lombok.Builder.Default
     private List<PTOResponse> ptos = Collections.emptyList();
-    @lombok.Builder.Default
-    private List<HouseholdResponse> households = Collections.emptyList();
-    @lombok.Builder.Default
-    private List<BusinessOccupancyResponse> businesses = Collections.emptyList();
 
         public long getTotalResults() {
             return (authorities != null ? authorities.size() : 0)
                     + (villages != null ? villages.size() : 0)
                     + (parcels != null ? parcels.size() : 0)
-                    + (ptos != null ? ptos.size() : 0)
-                    + (households != null ? households.size() : 0)
-                    + (businesses != null ? businesses.size() : 0);
+                    + (ptos != null ? ptos.size() : 0);
         }
     }
 }

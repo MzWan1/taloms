@@ -35,6 +35,11 @@ public class VillageRepositoryAdapter
     }
 
     @Override
+    public List<Village> findByHeadmanId(Long headmanId) {
+        return jpaRepository.findByHeadmanId(headmanId);
+    }
+
+    @Override
     public List<Village> findAllActive() {
         return jpaRepository.findAllActive();
     }

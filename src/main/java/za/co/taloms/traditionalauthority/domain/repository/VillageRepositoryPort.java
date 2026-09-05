@@ -9,6 +9,8 @@ public interface VillageRepositoryPort {
     Optional<Village> findById(Long id);
     List<Village> findAll();
     List<Village> findByTraditionalAuthorityId(Long authorityId);
+    List<Village> findByHeadmanId(Long headmanId);
+
     List<Village> findAllActive();
     boolean existsByVillageNameAndTraditionalAuthorityId(
             String villageName, Long authorityId);

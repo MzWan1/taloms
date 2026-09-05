@@ -28,6 +28,12 @@ public class TraditionalAuthority {
     @Column(name = "headman_name", length = 150)
     private String headmanName;
 
+    @Column(name = "chief_id")
+    private Long chiefId;
+
+    @Column(name = "headman_id")
+    private Long headmanId;
+
     @Column(name = "contact_phone", length = 20)
     private String contactPhone;
 

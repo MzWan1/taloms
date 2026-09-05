@@ -155,7 +155,7 @@
                         </div>
 
                         <!-- Role -->
-                        <div class="mb-4">
+                        <div class="mb-3">
                             <label for="roleName" class="form-label">
                                 System Role <span class="text-danger">*</span>
                             </label>
@@ -180,6 +180,31 @@
                                  id="roleInfoBox" style="display:none">
                                 <i class="bi bi-info-circle me-1"></i>
                                 <span id="roleInfoText"></span>
+                            </div>
+                        </div>
+
+                        <!-- Linked Authority (optional, for CHIEF role) -->
+                        <div class="mb-4" id="authoritySection" style="display:none;">
+                            <label for="traditionalAuthorityId" class="form-label">
+                                Linked Traditional Authority <span class="text-muted small">(optional)</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="bi bi-building"></i>
+                                </span>
+                                <select id="traditionalAuthorityId"
+                                        th:field="*{traditionalAuthorityId}"
+                                        class="form-select">
+                                    <option value="">— Select an authority (optional) —</option>
+                                    <option th:each="auth : ${authorities}"
+                                            th:value="${auth.id}"
+                                            th:text="${auth.authorityName}">
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="form-text">
+                                Optional — a chief can be created without an authority first, then linked
+                                later when the authority is created (authorities require a chief).
                             </div>
                         </div>
 
@@ -332,11 +357,9 @@
 <script>
     // ── Role descriptions ──────────────────────────────────────────────────
     const roleDescriptions = {
-        'SYSTEM_ADMIN':    'Full system access — user management, all modules, system config.',
-        'TA_ADMINISTRATOR':'Approve/revoke PTOs, manage villages and authorities, all reports.',
-        'LAND_OFFICER':    'Create and demarcate parcels, capture GPS coordinates.',
-        'DATA_CAPTURER':   'Capture household, resident, and business records; upload documents.',
-        'REPORT_VIEWER':   'Read-only — search, view records, download reports only.',
+        'ROLE_ADMIN':     'Full system access — user management, authorities, all modules, system config.',
+        'ROLE_CHIEF':     'Manage own authority: add villages, attach headsmen, create and approve PTOs, add parcels.',
+        'ROLE_HEADSMAN':  'Manage villages in own authority: add parcels and create PTOs (cannot approve).',
     };
 
     document.getElementById('roleName').addEventListener('change', function () {
@@ -345,9 +368,18 @@
         const desc = roleDescriptions[this.value];
         if (desc) { text.textContent = desc; box.style.display = 'block'; }
         else       { box.style.display = 'none'; }
+
+        // Show/hide authority section for CHIEF role
+        const authoritySection = document.getElementById('authoritySection');
+        if (this.value === 'ROLE_CHIEF') {
+            authoritySection.style.display = 'block';
+        } else {
+            authoritySection.style.display = 'none';
+            document.getElementById('traditionalAuthorityId').value = '';
+        }
     });
 
-    // Show role description on page load for current role
+    // Show role description and authority section on page load
     window.addEventListener('load', () => {
         document.getElementById('roleName').dispatchEvent(new Event('change'));
     });

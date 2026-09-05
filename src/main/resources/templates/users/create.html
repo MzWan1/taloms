@@ -141,6 +141,31 @@
                             <div class="form-text" id="roleHint"></div>
                         </div>
 
+                        <!-- Linked Authority (optional, for CHIEF role) -->
+                        <div class="mb-3" id="authoritySection" style="display:none;">
+                            <label for="traditionalAuthorityId" class="form-label">
+                                Linked Traditional Authority <span class="text-muted small">(optional)</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="bi bi-building"></i>
+                                </span>
+                                <select id="traditionalAuthorityId"
+                                        th:field="*{traditionalAuthorityId}"
+                                        class="form-select">
+                                    <option value="">— Select an authority (optional) —</option>
+                                    <option th:each="auth : ${authorities}"
+                                            th:value="${auth.id}"
+                                            th:text="${auth.authorityName}">
+                                    </option>
+                                </select>
+                            </div>
+                            <div class="form-text">
+                                Optional — a chief can be created without an authority first, then linked
+                                later when the authority is created (authorities require a chief).
+                            </div>
+                        </div>
+
                         <!-- Password -->
                         <div class="mb-3">
                             <label for="password" class="form-label">
@@ -278,11 +303,9 @@
 
     // ── Role descriptions ──────────────────────────────────────────────────
     const roleDescriptions = {
-        'SYSTEM_ADMIN':    'Full system access — user management, all modules, system config.',
-        'TA_ADMINISTRATOR':'Approve/revoke PTOs, manage villages and authorities, view all reports.',
-        'LAND_OFFICER':    'Create and demarcate parcels, capture GPS coordinates.',
-        'DATA_CAPTURER':   'Capture household, resident, and business records; upload documents.',
-        'REPORT_VIEWER':   'Read-only — search, view records, download reports only.',
+        'ROLE_ADMIN':     'Full system access — user management, authorities, all modules, system config.',
+        'ROLE_CHIEF':     'Manage own authority: add villages, attach headsmen, create and approve PTOs, add parcels.',
+        'ROLE_HEADSMAN':  'Manage villages in own authority: add parcels and create PTOs (cannot approve).',
     };
     document.getElementById('roleName').addEventListener('change', function () {
         const box  = document.getElementById('roleInfoBox');
@@ -294,6 +317,20 @@
         } else {
             box.style.display = 'none';
         }
+
+        // Show/hide authority section for CHIEF role
+        const authoritySection = document.getElementById('authoritySection');
+        if (this.value === 'ROLE_CHIEF') {
+            authoritySection.style.display = 'block';
+        } else {
+            authoritySection.style.display = 'none';
+            document.getElementById('traditionalAuthorityId').value = '';
+        }
+    });
+
+    // Trigger on page load to handle pre-selected role
+    window.addEventListener('load', () => {
+        document.getElementById('roleName').dispatchEvent(new Event('change'));
     });
 
     // ── Form submit guard (confirm passwords match) ────────────────────────

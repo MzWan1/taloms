@@ -742,7 +742,7 @@ The PTO module digitises the traditional Permission to Occupy issuance process u
                                                         ▼
 ┌─────────────────┐    ┌──────────────────┐    ┌──────────────────┐
 │  6. Household   │◀───│  5. Approval     │◀───│  4. Upload        │
-│     Creation    │    │  (TA Admin)      │    │  Documents        │
+│     Creation    │    │  (Chief)         │    │  Documents        │
 │  (after ACTIVE) │    │  Gates on docs   │    │  (TA Letter,      │
 │                 │    │  present)        │    │   Site Sketch)    │
 └─────────────────┘    └──────────────────┘    └──────────────────┘
@@ -772,7 +772,7 @@ A PTO **cannot be approved** unless the following documents are uploaded and act
                                               [REVOKE]──▶ REVOKED
 ```
 
-- **PENDING**: Created by Land Officer / Data Capturer; awaiting TA Administrator approval.
+- **PENDING**: Created by Land Officer / Data Capturer; awaiting Chief approval.
 - **ACTIVE**: Occupancy rights conferred; parcel status set to `ALLOCATED`.
 - **SUSPENDED**: Temporarily paused; occupancy rights suspended.
 - **REVOKED**: Permanently withdrawn; parcel returned to `AVAILABLE`.
@@ -785,7 +785,7 @@ A PTO **cannot be approved** unless the following documents are uploaded and act
 |---|---|
 | `ROLE_LAND_OFFICER` | Create parcels, create PTOs, upload documents |
 | `ROLE_DATA_CAPTURER` | Create PTOs, upload documents, edit PENDING PTOs |
-| `ROLE_TA_ADMINISTRATOR` | Approve, suspend, reactivate, revoke, reinstate PTOs |
+| `ROLE_CHIEF` | Approve, suspend, reactivate, revoke, reinstate PTOs |
 | `ROLE_SYSTEM_ADMIN` | Full access to all PTO operations |
 | `ROLE_REPORT_VIEWER` | Read-only search and report access |
 

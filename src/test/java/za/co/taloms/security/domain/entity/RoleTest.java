@@ -8,11 +8,11 @@ class RoleTest {
     @Test
     void shouldCreateRole() {
         var role = Role.builder()
-                .name("ROLE_SYSTEM_ADMIN")
+                .name("ROLE_ADMIN")
                 .description("System Administrator")
                 .build();
 
-        assertEquals("ROLE_SYSTEM_ADMIN", role.getName());
+        assertEquals("ROLE_ADMIN", role.getName());
         assertEquals("System Administrator", role.getDescription());
     }
 }

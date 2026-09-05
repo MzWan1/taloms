@@ -22,19 +22,6 @@ public class DashboardSummaryDto {
     private Long disputedParcels;
     private Long reservedParcels;
 
-    // Household KPIs
-    private Long totalHouseholds;
-    private Long activeHouseholds;
-
-    // Resident KPIs
-    private Long totalResidents;
-    private Long activeResidents;
-
-    // Business KPIs
-    private Long totalBusinesses;
-    private Long activeBusinesses;
-    private Long pendingBusinesses;
-
     // Document KPIs
     private Long totalDocuments;
 

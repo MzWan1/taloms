@@ -27,5 +27,19 @@ public interface UserJpaRepository extends JpaRepository<User, Long> {
 
     @Query("SELECT u FROM User u ORDER BY u.createdAt DESC")
     List<User> findAllOrderByCreatedAtDesc();
+
+        @Query("SELECT u FROM User u WHERE " +
+           "LOWER(u.fullName) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           "LOWER(u.email) LIKE LOWER(CONCAT('%', :query, '%')) " +
+           "ORDER BY u.fullName")
+    List<User> searchByNameOrEmail(@Param("query") String query);
+
+    @Query("SELECT u FROM User u WHERE " +
+           "(LOWER(u.fullName) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           "LOWER(u.email) LIKE LOWER(CONCAT('%', :query, '%'))) " +
+                       "AND (u.traditionalAuthorityId IS NULL OR u.traditionalAuthorityId = :authorityId) " +
+           "ORDER BY u.fullName")
+    List<User> searchByNameOrEmailAndAuthorityScope(@Param("query") String query,
+                                                     @Param("authorityId") Long authorityId);
 }
 

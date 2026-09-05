@@ -201,7 +201,8 @@
                                 </a>
                                 <form th:if="${pto.status.name() == 'PENDING'}"
                                       th:action="@{/ptos/{id}/approve(id=${pto.id})}"
-                                      method="post" class="d-inline">
+                                      method="post" class="d-inline"
+                                      sec:authorize="hasRole('CHIEF')">
                                     <button type="submit"
                                             class="btn btn-outline-success" title="Approve">
                                         <i class="bi bi-check-circle"></i>

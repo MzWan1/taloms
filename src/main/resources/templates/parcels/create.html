@@ -58,6 +58,9 @@
             background: #1B3A6B;
             color: white;
         }
+        .map-pick-target {
+            cursor: pointer;
+        }
         .point-marker {
             background: #1B3A6B;
             color: white;
@@ -454,6 +457,7 @@
     let gpsWatchId = null;
     let lastGpsPosition = null;
     let gpsCaptureCount = 0;  // Track number of GPS captures to force fresh readings
+    let activePointSeq = null; // The manual point currently "open" — map clicks fill this one
 
     // ── Map Setup ──────────────────────────────────────────────────────────
     const map = L.map('map').setView([-25.0, 28.0], 8);
@@ -464,6 +468,55 @@
 
     let polygonLayer = null;
     let markers = [];
+
+    // ── Map Click → Fill Active Manual Point ─────────────────────────────
+    // Clicking the map fills the coordinates of the point currently "open"
+    // (the latest added manual point, or a previously added one that the
+    // user re-selected by clicking its card). Clicking the map again
+    // replaces the values of that same open point until a new point is
+    // added or another point is selected.
+    const MAP_PICK_HINT = 'Click the map below to fill coordinates';
+    const MAP_EMPTY_HINT = '— manually enter or capture GPS';
+
+    map.on('click', function (e) {
+        if (isSubmitting || loopClosed || activePointSeq === null) return;
+        const idx = gpsPoints.findIndex(p => p.sequence === activePointSeq);
+        if (idx === -1) return;
+        const point = gpsPoints[idx];
+        if (point.isClosurePoint || point.autoCaptured) return;
+
+        const lat = e.latlng.lat;
+        const lng = e.latlng.lng;
+        point.latitude = lat;
+        point.longitude = lng;
+
+        const latInput = document.getElementById('lat' + activePointSeq);
+        const lngInput = document.getElementById('lng' + activePointSeq);
+        if (latInput) latInput.value = lat.toFixed(8);
+        if (lngInput) lngInput.value = lng.toFixed(8);
+
+        const coordDisplay = document.getElementById('coord' + activePointSeq);
+        if (coordDisplay) {
+            coordDisplay.textContent = `${lat.toFixed(8)}, ${lng.toFixed(8)} (map)`;
+            coordDisplay.className = 'coordinate-preview small text-success';
+        }
+
+        const card = document.getElementById('pointCard' + activePointSeq);
+        if (card) {
+            const cardDiv = card.querySelector('.card');
+            if (cardDiv) {
+                cardDiv.classList.remove('pending');
+                cardDiv.classList.add('captured');
+            }
+            const badge = card.querySelector('.gps-badge');
+            if (badge) {
+                badge.classList.remove('gps-badge-pending');
+                badge.classList.add('gps-badge-captured');
+            }
+        }
+
+        updateDisplay();
+    });
 
     // ── GPS Status Update ────────────────────────────────────────────────
     function updateGpsStatus(lat, lng, accuracy, timestamp, source) {
@@ -1177,7 +1230,7 @@ accuracyClass = 'accuracy-poor';
                 <div class="card-body p-2">
                     <div class="d-flex align-items-center gap-2 mb-2">
                         <div class="gps-badge ${hasCoords ? 'gps-badge-captured' : 'gps-badge-pending'}">${seq}</div>
-                        <div class="flex-grow-1">
+                        <div class="flex-grow-1${!autoCaptured && !loopClosed ? ' map-pick-target' : ''}"${!autoCaptured && !loopClosed ? ` onclick="setActivePoint(${seq})" title="Click to select this point, then click the map to fill its coordinates"` : ''}>
                             <div class="fw-semibold small">Point ${seq}${autoCaptured ? ' <span class="badge bg-info text-white" style="font-size:0.6rem;">auto</span>' : ''}</div>
                         </div>
                         <button type="button" class="btn btn-sm btn-outline-danger" onclick="removePoint(${seq})" ${loopClosed ? 'disabled' : ''}>
@@ -1218,7 +1271,61 @@ accuracyClass = 'accuracy-poor';
         const seq = nextPointId++;
         gpsPoints.push({ latitude: null, longitude: null, sequence: seq, accuracy: null });
         addPointCard(seq, null, null, null, false);
+        activePointSeq = seq;
         updateDisplay();
+        highlightActivePointCard();
+    }
+
+    // ── Active Point Selection (map picking) ─────────────────────────────
+    function setActivePoint(seq) {
+        if (isSubmitting || loopClosed) return;
+        const idx = gpsPoints.findIndex(p => p.sequence === seq);
+        if (idx === -1) return;
+        const point = gpsPoints[idx];
+        if (point.autoCaptured || point.isClosurePoint) return;
+        activePointSeq = seq;
+        highlightActivePointCard();
+    }
+
+    function highlightActivePointCard() {
+        // Reset hint text on any card that was showing the map-pick hint
+        document.querySelectorAll('#gpsPointsContainer .coordinate-preview').forEach(el => {
+            if (el.textContent === MAP_PICK_HINT) {
+                el.textContent = MAP_EMPTY_HINT;
+                el.className = 'coordinate-preview small text-muted';
+            }
+        });
+        // Clear active highlight from all cards
+        document.querySelectorAll('#gpsPointsContainer .gps-point-card').forEach(c => c.classList.remove('active'));
+        document.querySelectorAll('#gpsPointsContainer .gps-badge').forEach(b => {
+            if (b.classList.contains('gps-badge-active')) {
+                b.classList.remove('gps-badge-active');
+                b.classList.add('gps-badge-pending');
+            }
+        });
+
+        if (activePointSeq === null) return;
+        const card = document.getElementById('pointCard' + activePointSeq);
+        if (!card) return;
+
+        const cardDiv = card.querySelector('.card');
+        if (cardDiv && !cardDiv.classList.contains('captured')) {
+            cardDiv.classList.add('active');
+        }
+        const badge = card.querySelector('.gps-badge');
+        if (badge && badge.classList.contains('gps-badge-pending')) {
+            badge.classList.remove('gps-badge-pending');
+            badge.classList.add('gps-badge-active');
+        }
+
+        // Show the pick hint on the active point while it has no coordinates
+        const idx = gpsPoints.findIndex(p => p.sequence === activePointSeq);
+        const point = gpsPoints[idx];
+        const coordDisplay = document.getElementById('coord' + activePointSeq);
+        if (coordDisplay && point && point.latitude === null && point.longitude === null) {
+            coordDisplay.textContent = MAP_PICK_HINT;
+            coordDisplay.className = 'coordinate-preview small text-primary fw-semibold';
+        }
     }
 
     function updatePointFromInput(seq) {
@@ -1268,11 +1375,19 @@ accuracyClass = 'accuracy-poor';
         const card = document.getElementById('pointCard' + seq);
         if (card) card.remove();
 
+        // If the removed point was the one open for map picking,
+        // fall back to the latest remaining manual point (if any)
+        if (activePointSeq === seq) {
+            const remaining = gpsPoints.filter(p => !p.autoCaptured && !p.isClosurePoint);
+            activePointSeq = remaining.length ? remaining[remaining.length - 1].sequence : null;
+        }
+
         if (gpsPoints.length === 0) {
             const noMsg = document.getElementById('noPointsMessage');
             if (noMsg) noMsg.style.display = 'block';
         }
         updateDisplay();
+        highlightActivePointCard();
     }
 
     // ── Finish Capture ──────────────────────────────────────────────────
@@ -1306,6 +1421,7 @@ accuracyClass = 'accuracy-poor';
 
         loopClosed = true;
         stopAutoWalkInternal();
+        activePointSeq = null;
 
         document.getElementById('loopClosedBadge').style.display = 'inline-block';
         document.getElementById('loopStatus').textContent = 'Loop: Closed ✓';

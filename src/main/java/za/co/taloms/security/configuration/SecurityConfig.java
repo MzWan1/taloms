@@ -52,6 +52,22 @@ public class SecurityConfig {
                                 "/images/**",
                                 "/favicon.ico"
                         ).permitAll()
+                        // Admin-only pages
+                        .requestMatchers("/users", "/users/**").hasRole("ADMIN")
+                        .requestMatchers("/audit", "/audit/**").hasRole("ADMIN")
+                        // User search for leadership selection - ADMIN and CHIEF both use it
+                        .requestMatchers("/api/users/search").hasAnyRole("ADMIN", "CHIEF")
+                        .requestMatchers("/api/users", "/api/users/**").hasRole("ADMIN")
+                        .requestMatchers("/api/audit", "/api/audit/**").hasRole("ADMIN")
+                        // Authorities - ADMIN creates/manages authorities; CHIEF adds villages
+                        .requestMatchers("/authorities", "/authorities/**").hasAnyRole("ADMIN", "CHIEF")
+                        .requestMatchers("/api/authorities", "/api/authorities/**").hasAnyRole("ADMIN", "CHIEF")
+                        // Villages - CHIEF-only (admin cannot view or manage villages)
+                        .requestMatchers("/villages", "/villages/**").hasRole("CHIEF")
+                        .requestMatchers("/api/villages", "/api/villages/**").hasRole("CHIEF")
+                        // All authenticated users
+                        .requestMatchers("/dashboard", "/ptos/**", "/parcels/**", "/gis/**", "/documents/**").authenticated()
+                        .requestMatchers("/api/ptos/**", "/api/parcels/**", "/api/gis/**", "/api/documents/**").authenticated()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session

@@ -5,19 +5,15 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import za.co.taloms.audit.application.service.AuditService;
-import za.co.taloms.businessoccupancy.application.service.BusinessOccupancyService;
-import za.co.taloms.businessoccupancy.domain.entity.BusinessStatus;
 import za.co.taloms.dashboard.application.dto.DashboardSummaryDto;
 import za.co.taloms.dashboard.application.dto.PendingPtoSummaryDto;
 import za.co.taloms.dashboard.application.dto.RecentActivityDto;
 import za.co.taloms.document.application.service.DocumentService;
-import za.co.taloms.household.application.service.HouseholdService;
 import za.co.taloms.parcel.application.service.ParcelService;
 import za.co.taloms.parcel.domain.entity.ParcelStatus;
 import za.co.taloms.pto.application.dto.PTOResponse;
 import za.co.taloms.pto.application.service.PTOService;
 import za.co.taloms.pto.domain.entity.PTOStatus;
-import za.co.taloms.resident.application.service.ResidentService;
 import za.co.taloms.security.application.service.UserService;
 
 import java.util.ArrayList;
@@ -30,9 +26,6 @@ public class DashboardServiceImpl implements DashboardService {
 
     private final PTOService ptoService;
     private final ParcelService parcelService;
-    private final HouseholdService householdService;
-    private final ResidentService residentService;
-    private final BusinessOccupancyService businessService;
     private final DocumentService documentService;
     private final UserService userService;
     private final AuditService auditService;
@@ -54,19 +47,6 @@ public class DashboardServiceImpl implements DashboardService {
             Long allocatedParcels = safeLong(() -> parcelService.countByStatus(ParcelStatus.ALLOCATED));
             Long disputedParcels = safeLong(() -> parcelService.countByStatus(ParcelStatus.DISPUTED));
             Long reservedParcels = safeLong(() -> parcelService.countByStatus(ParcelStatus.RESERVED));
-
-            // Household Counts
-            Long totalHouseholds = safeLong(() -> householdService.countAll());
-            Long activeHouseholds = safeLong(() -> householdService.countActive());
-
-            // Resident Counts
-            Long totalResidents = safeLong(() -> residentService.countAll());
-            Long activeResidents = safeLong(() -> residentService.countActive());
-
-            // Business Counts
-            Long totalBusinesses = safeLong(() -> businessService.countAll());
-            Long activeBusinesses = safeLong(() -> businessService.countByStatus(BusinessStatus.ACTIVE));
-            Long pendingBusinesses = safeLong(() -> businessService.countByStatus(BusinessStatus.PENDING));
 
             // Document Counts
             Long totalDocuments = safeLong(() -> documentService.countAll());
@@ -92,13 +72,6 @@ public class DashboardServiceImpl implements DashboardService {
                     .allocatedParcels(allocatedParcels)
                     .disputedParcels(disputedParcels)
                     .reservedParcels(reservedParcels)
-                    .totalHouseholds(totalHouseholds)
-                    .activeHouseholds(activeHouseholds)
-                    .totalResidents(totalResidents)
-                    .activeResidents(activeResidents)
-                    .totalBusinesses(totalBusinesses)
-                    .activeBusinesses(activeBusinesses)
-                    .pendingBusinesses(pendingBusinesses)
                     .totalDocuments(totalDocuments)
                     .totalUsers(totalUsers)
                     .activeUsers(activeUsers)
@@ -121,13 +94,6 @@ public class DashboardServiceImpl implements DashboardService {
                     .allocatedParcels(0L)
                     .disputedParcels(0L)
                     .reservedParcels(0L)
-                    .totalHouseholds(0L)
-                    .activeHouseholds(0L)
-                    .totalResidents(0L)
-                    .activeResidents(0L)
-                    .totalBusinesses(0L)
-                    .activeBusinesses(0L)
-                    .pendingBusinesses(0L)
                     .totalDocuments(0L)
                     .totalUsers(0L)
                     .activeUsers(0L)

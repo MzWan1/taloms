@@ -14,6 +14,7 @@ public class VillageResponse {
     private Boolean       active;
     private Long          traditionalAuthorityId;
     private String        authorityName;
+    private Long          headmanId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

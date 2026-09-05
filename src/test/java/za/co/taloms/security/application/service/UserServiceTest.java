@@ -37,7 +37,7 @@ class UserServiceTest extends BaseTest {
                 .email("test@example.com")
                 .fullName("Test User")
                 .password("Password123!")
-                .roleName("ROLE_TA_ADMINISTRATOR")
+                .roleName("ROLE_CHIEF")
                 .build();
 
         var response = userService.createUser(request);
@@ -56,7 +56,7 @@ class UserServiceTest extends BaseTest {
                 .email("find@example.com")
                 .fullName("Find User")
                 .password("Password123!")
-                .roleName("ROLE_TA_ADMINISTRATOR")
+                .roleName("ROLE_CHIEF")
                 .build();
 
         var created = userService.createUser(request);
@@ -74,7 +74,7 @@ class UserServiceTest extends BaseTest {
                 .email("update@example.com")
                 .fullName("Update User")
                 .password("Password123!")
-                .roleName("ROLE_TA_ADMINISTRATOR")
+                .roleName("ROLE_CHIEF")
                 .build();
 
         var created = userService.createUser(request);
@@ -82,7 +82,7 @@ class UserServiceTest extends BaseTest {
         var updateRequest = UserUpdateRequest.builder()
                 .fullName("Updated User")
                 .email("updated@example.com")
-                .roleName("ROLE_SYSTEM_ADMIN")
+                .roleName("ROLE_ADMIN")
                 .build();
 
         var updated = userService.updateUser(created.getId(), updateRequest);
@@ -98,7 +98,7 @@ class UserServiceTest extends BaseTest {
                 .email("lock@example.com")
                 .fullName("Lock User")
                 .password("Password123!")
-                .roleName("ROLE_TA_ADMINISTRATOR")
+                .roleName("ROLE_CHIEF")
                 .build();
 
         var created = userService.createUser(request);
@@ -115,7 +115,7 @@ class UserServiceTest extends BaseTest {
                 .email("unlock@example.com")
                 .fullName("Unlock User")
                 .password("Password123!")
-                .roleName("ROLE_TA_ADMINISTRATOR")
+                .roleName("ROLE_CHIEF")
                 .build();
 
         var created = userService.createUser(request);
@@ -133,7 +133,7 @@ class UserServiceTest extends BaseTest {
                 .email("activate@example.com")
                 .fullName("Activate User")
                 .password("Password123!")
-                .roleName("ROLE_TA_ADMINISTRATOR")
+                .roleName("ROLE_CHIEF")
                 .build();
 
         var created = userService.createUser(request);
