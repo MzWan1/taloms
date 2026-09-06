@@ -227,6 +227,7 @@ public class TraditionalAuthorityPageController {
     public String createVillage(
             @PathVariable Long authorityId,
             @ModelAttribute("form") VillageRequest request,
+            Model model,
             RedirectAttributes ra) {
         try {
             // Validate CHIEF can only add villages to their linked authority
@@ -237,7 +238,13 @@ public class TraditionalAuthorityPageController {
                     "Village '" + request.getVillageName()
                             + "' added successfully.");
         } catch (Exception e) {
-            ra.addFlashAttribute("errorMessage", e.getMessage());
+            model.addAttribute("errorMessage", e.getMessage());
+            model.addAttribute("form", request);
+            model.addAttribute("authority",
+                    authorityService.findById(authorityId));
+            model.addAttribute("pageTitle",   "Add Village");
+            model.addAttribute("currentPage", "authorities");
+            return "authorities/village-form";
         }
         return "redirect:/authorities/" + authorityId;
     }

@@ -19,6 +19,7 @@ import za.co.taloms.parcel.domain.entity.CaptureMode;
 import za.co.taloms.parcel.domain.entity.ParcelStatus;
 import za.co.taloms.security.application.service.AuthorityScopeService;
 import za.co.taloms.traditionalauthority.application.dto.TraditionalAuthorityResponse;
+import za.co.taloms.traditionalauthority.application.dto.VillageResponse;
 import za.co.taloms.traditionalauthority.application.service.TraditionalAuthorityService;
 import za.co.taloms.traditionalauthority.application.service.VillageService;
 
@@ -40,18 +41,9 @@ public class ParcelPageController {
     private final AuthorityScopeService scopeService;
     private final ObjectMapper objectMapper;
 
-    /** Returns the village IDs belonging to the current chief/headman's authority, or null if unrestricted. */
+    /** Returns the village IDs the current chief/headman may manage, or null if unrestricted (admin). */
     private Set<Long> scopedVillageIds() {
-        if (!scopeService.isCurrentUserChiefOrHeadsman()) {
-            return null; // unrestricted (admin etc.)
-        }
-        Long linkedAuthorityId = scopeService.getCurrentUserAuthorityId();
-        if (linkedAuthorityId == null) {
-            return Set.of(); // linked to nothing → sees nothing
-        }
-        return villageService.findByAuthority(linkedAuthorityId).stream()
-                .map(v -> v.getId())
-                .collect(Collectors.toSet());
+        return scopeService.scopedVillageIds();
     }
 
     /** Throws SecurityException if the given village is outside the current user's scope. */
@@ -59,11 +51,7 @@ public class ParcelPageController {
         if (villageId == null) {
             throw new SecurityException("A village must be selected.");
         }
-        var village = villageService.findById(villageId);
-        if (village == null || village.getTraditionalAuthorityId() == null) {
-            throw new SecurityException("Village not found: " + villageId);
-        }
-        scopeService.requireAuthorityAccess(village.getTraditionalAuthorityId());
+        scopeService.requireVillageAccess(villageId);
     }
 
     /** Throws SecurityException if the given parcel is outside the current user's scope. */
@@ -73,11 +61,28 @@ public class ParcelPageController {
     }
 
     @GetMapping
-    public String list(Model model) {
+    public String list(
+            @RequestParam(value = "q", required = false) String q,
+            @RequestParam(value = "status", required = false) ParcelStatus status,
+            @RequestParam(value = "villageId", required = false) Long villageId,
+            Model model) {
         try {
             Set<Long> allowedVillageIds = scopedVillageIds();
 
             List<ParcelResponse> parcels = parcelService.findAll();
+            if (q != null && !q.trim().isEmpty()) {
+                parcels = parcelService.search(q.trim());
+            }
+            if (status != null) {
+                parcels = parcels.stream()
+                        .filter(p -> status.equals(p.getStatus()))
+                        .toList();
+            }
+            if (villageId != null) {
+                parcels = parcels.stream()
+                        .filter(p -> villageId.equals(p.getVillageId()))
+                        .toList();
+            }
             if (allowedVillageIds != null) {
                 // Chiefs/headsmen only see parcels in their authority's villages
                 parcels = parcels.stream()
@@ -94,6 +99,9 @@ public class ParcelPageController {
                     .filter(p -> p.getStatus() == ParcelStatus.DISPUTED).count();
 
             model.addAttribute("parcels", parcels);
+            model.addAttribute("q", q);
+            model.addAttribute("selectedStatus", status);
+            model.addAttribute("selectedVillageId", villageId);
             model.addAttribute("statuses", ParcelStatus.values());
             model.addAttribute("totalCount", (long) parcels.size());
             model.addAttribute("availableCount", availableCount);
@@ -120,35 +128,39 @@ public class ParcelPageController {
     @GetMapping("/create")
     public String createForm(Model model) {
         try {
-            List<TraditionalAuthorityResponse> authorities;
-            if (scopeService.isCurrentUserChiefOrHeadsman()) {
-                // Chiefs/headsmen can only create parcels in their own authority
-                Long linkedAuthorityId = scopeService.getCurrentUserAuthorityId();
-                authorities = linkedAuthorityId != null
-                        ? authorityService.findAllActive().stream()
-                            .filter(a -> linkedAuthorityId.equals(a.getId()))
-                            .toList()
-                        : Collections.emptyList();
-            } else {
-                authorities = authorityService.findAllActive();
-            }
-            log.info("Loading parcel create form with {} active authorities", authorities.size());
+            List<VillageResponse> villages;
+            boolean creationBlocked = false;
 
-            if (authorities.isEmpty() && !scopeService.isCurrentUserChiefOrHeadsman()) {
-                log.warn("No active authorities found for parcel creation form. Falling back to all authorities.");
-                authorities = authorityService.findAll();
-                if (!authorities.isEmpty()) {
-                    model.addAttribute("warningMessage",
-                            "No active authorities found. Showing all authorities including inactive ones. " +
-                            "Please activate an authority before creating a parcel.");
+            if (scopeService.isCurrentUserChiefOrHeadsman()) {
+                // Chiefs/headsmen choose from the villages they are scoped to
+                // (via their linked authority and/or the villages they directly head).
+                // The authority is not asked for; it is derived from their own links.
+                Set<Long> allowed = scopedVillageIds();
+                if (allowed == null || allowed.isEmpty()) {
+                    // Not scoped to any village -> cannot create parcels.
+                    villages = Collections.emptyList();
+                    creationBlocked = true;
+                } else {
+                    villages = villageService.findAll().stream()
+                            .filter(v -> allowed.contains(v.getId()))
+                            .filter(v -> v.getActive() == null || v.getActive())
+                            .collect(Collectors.toList());
                 }
+            } else {
+                // Admins etc. -> all active villages.
+                villages = villageService.findAll().stream()
+                        .filter(v -> v.getActive() == null || v.getActive())
+                        .collect(Collectors.toList());
             }
+            log.info("Loading parcel create form with {} villages (creationBlocked={})",
+                    villages.size(), creationBlocked);
 
             if (!model.containsAttribute("form")) {
                 model.addAttribute("form", ParcelRequest.builder().build());
             }
 
-            model.addAttribute("authorities", authorities);
+            model.addAttribute("villages", villages);
+            model.addAttribute("creationBlocked", creationBlocked);
             model.addAttribute("statuses", ParcelStatus.values());
             model.addAttribute("captureModes", CaptureMode.values());
             model.addAttribute("pageTitle", "Create Parcel");
@@ -157,7 +169,8 @@ public class ParcelPageController {
         } catch (Exception e) {
             log.error("Error loading create parcel form: {}", e.getMessage(), e);
             model.addAttribute("errorMessage", "Error loading form: " + e.getMessage());
-            model.addAttribute("authorities", Collections.emptyList());
+            model.addAttribute("villages", Collections.emptyList());
+            model.addAttribute("creationBlocked", true);
             model.addAttribute("statuses", ParcelStatus.values());
             model.addAttribute("captureModes", CaptureMode.values());
             model.addAttribute("pageTitle", "Create Parcel");
@@ -252,23 +265,41 @@ public class ParcelPageController {
                     .captureMode(parcel.getCaptureMode())
                     .build();
 
+            var parcelVillage = villageService.findById(parcel.getVillageId());
+
             List<TraditionalAuthorityResponse> authorities;
             if (scopeService.isCurrentUserChiefOrHeadsman()) {
+                // Determine the authorities the user may see/edit against.
+                // Prefer the user's linked authority; but if the user is only
+                // linked to a village (not an authority), fall back to the
+                // parcel's own village authority so the form can still load.
+                var parcelVillageAuth = parcelVillage != null
+                        ? parcelVillage.getTraditionalAuthorityId() : null;
+
                 Long linkedAuthorityId = scopeService.getCurrentUserAuthorityId();
-                authorities = linkedAuthorityId != null
-                        ? authorityService.findAllActive().stream()
-                            .filter(a -> linkedAuthorityId.equals(a.getId()))
-                            .toList()
-                        : Collections.emptyList();
+                Long relevantAuthorityId = linkedAuthorityId != null
+                        ? linkedAuthorityId : parcelVillageAuth;
+
+                // Only allow editing if the parcel's village is within the user's scope.
+                if (scopeService.isCurrentUserAdmin()
+                        || scopeService.canAccessVillage(parcel.getVillageId())) {
+                    authorities = relevantAuthorityId != null
+                            ? authorityService.findAllActive().stream()
+                                .filter(a -> relevantAuthorityId.equals(a.getId()))
+                                .toList()
+                            : Collections.emptyList();
+                } else {
+                    authorities = Collections.emptyList();
+                }
             } else {
                 authorities = authorityService.findAllActive();
             }
-            var parcelVillage = villageService.findById(parcel.getVillageId());
-            var villages = villageService.findByAuthority(
-                    parcelVillage != null ? parcelVillage.getTraditionalAuthorityId() : null);
+            Long currentAuthorityId = parcelVillage != null ? parcelVillage.getTraditionalAuthorityId() : null;
+            var villages = villageService.findByAuthority(currentAuthorityId);
 
             model.addAttribute("parcel", parcel);
             model.addAttribute("form", form);
+            model.addAttribute("currentAuthorityId", currentAuthorityId);
             model.addAttribute("authorities", authorities);
             model.addAttribute("villages", villages);
             model.addAttribute("statuses", ParcelStatus.values());
@@ -348,10 +379,27 @@ public class ParcelPageController {
     @ResponseBody
     public Object getVillagesByAuthority(@PathVariable Long authorityId) {
         try {
-            // Chiefs/headsmen may only load villages of their linked authority
-            if (scopeService.isCurrentUserChiefOrHeadsman()
-                    && !scopeService.canAccessAuthority(authorityId)) {
-                return Collections.emptyList();
+            // Chiefs/headsmen may only load villages they are scoped to.
+            // They may be scoped via a linked authority, or directly via the
+            // villages they head. If they can access the authority directly,
+            // return its villages. Otherwise return only the villages within
+            // their scoped set that belong to this authority.
+            if (scopeService.isCurrentUserChiefOrHeadsman()) {
+                if (scopeService.canAccessAuthority(authorityId)) {
+                    log.info("Loading villages for authority ID: {}", authorityId);
+                    return villageService.findByAuthority(authorityId).stream()
+                            .filter(v -> v.getActive() == null || v.getActive())
+                            .collect(Collectors.toList());
+                }
+                Set<Long> scopedVillageIds = scopeService.scopedVillageIds();
+                if (scopedVillageIds == null || scopedVillageIds.isEmpty()) {
+                    return Collections.emptyList();
+                }
+                log.info("Loading scoped villages for authority ID: {}", authorityId);
+                return villageService.findByAuthority(authorityId).stream()
+                        .filter(v -> (v.getActive() == null || v.getActive())
+                                && scopedVillageIds.contains(v.getId()))
+                        .collect(Collectors.toList());
             }
 
             log.info("Loading villages for authority ID: {}", authorityId);

@@ -17,6 +17,7 @@ import za.co.taloms.parcel.application.dto.ParcelResponse;
 import za.co.taloms.parcel.application.service.ParcelService;
 import za.co.taloms.parcel.domain.entity.ParcelStatus;
 import za.co.taloms.parcel.domain.repository.ParcelRepositoryPort;
+import za.co.taloms.security.application.service.AuthorityScopeService;
 import za.co.taloms.traditionalauthority.application.dto.TraditionalAuthorityResponse;
 import za.co.taloms.traditionalauthority.application.dto.VillageResponse;
 import za.co.taloms.traditionalauthority.application.service.TraditionalAuthorityService;
@@ -36,6 +37,7 @@ public class GisServiceImpl implements GisService {
     private final BusinessOccupancyRepositoryPort businessOccupancyRepository;
     private final HouseholdRepositoryPort householdRepository;
     private final ParcelRepositoryPort parcelRepository;
+    private final AuthorityScopeService scopeService;
 
     @Override
     @Transactional(readOnly = true)
@@ -61,9 +63,53 @@ public class GisServiceImpl implements GisService {
     @Override
     @Transactional(readOnly = true)
     public ParcelGeoJsonResponse getParcelGeoJsonByStatus(String status) {
-        ParcelStatus parcelStatus = ParcelStatus.valueOf(status.toUpperCase());
+        ParcelStatus parcelStatus = parseParcelStatus(status);
         var parcels = parcelService.findByStatus(parcelStatus);
         return buildParcelGeoJsonResponse(parcels, null);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public ParcelGeoJsonResponse getParcelGeoJsonAll() {
+        List<ParcelResponse> parcels;
+
+        // Filter parcels based on the user's village scope.
+        // Admins see all; chiefs/headsmen see the villages they manage
+        // (via linked authority and/or the villages they directly head).
+        if (scopeService.isCurrentUserAdmin()) {
+            parcels = parcelService.findAll();
+        } else {
+            Set<Long> scopedVillageIds = scopeService.scopedVillageIds();
+            if (scopedVillageIds != null && !scopedVillageIds.isEmpty()) {
+                parcels = parcelService.findAll().stream()
+                        .filter(p -> p.getVillageId() != null
+                                && scopedVillageIds.contains(p.getVillageId()))
+                        .collect(Collectors.toList());
+            } else {
+                // User scoped to no village - return empty list
+                parcels = Collections.emptyList();
+            }
+        }
+
+        return buildParcelGeoJsonResponse(parcels, null);
+    }
+
+    private ParcelStatus parseParcelStatus(String status) {
+        if (status == null || status.isBlank()) {
+            return ParcelStatus.AVAILABLE;
+        }
+
+        String normalized = status.trim().toUpperCase();
+        if ("ACTIVE".equals(normalized)) {
+            return ParcelStatus.AVAILABLE;
+        }
+
+        try {
+            return ParcelStatus.valueOf(normalized);
+        } catch (IllegalArgumentException ex) {
+            log.warn("Unknown parcel status '{}', defaulting to AVAILABLE", status);
+            return ParcelStatus.AVAILABLE;
+        }
     }
 
     @Override
@@ -206,6 +252,7 @@ public class GisServiceImpl implements GisService {
                             .standNumber(parcel.getStandNumber())
                             .status(parcel.getStatus().name())
                             .statusDisplay(parcel.getStatusDisplay())
+                            .villageId(parcel.getVillageId())
                             .villageName(parcel.getVillageName())
                             .areaM2(parcel.getAreaM2())
                             .ptoNumber(parcel.getPtoNumber())

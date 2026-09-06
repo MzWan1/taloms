@@ -34,6 +34,7 @@ public class ParcelGeoJsonResponse {
         private String standNumber;
         private String status;
         private String statusDisplay;
+        private Long villageId;
         private String villageName;
         private Double areaM2;
         private String ptoNumber;

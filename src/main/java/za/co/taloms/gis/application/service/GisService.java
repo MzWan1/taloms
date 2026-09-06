@@ -10,6 +10,7 @@ public interface GisService {
     ParcelGeoJsonResponse getParcelGeoJsonByAuthority(Long authorityId);
     ParcelGeoJsonResponse getParcelGeoJsonByStatus(String status);
     ParcelGeoJsonResponse getParcelGeoJsonById(Long parcelId);
+    ParcelGeoJsonResponse getParcelGeoJsonAll();
     GeoJsonResponse getGeoJsonForVillage(Long villageId);
     GeoJsonResponse getGeoJsonForAuthority(Long authorityId);
     Map<String, Object> getParcelGeometry(Long parcelId);

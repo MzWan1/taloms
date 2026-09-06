@@ -301,13 +301,26 @@
 
     // ── User search for Chief and Headman ─────────────────────────────────
     function setupUserSearch(searchInputId, resultsDivId, selectedDivId,
-                             selectedNameSpanId, hiddenInputId) {
+                             selectedNameSpanId, hiddenInputId, role, authorityIdInputId) {
         const searchInput = document.getElementById(searchInputId);
         const resultsDiv = document.getElementById(resultsDivId);
         const selectedDiv = document.getElementById(selectedDivId);
         const selectedNameSpan = document.getElementById(selectedNameSpanId);
         const hiddenInput = document.getElementById(hiddenInputId);
+        const authorityIdInput = authorityIdInputId ? document.getElementById(authorityIdInputId) : null;
         let debounceTimer;
+
+        function buildUrl(query) {
+            let url = '/api/users/search?q=' + encodeURIComponent(query);
+            if (role) {
+                url += '&role=' + encodeURIComponent(role);
+            }
+            const authorityId = authorityIdInput ? authorityIdInput.value : '';
+            if (authorityId) {
+                url += '&authorityId=' + encodeURIComponent(authorityId);
+            }
+            return url;
+        }
 
         searchInput.addEventListener('input', function () {
             const query = this.value.trim();
@@ -319,7 +332,7 @@
             }
 
             debounceTimer = setTimeout(() => {
-                fetch('/api/users/search?q=' + encodeURIComponent(query))
+                fetch(buildUrl(query))
                     .then(r => r.json())
                     .then(data => {
                         resultsDiv.innerHTML = '';
@@ -377,7 +390,7 @@
 
     // Setup search for Headman
     setupUserSearch('headmanSearch', 'headmanResults', 'headmanSelected',
-        'headmanSelectedName', 'headmanId');
+        'headmanSelectedName', 'headmanId', 'ROLE_HEADSMAN', 'authorityId');
 </script>
 </body>
 </html>

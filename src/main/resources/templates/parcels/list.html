@@ -89,14 +89,14 @@
     <!-- Search -->
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-body py-3">
-            <form th:action="@{/parcels}" method="get">
+            <form th:action="@{/parcels}" method="get" onsubmit="return false;">
                 <div class="row g-3 align-items-end">
                     <div class="col-12 col-md-5">
                         <label class="form-label small mb-1">Search</label>
                         <div class="input-group">
                             <span class="input-group-text"><i class="bi bi-search text-muted"></i></span>
-                            <input type="text" name="search" class="form-control"
-                                   th:value="${searchTerm}"
+                            <input type="text" name="q" class="form-control"
+                                   th:value="${q}"
                                    placeholder="Search by stand number or parcel number...">
                         </div>
                     </div>
@@ -111,15 +111,10 @@
                             </option>
                         </select>
                     </div>
-                    <div class="col-3 col-md-2">
-                        <button type="submit" class="btn btn-navy w-100">
-                            <i class="bi bi-search me-1"></i>Search
-                        </button>
-                    </div>
-                    <div class="col-3 col-md-2">
-                        <a th:href="@{/parcels}" class="btn btn-outline-secondary w-100">
+                    <div class="col-3 col-md-1">
+                        <button type="button" class="btn btn-outline-secondary w-100" id="clearFiltersBtn">
                             <i class="bi bi-x-circle me-1"></i>Clear
-                        </a>
+                        </button>
                     </div>
                 </div>
             </form>
@@ -143,14 +138,16 @@
                     </tr>
                     </thead>
                     <tbody>
-                    <tr th:if="${parcels == null or parcels.empty}">
+                    <tr id="noParcelsRow" th:if="${parcels == null or parcels.empty}">
                         <td colspan="7" class="text-center py-5 text-muted">
                             <i class="bi bi-map display-5 d-block mb-2 opacity-25"></i>
                             <span class="fw-semibold">No parcels found</span><br>
                             <small>Click "New Parcel" to create the first record</small>
                         </td>
                     </tr>
-                    <tr th:each="parcel : ${parcels}">
+                    <tr th:each="parcel : ${parcels}"
+                        class="parcel-row"
+                        th:attr="data-parcel-number=${parcel.parcelNumber},data-stand-number=${parcel.standNumber},data-village-name=${parcel.villageName},data-status=${parcel.status != null ? parcel.status.name() : ''},data-area=${parcel.areaM2 != null ? parcel.areaM2 : ''}">
                         <td class="px-4">
                             <a th:href="@{/parcels/{id}(id=${parcel.id})}"
                                class="fw-bold text-navy text-decoration-none"
@@ -185,6 +182,64 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    (function () {
+        const form = document.querySelector('form[action$="/parcels"]');
+        if (!form) return;
+
+        const q = form.querySelector('input[name="q"]');
+        const status = form.querySelector('select[name="status"]');
+        const rows = Array.from(document.querySelectorAll('tr.parcel-row'));
+        const noParcelsRow = document.getElementById('noParcelsRow');
+        const clearBtn = document.getElementById('clearFiltersBtn');
+
+        const normalize = (value) => (value || '').toString().toLowerCase().trim();
+
+        function filterRows() {
+            const query = normalize(q && q.value);
+            const statusValue = normalize(status && status.value);
+
+            let visibleCount = 0;
+            rows.forEach(row => {
+                const matchesQuery = !query || [
+                    row.dataset.parcelNumber,
+                    row.dataset.standNumber,
+                    row.dataset.villageName,
+                    row.dataset.status,
+                    row.dataset.area
+                ].some(v => normalize(v).includes(query));
+
+                const matchesStatus = !statusValue || normalize(row.dataset.status) === statusValue;
+
+                const show = matchesQuery && matchesStatus;
+                row.style.display = show ? '' : 'none';
+                if (show) visibleCount++;
+            });
+
+            if (noParcelsRow) {
+                noParcelsRow.style.display = visibleCount === 0 ? '' : 'none';
+            }
+        }
+
+        let timer = null;
+        const debounceFilter = () => {
+            clearTimeout(timer);
+            timer = setTimeout(filterRows, 150);
+        };
+
+        if (q) q.addEventListener('input', debounceFilter);
+        if (status) status.addEventListener('change', filterRows);
+        if (clearBtn) {
+            clearBtn.addEventListener('click', function () {
+                if (q) q.value = '';
+                if (status) status.value = '';
+                filterRows();
+            });
+        }
+
+        filterRows();
+    })();
+</script>
 </body>
 </html>
 

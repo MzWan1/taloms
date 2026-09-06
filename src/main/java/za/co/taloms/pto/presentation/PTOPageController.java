@@ -19,6 +19,7 @@ import za.co.taloms.pto.application.service.PTOService;
 import za.co.taloms.pto.domain.entity.PTOPurpose;
 import za.co.taloms.pto.domain.entity.PTOStatus;
 import za.co.taloms.security.application.service.AuthorityScopeService;
+import za.co.taloms.traditionalauthority.application.dto.TraditionalAuthorityResponse;
 import za.co.taloms.traditionalauthority.application.service.TraditionalAuthorityService;
 import za.co.taloms.traditionalauthority.application.service.VillageService;
 import java.time.LocalDate;
@@ -40,10 +41,13 @@ public class PTOPageController {
     private final DocumentService documentService;
     private final AuthorityScopeService scopeService;
 
-    /** Throws SecurityException if the PTO's authority is outside the current user's scope. */
+    /** Throws SecurityException if the PTO is outside the current user's scope. */
     private void requirePtoAccess(Long ptoId) {
         var pto = ptoService.findById(ptoId);
-        scopeService.requireAuthorityAccess(pto.getTraditionalAuthorityId());
+        if (pto == null || pto.getVillageId() == null) {
+            throw new SecurityException("PTO not found or has no linked village.");
+        }
+        scopeService.requireVillageAccess(pto.getVillageId());
     }
 
     @GetMapping
@@ -59,30 +63,28 @@ public class PTOPageController {
                 criteria.holderName(search);
             }
 
-            // Chiefs/headsmen are scoped to their linked authority
+            // Chiefs/headsmen are scoped to the villages they manage
             boolean scopedUser = scopeService.isCurrentUserChiefOrHeadsman();
-            Long linkedAuthorityId = scopedUser
-                    ? scopeService.getCurrentUserAuthorityId() : null;
-            if (linkedAuthorityId != null) {
-                criteria.authorityId(linkedAuthorityId);
-            }
+            Set<Long> scopedVillageIds = scopedUser ? scopeService.scopedVillageIds() : null;
 
             List<PTOResponse> ptos;
-            if (scopedUser && linkedAuthorityId == null) {
-                // Chief/headman not linked to any authority sees nothing
+            if (scopedUser && (scopedVillageIds == null || scopedVillageIds.isEmpty())) {
+                // Chief/headman scoped to no village sees nothing
                 ptos = Collections.emptyList();
             } else if ((status != null && !status.isBlank())
                     || (search != null && !search.isBlank())
-                    || linkedAuthorityId != null) {
+                    || scopedVillageIds != null) {
                 ptos = ptoService.search(criteria.build());
             } else {
                 ptos = ptoService.findAll();
             }
 
-            // Guard against authorities that ignore the criteria filter
-            if (linkedAuthorityId != null) {
+            // Guard against authorities/implementations that ignore the criteria filter:
+            // restrict to the scoped villages for chiefs/headsmen.
+            if (scopedVillageIds != null) {
                 ptos = ptos.stream()
-                        .filter(p -> linkedAuthorityId.equals(p.getTraditionalAuthorityId()))
+                        .filter(p -> p.getVillageId() != null
+                                && scopedVillageIds.contains(p.getVillageId()))
                         .toList();
             }
 
@@ -120,11 +122,13 @@ public class PTOPageController {
     @GetMapping("/create")
     public String createForm(Model model) {
         try {
-            // Chiefs/headsmen can only create PTOs for their own authority
+            // Chiefs/headsmen can only create PTOs for the villages they manage
             boolean scopedUser = scopeService.isCurrentUserChiefOrHeadsman();
-            Long linkedAuthorityId = scopedUser
-                    ? scopeService.getCurrentUserAuthorityId() : null;
+            Set<Long> scopedVillageIds = scopedUser ? scopeService.scopedVillageIds() : null;
 
+            // Authorities are needed for the PTO form's authority field.
+            // For chiefs/headsmen, only their linked authority is shown.
+            Long linkedAuthorityId = scopeService.getCurrentUserAuthorityId();
             var authorities = scopedUser
                     ? (linkedAuthorityId != null
                         ? authorityService.findAllActive().stream()
@@ -140,15 +144,8 @@ public class PTOPageController {
                         .build());
             }
 
-            // Get available parcels for PTO (scoped to the user's authority)
-            Set<Long> allowedVillageIds = null;
-            if (scopedUser) {
-                allowedVillageIds = linkedAuthorityId != null
-                        ? villageService.findByAuthority(linkedAuthorityId).stream()
-                            .map(v -> v.getId())
-                            .collect(Collectors.toSet())
-                        : Set.of(); // linked to nothing → no parcels selectable
-            }
+            // Get available parcels for PTO (scoped to the user's villages)
+            Set<Long> allowedVillageIds = scopedUser ? scopedVillageIds : null;
             Set<Long> finalAllowedVillageIds = allowedVillageIds;
 
             List<za.co.taloms.parcel.application.dto.ParcelResponse> availableParcels = Collections.emptyList();
@@ -221,10 +218,9 @@ public class PTOPageController {
                 return "redirect:/ptos/create";
             }
 
-            // Chiefs/headsmen can only create PTOs for parcels in their own authority
+            // Chiefs/headsmen can only create PTOs for parcels in villages they manage
             if (scopeService.isCurrentUserChiefOrHeadsman()) {
-                var parcelVillage = villageService.findById(parcel.getVillageId());
-                scopeService.requireAuthorityAccess(parcelVillage.getTraditionalAuthorityId());
+                scopeService.requireVillageAccess(parcel.getVillageId());
             }
 
             var request = PTORequest.builder()
@@ -471,10 +467,23 @@ public class PTOPageController {
     @ResponseBody
     public Object getVillagesByAuthority(@PathVariable Long authorityId) {
         try {
-            // Chiefs/headsmen may only load villages of their linked authority
-            if (scopeService.isCurrentUserChiefOrHeadsman()
-                    && !scopeService.canAccessAuthority(authorityId)) {
-                return Collections.emptyList();
+            // Chiefs/headsmen may only load villages they are scoped to.
+            // They may be scoped via a linked authority, or directly via the
+            // villages they head. Allow the authority's villages if at least
+            // one is within the user's scoped set.
+            if (scopeService.isCurrentUserChiefOrHeadsman()) {
+                if (scopeService.canAccessAuthority(authorityId)) {
+                    log.info("Loading villages for authority ID: {}", authorityId);
+                    return villageService.findByAuthority(authorityId);
+                }
+                Set<Long> scopedVillageIds = scopeService.scopedVillageIds();
+                if (scopedVillageIds == null || scopedVillageIds.isEmpty()) {
+                    return Collections.emptyList();
+                }
+                log.info("Loading scoped villages for authority ID: {}", authorityId);
+                return villageService.findByAuthority(authorityId).stream()
+                        .filter(v -> scopedVillageIds.contains(v.getId()))
+                        .collect(Collectors.toList());
             }
 
             log.info("Loading villages for authority ID: {}", authorityId);
@@ -518,7 +527,21 @@ public class PTOPageController {
                     .communityResolutionRequired(pto.getCommunityResolutionRequired())
                     .build();
 
-            var authorities = authorityService.findAllActive();
+                        List<TraditionalAuthorityResponse> authorities;
+            if (scopeService.isCurrentUserChiefOrHeadsman()) {
+                // Prefer the user's linked authority; otherwise fall back to the
+                // PTO's village authority so a village-scoped headsman can edit.
+                Long linkedAuthorityId = scopeService.getCurrentUserAuthorityId();
+                Long relevantAuthorityId = linkedAuthorityId != null
+                        ? linkedAuthorityId : pto.getTraditionalAuthorityId();
+                authorities = relevantAuthorityId != null
+                        ? authorityService.findAllActive().stream()
+                            .filter(a -> relevantAuthorityId.equals(a.getId()))
+                            .toList()
+                        : Collections.emptyList();
+            } else {
+                authorities = authorityService.findAllActive();
+            }
             var villages = villageService.findByAuthority(pto.getTraditionalAuthorityId());
 
             model.addAttribute("pto", pto);
@@ -672,14 +695,14 @@ public class PTOPageController {
         try {
             var deletedPtos = ptoService.findDeleted();
 
-            // Chiefs/headsmen only see deleted PTOs of their own authority
+            // Chiefs/headsmen only see deleted PTOs of the villages they manage
             boolean scopedUser = scopeService.isCurrentUserChiefOrHeadsman();
-            Long linkedAuthorityId = scopedUser
-                    ? scopeService.getCurrentUserAuthorityId() : null;
+            Set<Long> scopedVillageIds = scopedUser ? scopeService.scopedVillageIds() : null;
             if (scopedUser) {
+                Set<Long> allowed = scopedVillageIds != null ? scopedVillageIds : Set.of();
                 deletedPtos = deletedPtos.stream()
-                        .filter(p -> linkedAuthorityId != null
-                                && linkedAuthorityId.equals(p.getTraditionalAuthorityId()))
+                        .filter(p -> p.getVillageId() != null
+                                && allowed.contains(p.getVillageId()))
                         .toList();
             }
 

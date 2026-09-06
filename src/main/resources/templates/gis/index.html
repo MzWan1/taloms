@@ -1,6 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"
-      xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,24 +8,23 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link th:href="@{/css/taloms.css}" rel="stylesheet">
-        <style>
-            #map { height: 70vh; border-radius: 8px; }
-            .legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
-            .legend-color { width: 20px; height: 12px; border-radius: 2px; flex-shrink: 0; }
-            .map-controls { position: absolute; top: 10px; right: 10px; z-index: 1000; }
-            .parcel-label {
-                background: rgba(255, 255, 255, 0.92);
-                border: 1px solid #dee2e6;
-                border-radius: 4px;
-                padding: 2px 6px;
-                font-size: 11px;
-                font-weight: 600;
-                color: #212529;
-                box-shadow: 0 1px 3px rgba(0,0,0,0.15);
-                white-space: nowrap;
-                text-align: center;
-            }
-        </style>
+    <style>
+        #map { height: 70vh; border-radius: 8px; }
+        .legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+        .legend-color { width: 20px; height: 12px; border-radius: 2px; flex-shrink: 0; }
+        .parcel-label {
+            background: rgba(255, 255, 255, 0.92);
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-size: 11px;
+            font-weight: 600;
+            color: #212529;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+            white-space: nowrap;
+            text-align: center;
+        }
+    </style>
 </head>
 <body class="bg-light">
 
@@ -34,135 +32,78 @@
 
 <div class="container-fluid px-4 py-4">
 
-    <div th:if="${successMessage}"
-         class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-4">
+    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-4">
         <i class="bi bi-check-circle-fill me-2"></i>
         <span th:text="${successMessage}"></span>
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
-    <div th:if="${errorMessage}"
-         class="alert alert-danger alert-dismissible fade show border-0 shadow-sm mb-4">
+    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show border-0 shadow-sm mb-4">
         <i class="bi bi-exclamation-circle-fill me-2"></i>
         <span th:text="${errorMessage}"></span>
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 
-    <!-- Header -->
     <div class="d-flex align-items-start justify-content-between mb-4 flex-wrap gap-3">
         <div>
             <nav aria-label="breadcrumb">
                 <ol class="breadcrumb mb-1 small">
-                    <li class="breadcrumb-item">
-                        <a th:href="@{/dashboard}" class="text-muted text-decoration-none">Dashboard</a>
-                    </li>
+                    <li class="breadcrumb-item"><a th:href="@{/dashboard}" class="text-muted text-decoration-none">Dashboard</a></li>
                     <li class="breadcrumb-item active">GIS Map</li>
                 </ol>
             </nav>
-            <h4 class="fw-bold text-navy mb-0">
-                <i class="bi bi-map me-2"></i>GIS Map Viewer
-            </h4>
-            <p class="text-muted small mb-0">Interactive map showing all land parcels</p>
+            <h4 class="fw-bold text-navy mb-0"><i class="bi bi-map me-2"></i>GIS Map Viewer</h4>
+            <p class="text-muted small mb-0">Search parcels and filter by village</p>
+            <div class="small text-muted mt-1" th:if="${scopedAuthorityId != null}">
+                Showing villages for your authority only.
+            </div>
         </div>
         <a th:href="@{/dashboard}" class="btn btn-outline-secondary px-3">
             <i class="bi bi-arrow-left me-1"></i>Back
         </a>
     </div>
 
-    <!-- Controls -->
     <div class="card border-0 shadow-sm mb-4">
         <div class="card-body py-3">
             <div class="row g-3 align-items-end">
-                <div class="col-12 col-md-4">
-                    <label class="form-label small mb-1">Traditional Authority</label>
-                    <select id="authoritySelect" class="form-select" onchange="loadVillages(this.value)">
-                        <option value="">All Authorities</option>
-                        <option th:each="a : ${authorities}"
-                                th:value="${a.id}"
-                                th:text="${a.authorityName}">
-                        </option>
-                    </select>
+                <div class="col-12 col-lg-6">
+                    <label class="form-label small mb-1">Search Parcels</label>
+                    <input id="searchInput" type="text" class="form-control"
+                           placeholder="Parcel, stand, owner name, email, or ID number...">
                 </div>
-                <div class="col-12 col-md-4">
+                <div class="col-12 col-md-4 col-lg-3">
                     <label class="form-label small mb-1">Village</label>
-                    <select id="villageSelect" class="form-select" onchange="loadParcels()">
-                        <option value="">Select Authority First</option>
-                        <option th:each="v : ${villages}"
-                                th:value="${v.id}"
-                                th:text="${v.villageName}">
-                        </option>
+                    <select id="villageSelect" class="form-select">
+                        <option value="">All Villages</option>
+                        <option th:each="v : ${villages}" th:value="${v.id}" th:text="${v.villageName}"></option>
                     </select>
                 </div>
-                <div class="col-6 col-md-2">
-                    <label class="form-label small mb-1">Status Filter</label>
-                    <select id="statusFilter" class="form-select" onchange="loadParcels()">
-                        <option value="">All</option>
-                        <option value="AVAILABLE">Available</option>
-                        <option value="ALLOCATED">Allocated</option>
-                        <option value="DISPUTED">Disputed</option>
-                        <option value="RESERVED">Reserved</option>
-                    </select>
-                </div>
-                <div class="col-6 col-md-2">
-                    <button class="btn btn-navy w-100" onclick="resetMap()">
-                        <i class="bi bi-arrow-counterclockwise me-1"></i>Reset
+                <div class="col-12 col-md-4 col-lg-2">
+                    <button type="button" class="btn btn-outline-secondary w-100" onclick="resetMap()">
+                        Clear
                     </button>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- KPI Summary -->
     <div class="row g-3 mb-4">
-        <div class="col-6 col-md-3">
-            <div class="card border-0 shadow-sm text-center py-2">
-                <div class="fw-bold fs-5 text-navy" id="totalParcels">0</div>
-                <div class="small text-muted">Total Parcels</div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="card border-0 shadow-sm text-center py-2">
-                <div class="fw-bold fs-5 text-success" id="availableParcels">0</div>
-                <div class="small text-muted">Available</div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="card border-0 shadow-sm text-center py-2">
-                <div class="fw-bold fs-5 text-primary" id="allocatedParcels">0</div>
-                <div class="small text-muted">Allocated</div>
-            </div>
-        </div>
-        <div class="col-6 col-md-3">
-            <div class="card border-0 shadow-sm text-center py-2">
-                <div class="fw-bold fs-5 text-danger" id="disputedParcels">0</div>
-                <div class="small text-muted">Disputed</div>
-            </div>
-        </div>
+        <div class="col-6 col-md-3"><div class="card border-0 shadow-sm text-center py-2"><div class="fw-bold fs-5 text-navy" id="totalParcels">0</div><div class="small text-muted">Total Parcels</div></div></div>
+        <div class="col-6 col-md-3"><div class="card border-0 shadow-sm text-center py-2"><div class="fw-bold fs-5 text-success" id="availableParcels">0</div><div class="small text-muted">Available</div></div></div>
+        <div class="col-6 col-md-3"><div class="card border-0 shadow-sm text-center py-2"><div class="fw-bold fs-5 text-primary" id="allocatedParcels">0</div><div class="small text-muted">Allocated</div></div></div>
+        <div class="col-6 col-md-3"><div class="card border-0 shadow-sm text-center py-2"><div class="fw-bold fs-5 text-danger" id="disputedParcels">0</div><div class="small text-muted">Disputed</div></div></div>
     </div>
 
-    <!-- Map -->
     <div class="card border-0 shadow-sm">
-        <div class="card-body p-2 position-relative">
+        <div class="card-body p-0 position-relative">
             <div id="map"></div>
-            <!-- Legend -->
             <div class="map-controls">
-                <div class="card shadow-sm" style="width: 150px;">
-                    <div class="card-body p-2">
-                        <div class="legend-item">
-                            <div class="legend-color" style="background:#28a745;"></div>
-                            <span class="small">Available</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-color" style="background:#0d6efd;"></div>
-                            <span class="small">Allocated</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-color" style="background:#dc3545;"></div>
-                            <span class="small">Disputed</span>
-                        </div>
-                        <div class="legend-item">
-                            <div class="legend-color" style="background:#ffc107;"></div>
-                            <span class="small">Reserved</span>
-                        </div>
+                <div class="card border-0 shadow-sm">
+                    <div class="card-body py-2 px-3 small">
+                        <div class="fw-semibold mb-2">Legend</div>
+                        <div class="legend-item"><div class="legend-color" style="background:#198754;"></div><span class="small">Available</span></div>
+                        <div class="legend-item"><div class="legend-color" style="background:#0d6efd;"></div><span class="small">Allocated</span></div>
+                        <div class="legend-item"><div class="legend-color" style="background:#dc3545;"></div><span class="small">Disputed</span></div>
+                        <div class="legend-item"><div class="legend-color" style="background:#ffc107;"></div><span class="small">Reserved</span></div>
                     </div>
                 </div>
             </div>
@@ -172,171 +113,34 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script>
-    // ── Map Setup ──────────────────────────────────────────────────────────
+<script th:inline="javascript">
     const map = L.map('map').setView([-25.0, 28.0], 8);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap contributors' }).addTo(map);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
-    }).addTo(map);
-
-    let parcelLayer = null;
-    let geoJsonData = [];
-
-    // ── Color mapping ──────────────────────────────────────────────────────
     const statusColors = {
-        'AVAILABLE': '#28a745',
-        'ALLOCATED': '#0d6efd',
-        'DISPUTED': '#dc3545',
-        'RESERVED': '#ffc107',
-        'INACTIVE': '#6c757d'
+        AVAILABLE: '#198754',
+        ALLOCATED: '#0d6efd',
+        DISPUTED: '#dc3545',
+        RESERVED: '#ffc107'
     };
 
-    // ── Load Villages ──────────────────────────────────────────────────────
-    function loadVillages(authorityId) {
-        const villageSelect = document.getElementById('villageSelect');
-        villageSelect.innerHTML = '<option value="">Loading...</option>';
+    let geoJsonData = null;
+    let parcelLayer = null;
 
-        if (!authorityId) {
-            villageSelect.innerHTML = '<option value="">All Villages</option>';
-            loadParcels();
-            return;
-        }
-
-        fetch('/api/villages/by-authority/' + authorityId)
-            .then(r => r.json())
-            .then(response => {
-                if (response.success) {
-                    villageSelect.innerHTML = '<option value="">All Villages</option>';
-                    response.data.forEach(v => {
-                        const opt = document.createElement('option');
-                        opt.value = v.id;
-                        opt.textContent = v.villageName;
-                        villageSelect.appendChild(opt);
-                    });
-                    loadParcels();
-                }
-            })
-            .catch(err => {
-                console.error('Error loading villages:', err);
-                villageSelect.innerHTML = '<option value="">Error loading villages</option>';
-            });
+    function getParcelSearchText(props) {
+        return [props.parcelNumber, props.standNumber, props.villageName, props.statusDisplay, props.ptoNumber, props.ptoHolderName, props.ownerName, props.ownerEmail, props.ownerIdNumber, props.createdBy]
+            .filter(Boolean).join(' ').toLowerCase();
     }
 
-    // ── Load Parcels ──────────────────────────────────────────────────────
-    function loadParcels() {
-        const villageId = document.getElementById('villageSelect').value;
-        const status = document.getElementById('statusFilter').value;
-        const authorityId = document.getElementById('authoritySelect').value;
-
-        let url = '/api/gis/parcels/';
-        if (villageId) {
-            url += 'village/' + villageId;
-        } else if (authorityId) {
-            url += 'authority/' + authorityId;
-        } else {
-            url += 'authority/1';
-        }
-
-        // Add status filter via query param
-        if (status) {
-            url += '?status=' + status;
-        }
-
-        fetch(url)
-            .then(r => {
-                if (!r.ok) {
-                    throw new Error('HTTP ' + r.status + ': ' + r.statusText);
-                }
-                return r.json();
-            })
-            .then(response => {
-                if (response.success) {
-                    geoJsonData = response.data;
-                    renderParcels(geoJsonData);
-                    updateKPIs(geoJsonData.metadata);
-                } else {
-                    console.warn('API returned success=false:', response.message);
-                }
-            })
-            .catch(err => {
-                console.error('Error loading parcels:', err);
-            });
-    }
-
-    // ── Render Parcels ─────────────────────────────────────────────────────
-    function renderParcels(data) {
-        if (parcelLayer) {
-            map.removeLayer(parcelLayer);
-        }
-
-        if (!data || !data.features || data.features.length === 0) {
-            parcelLayer = L.layerGroup().addTo(map);
-            return;
-        }
-
-        const features = data.features.map(f => {
-            const status = f.properties.status || 'AVAILABLE';
-            const color = statusColors[status] || '#6c757d';
-
-            return {
-                type: 'Feature',
-                geometry: f.geometry,
-                properties: {
-                    ...f.properties,
-                    color: color
-                }
-            };
+    function sortFeatures(features) {
+        const sortOrder = document.getElementById('sortOrder').value;
+        return [...features].sort((a, b) => {
+            const aTime = new Date(a.properties?.createdAt || 0).getTime();
+            const bTime = new Date(b.properties?.createdAt || 0).getTime();
+            return sortOrder === 'oldest' ? aTime - bTime : bTime - aTime;
         });
-
-        parcelLayer = L.geoJSON(features, {
-            style: function(feature) {
-                return {
-                    color: feature.properties.color,
-                    weight: 2,
-                    opacity: 0.8,
-                    fillColor: feature.properties.color,
-                    fillOpacity: 0.3
-                };
-            },
-            onEachFeature: function(feature, layer) {
-                const props = feature.properties;
-                const occupant = props.occupantTag || 'Not Assigned';
-                const ptoInfo = props.ptoNumber
-                    ? `<strong>${props.ptoHolderName || 'Unknown'}</strong><br/>${props.ptoNumber}`
-                    : occupant;
-                const popupContent = `
-                <div class="fw-bold">${props.standNumber || 'N/A'}</div>
-                <div><strong>Parcel:</strong> ${props.parcelNumber || 'N/A'}</div>
-                <div><strong>Status:</strong> ${props.statusDisplay || 'N/A'}</div>
-                <div><strong>Village:</strong> ${props.villageName || 'N/A'}</div>
-                <div><strong>Area:</strong> ${props.areaM2 ? props.areaM2.toFixed(2) + ' m²' : 'N/A'}</div>
-                ${props.ptoNumber ? `
-                <div><strong>PTO:</strong> ${props.ptoNumber}</div>
-                <div><strong>Holder:</strong> ${props.ptoHolderName}</div>
-                ` : `<div><strong>Occupant:</strong> ${occupant}</div>`}
-                <hr class="my-1">
-                <a href="/parcels/${props.id}" class="btn btn-sm btn-navy w-100">View Parcel</a>
-            `;
-                layer.bindPopup(popupContent);
-                layer.bindTooltip(ptoInfo, {
-                    permanent: true,
-                    direction: 'center',
-                    className: 'parcel-label'
-                });
-            }
-        }).addTo(map);
-
-        // Fit map to bounds
-        if (features.length > 0) {
-            const bounds = parcelLayer.getBounds();
-            if (bounds.isValid()) {
-                map.fitBounds(bounds, { padding: [50, 50] });
-            }
-        }
     }
 
-    // ── Update KPIs ────────────────────────────────────────────────────────
     function updateKPIs(metadata) {
         if (!metadata) return;
         document.getElementById('totalParcels').textContent = metadata.totalCount || 0;
@@ -345,34 +149,89 @@
         document.getElementById('disputedParcels').textContent = metadata.disputedCount || 0;
     }
 
-    // ── Reset Map ──────────────────────────────────────────────────────────
+    function renderParcels(data) {
+        if (parcelLayer) map.removeLayer(parcelLayer);
+        if (!data || !data.features || data.features.length === 0) {
+            parcelLayer = L.layerGroup().addTo(map);
+            return;
+        }
+
+        const features = data.features.map(f => ({
+            type: 'Feature',
+            geometry: f.geometry,
+            properties: { ...f.properties, color: statusColors[f.properties?.status] || '#6c757d' }
+        }));
+
+        parcelLayer = L.geoJSON(features, {
+            style: feature => ({
+                color: feature.properties.color,
+                weight: 2,
+                opacity: 0.85,
+                fillColor: feature.properties.color,
+                fillOpacity: 0.3
+            }),
+            onEachFeature: function (feature, layer) {
+                const props = feature.properties || {};
+                const occupant = props.occupantTag || 'Not Assigned';
+                const ptoInfo = props.ptoNumber ? `<strong>${props.ptoHolderName || 'Unknown'}</strong><br/>${props.ptoNumber}` : occupant;
+                layer.bindPopup(`
+                    <div class="fw-bold">${props.standNumber || 'N/A'}</div>
+                    <div><strong>Parcel:</strong> ${props.parcelNumber || 'N/A'}</div>
+                    <div><strong>Status:</strong> ${props.statusDisplay || 'N/A'}</div>
+                    <div><strong>Village:</strong> ${props.villageName || 'N/A'}</div>
+                    <div><strong>Area:</strong> ${props.areaM2 ? props.areaM2.toFixed(2) + ' m²' : 'N/A'}</div>
+                    ${props.ptoNumber ? `<div><strong>PTO:</strong> ${props.ptoNumber}</div><div><strong>Holder:</strong> ${props.ptoHolderName || 'Unknown'}</div>` : `<div><strong>Occupant:</strong> ${occupant}</div>`}
+                    <hr class="my-1">
+                    <a href="/parcels/${props.id}" class="btn btn-sm btn-navy w-100">View Parcel</a>
+                `);
+                layer.bindTooltip(ptoInfo, { permanent: true, direction: 'center', className: 'parcel-label' });
+            }
+        }).addTo(map);
+
+        const bounds = parcelLayer.getBounds();
+        if (bounds.isValid()) map.fitBounds(bounds, { padding: [50, 50] });
+    }
+
+    function applyClientFilters() {
+        if (!geoJsonData || !Array.isArray(geoJsonData.features)) return;
+
+        const query = (document.getElementById('searchInput').value || '').toLowerCase().trim();
+        const villageId = document.getElementById('villageSelect').value;
+
+        const filtered = geoJsonData.features.filter(feature => {
+            const props = feature.properties || {};
+            return (!villageId || String(props.villageId || '') === String(villageId)) &&
+                   (!query || getParcelSearchText(props).includes(query));
+        });
+
+        renderParcels({ ...geoJsonData, features: filtered });
+        updateKPIs({
+            ...(geoJsonData.metadata || {}),
+            totalCount: filtered.length,
+            availableCount: filtered.filter(f => (f.properties?.status || '') === 'AVAILABLE').length,
+            allocatedCount: filtered.filter(f => (f.properties?.status || '') === 'ALLOCATED').length,
+            disputedCount: filtered.filter(f => (f.properties?.status || '') === 'DISPUTED').length
+        });
+    }
+
     function resetMap() {
-        document.getElementById('authoritySelect').value = '';
-        document.getElementById('statusFilter').value = '';
-
-        const villageSelect = document.getElementById('villageSelect');
-        villageSelect.innerHTML = '<option value="">All Villages</option>';
-
-        const url = '/api/gis/parcels/authority/1';
-        fetch(url)
-            .then(r => r.json())
-            .then(response => {
-                if (response.success) {
-                    geoJsonData = response.data;
-                    renderParcels(geoJsonData);
-                    updateKPIs(geoJsonData.metadata);
-                    map.setView([-25.0, 28.0], 8);
-                }
-            });
+        document.getElementById('searchInput').value = '';
+        document.getElementById('villageSelect').value = '';
+        applyClientFilters();
     }
 
-    // ── Initialize ────────────────────────────────────────────────────────
-    // Auto-select first village so parcels load on initial view
-    const villageSelect = document.getElementById('villageSelect');
-    if (villageSelect && villageSelect.options.length > 1) {
-        villageSelect.selectedIndex = 1;
-    }
-    loadParcels();
+    document.getElementById('searchInput').addEventListener('input', applyClientFilters);
+    document.getElementById('villageSelect').addEventListener('change', applyClientFilters);
+
+    fetch('/api/gis/parcels')
+        .then(r => r.json())
+        .then(response => {
+            if (response.success) {
+                geoJsonData = response.data;
+                applyClientFilters();
+            }
+        })
+        .catch(err => console.error('Error loading GIS parcels:', err));
 </script>
 </body>
 </html>

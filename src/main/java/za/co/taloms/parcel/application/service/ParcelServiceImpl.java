@@ -407,12 +407,12 @@ public class ParcelServiceImpl implements ParcelService {
         }
         String q = query.trim().toLowerCase();
         return parcelRepository.findAll().stream()
-                .filter(p -> p.getParcelNumber() != null && p.getParcelNumber().toLowerCase().contains(q))
-                .filter(p -> p.getStandNumber() != null && p.getStandNumber().toLowerCase().contains(q))
-                .filter(p -> p.getVillage() != null && p.getVillage().getVillageName() != null
-                        && p.getVillage().getVillageName().toLowerCase().contains(q))
-                .filter(p -> p.getVillage() != null && p.getVillage().getTraditionalAuthority() != null
-                        && p.getVillage().getTraditionalAuthority().getAuthorityName().toLowerCase().contains(q))
+                .filter(p -> (p.getParcelNumber() != null && p.getParcelNumber().toLowerCase().contains(q))
+                        || (p.getStandNumber() != null && p.getStandNumber().toLowerCase().contains(q))
+                        || (p.getVillage() != null && p.getVillage().getVillageName() != null
+                            && p.getVillage().getVillageName().toLowerCase().contains(q))
+                        || (p.getVillage() != null && p.getVillage().getTraditionalAuthority() != null
+                            && p.getVillage().getTraditionalAuthority().getAuthorityName().toLowerCase().contains(q)))
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
@@ -443,6 +443,15 @@ public class ParcelServiceImpl implements ParcelService {
                     boolean hasSuspendedPto = ptoRepository.existsByParcelIdAndStatus(parcel.getId(), PTOStatus.SUSPENDED);
                     return !hasActivePto && !hasSuspendedPto;
                 })
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ParcelResponse> findByAuthorityId(Long authorityId) {
+        List<Parcel> parcels = parcelRepository.findByAuthorityId(authorityId);
+        return parcels.stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }

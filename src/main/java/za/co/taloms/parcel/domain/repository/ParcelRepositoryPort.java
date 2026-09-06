@@ -16,6 +16,7 @@ public interface ParcelRepositoryPort {
     List<Parcel> findByStatusAndVillageId(ParcelStatus status, Long villageId);
     List<Parcel> findAvailable(Long villageId);
     List<Parcel> findAllAvailable();
+    List<Parcel> findByAuthorityId(Long authorityId);
     boolean existsByStandNumberAndVillageId(String standNumber, Long villageId);
     boolean existsByParcelNumber(String parcelNumber);
     long countByStatus(ParcelStatus status);

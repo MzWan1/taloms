@@ -152,6 +152,18 @@ public class VillageServiceImpl implements VillageService {
 
     @Override
     @Transactional(readOnly = true)
+    public List<VillageResponse> findByHeadmanId(Long headmanId) {
+        if (headmanId == null) {
+            return java.util.Collections.emptyList();
+        }
+        return villageRepository.findByHeadmanId(headmanId)
+                .stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<VillageResponse> searchByName(String name) {
         if (name == null || name.trim().isEmpty()) {
             return findAll();
@@ -221,8 +233,8 @@ public class VillageServiceImpl implements VillageService {
         if (headsVillageElsewhere) {
             throw new BusinessValidationException(
                     headman.getFullName()
-                            + " is already a headman of a village under a different "
-                            + "Traditional Authority. A headsman may only serve one authority.");
+                            + " is assigned to another Traditional Authority through an existing village. "
+                            + "Please choose a headsman who belongs to this authority, or remove the other village assignment first.");
         }
 
         // Their authority link (if any) must already match this authority
@@ -230,8 +242,8 @@ public class VillageServiceImpl implements VillageService {
                 && !headman.getTraditionalAuthorityId().equals(authorityId)) {
             throw new BusinessValidationException(
                     headman.getFullName()
-                            + " is already assigned to a different Traditional Authority. "
-                            + "A headsman may only serve one authority.");
+                            + " is assigned to another Traditional Authority. "
+                            + "Please choose a headsman who belongs to this authority, or clear their current authority assignment first.");
         }
 
         // Take the village's authority and assign it to the headsman

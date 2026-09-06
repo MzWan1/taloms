@@ -2,12 +2,87 @@
 <html lang="en"
       xmlns:th="http://www.thymeleaf.org">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title th:text="'Edit Parcel ' + ${parcel.parcelNumber} + ' | TALOMS'">Edit Parcel | TALOMS</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
-  <link th:href="@{/css/taloms.css}" rel="stylesheet">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="'Edit Parcel ' + ${parcel.parcelNumber} + ' | TALOMS'">Edit Parcel | TALOMS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link th:href="@{/css/taloms.css}" rel="stylesheet">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        #map {
+            height: 350px;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        .gps-point-card {
+            border-left: 4px solid #1B3A6B;
+            transition: all 0.3s ease;
+        }
+        .gps-point-card.captured {
+            border-left-color: #28a745;
+            background-color: #f8fff8;
+        }
+        .gps-point-card.active {
+            border-left-color: #ffc107;
+            background-color: #fffbf0;
+        }
+        .gps-point-card.pending {
+            border-left-color: #e9ecef;
+            background-color: #f8f9fa;
+        }
+        .gps-badge {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+        .gps-badge-pending {
+            background: #e9ecef;
+            color: #6c757d;
+        }
+        .gps-badge-captured {
+            background: #28a745;
+            color: white;
+        }
+        .gps-badge-active {
+            background: #ffc107;
+            color: #212529;
+        }
+        .gps-badge-closed {
+            background: #1B3A6B;
+            color: white;
+        }
+        .point-marker {
+            background: #1B3A6B;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 10px;
+            font-weight: bold;
+            border: 2px solid white;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+        }
+        .point-marker-closed {
+            background: #28a745;
+        }
+        .coordinate-preview {
+            font-family: monospace;
+            font-size: 12px;
+            background: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 4px;
+        }
+    </style>
 </head>
 <body class="bg-light">
 
@@ -15,159 +90,535 @@
 
 <div class="container-fluid px-4 py-4">
 
-  <!-- Flash -->
-  <div th:if="${errorMessage}"
-       class="alert alert-danger alert-dismissible fade show border-0 shadow-sm mb-4">
-    <i class="bi bi-exclamation-circle-fill me-2"></i>
-    <span th:text="${errorMessage}"></span>
-    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-  </div>
-
-  <!-- Header -->
-  <div class="d-flex align-items-start justify-content-between mb-4 flex-wrap gap-3">
-    <div>
-      <nav aria-label="breadcrumb">
-        <ol class="breadcrumb mb-1 small">
-          <li class="breadcrumb-item">
-            <a th:href="@{/dashboard}" class="text-muted text-decoration-none">Dashboard</a>
-          </li>
-          <li class="breadcrumb-item">
-            <a th:href="@{/parcels}" class="text-muted text-decoration-none">Parcels</a>
-          </li>
-          <li class="breadcrumb-item">
-            <a th:href="@{/parcels/{id}(id=${parcel.id})}" class="text-muted text-decoration-none" th:text="${parcel.parcelNumber}">Parcel</a>
-          </li>
-          <li class="breadcrumb-item active">Edit</li>
-        </ol>
-      </nav>
-      <h4 class="fw-bold text-navy mb-0">
-        <i class="bi bi-pencil-square me-2"></i>
-        Edit Parcel <span th:text="${parcel.parcelNumber}">PRC-2026-00001</span>
-      </h4>
-      <p class="text-muted small mb-0">
-        Stand <strong th:text="${parcel.standNumber}">1</strong> ·
-        <span th:text="${parcel.villageName}">Village</span>
-      </p>
+    <div th:if="${errorMessage}"
+         class="alert alert-danger alert-dismissible fade show border-0 shadow-sm mb-4">
+        <i class="bi bi-exclamation-circle-fill me-2"></i>
+        <span th:text="${errorMessage}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
-    <a th:href="@{/parcels/{id}(id=${parcel.id})}" class="btn btn-outline-secondary px-3">
-      <i class="bi bi-arrow-left me-1"></i>Back to Parcel
-    </a>
-  </div>
 
-  <div class="row justify-content-center">
-    <div class="col-12 col-lg-8">
-      <form th:action="@{/parcels/{id}/edit(id=${parcel.id})}"
-            th:object="${form}"
-            method="post">
+    <div class="d-flex align-items-start justify-content-between mb-4 flex-wrap gap-3">
+        <div>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb mb-1 small">
+                    <li class="breadcrumb-item"><a th:href="@{/dashboard}" class="text-muted text-decoration-none">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a th:href="@{/parcels}" class="text-muted text-decoration-none">Parcels</a></li>
+                    <li class="breadcrumb-item"><a th:href="@{/parcels/{id}(id=${parcel.id})}" class="text-muted text-decoration-none" th:text="${parcel.parcelNumber}">Parcel</a></li>
+                    <li class="breadcrumb-item active">Edit</li>
+                </ol>
+            </nav>
+            <h4 class="fw-bold text-navy mb-0">
+                <i class="bi bi-pencil-square me-2"></i>Edit Parcel <span th:text="${parcel.parcelNumber}">PRC</span>
+            </h4>
+            <p class="text-muted small mb-0">
+                Stand <strong th:text="${parcel.standNumber}">1</strong> ·
+                <span th:text="${parcel.villageName}">Village</span>
+            </p>
+        </div>
+        <a th:href="@{/parcels/{id}(id=${parcel.id})}" class="btn btn-outline-secondary px-3">
+            <i class="bi bi-arrow-left me-1"></i>Back to Parcel
+        </a>
+    </div>
 
-        <div class="card border-0 shadow-sm">
-          <div class="card-header bg-white border-bottom py-3">
-            <h6 class="fw-bold text-navy mb-0">
-              <i class="bi bi-info-circle me-2"></i>Parcel Details
-            </h6>
-          </div>
-          <div class="card-body p-4">
-            <div class="row g-3">
-              <!-- Stand Number -->
-              <div class="col-12">
-                <label for="standNumber" class="form-label">
-                  Stand Number <span class="text-danger">*</span>
-                </label>
-                <div class="input-group">
+    <form th:action="@{/parcels/{id}/edit(id=${parcel.id})}"
+          th:object="${form}"
+          method="post"
+          id="parcelForm"
+          novalidate>
+
+        <div class="row g-4">
+            <div class="col-12 col-lg-5">
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h6 class="fw-bold text-navy mb-0">
+                            <i class="bi bi-info-circle me-2"></i>Parcel Details
+                        </h6>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-3">
+                            <div class="col-12">
+                                <label for="standNumber" class="form-label">Stand Number <span class="text-danger">*</span></label>
+                                <input type="text" id="standNumber" name="standNumber" class="form-control" th:value="*{standNumber}" required>
+                            </div>
+
+                            <div class="col-12">
+                                <label for="traditionalAuthorityId" class="form-label">
+                                    Traditional Authority <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
                                     <span class="input-group-text">
-                                        <i class="bi bi-hash"></i>
+                                        <i class="bi bi-building"></i>
                                     </span>
-                  <input type="text"
-                         id="standNumber"
-                         name="standNumber"
-                         class="form-control"
-                         th:value="${form.standNumber}"
-                         required>
-                 </div>
-               </div>
+                                    <select id="traditionalAuthorityId" name="traditionalAuthorityId" class="form-select" required>
+                                        <option value="">— Select Authority —</option>
+                                        <option th:each="a : ${authorities}"
+                                                th:value="${a.id}"
+                                                th:text="${a.authorityName}">
+                                        </option>
+                                    </select>
+                                </div>
+                            </div>
 
-               <!-- Village -->
-              <div class="col-12">
-                <label for="villageId" class="form-label">
-                  Village <span class="text-danger">*</span>
-                </label>
-                <div class="input-group">
+                            <div class="col-12">
+                                <label for="villageId" class="form-label">
+                                    Village <span class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
                                     <span class="input-group-text">
                                         <i class="bi bi-houses"></i>
                                     </span>
-                  <select id="villageId"
-                          name="villageId"
-                          class="form-select"
-                          required>
-                    <option th:each="v : ${villages}"
-                            th:value="${v.id}"
-                            th:text="${v.villageName}"
-                            th:selected="${v.id == form.villageId}">
-                    </option>
-                  </select>
-                </div>
-              </div>
+                                    <select id="villageId" name="villageId" class="form-select" required>
+                                        <option value="">— Select Authority First —</option>
+                                    </select>
+                                </div>
+                                <div id="villageInfo" class="mt-2" style="display:none;">
+                                    <div class="alert alert-light border py-2 px-3 small mb-0">
+                                        <div class="d-flex flex-wrap gap-3">
+                                            <span class="text-muted">
+                                                <i class="bi bi-houses me-1"></i>
+                                                Village: <strong id="infoVillageName" class="text-navy">—</strong>
+                                            </span>
+                                            <span class="text-muted">
+                                                <i class="bi bi-person-badge me-1"></i>
+                                                Headman: <strong id="infoHeadman" class="text-navy">—</strong>
+                                            </span>
+                                            <span class="text-muted">
+                                                <i class="bi bi-building me-1"></i>
+                                                Chief: <strong id="infoChief" class="text-navy">—</strong>
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <input type="hidden" id="chiefName" name="chiefName">
+                                <input type="hidden" id="headmanName" name="headmanName">
+                            </div>
 
-              <!-- Notes -->
-              <div class="col-12">
-                <label for="notes" class="form-label">Notes</label>
-                <textarea id="notes"
-                          name="notes"
-                          class="form-control"
-                          rows="2">${form.notes}</textarea>
-              </div>
-
-              <!-- Status -->
-              <div class="col-12">
-                <label for="status" class="form-label">Status</label>
-                <div class="input-group">
-                                    <span class="input-group-text">
-                                        <i class="bi bi-circle"></i>
-                                    </span>
-                  <select id="status" name="status" class="form-select">
-                    <option th:each="s : ${statuses}"
-                            th:value="${s.name()}"
-                            th:text="${s.displayName}"
-                            th:selected="${s.name() == parcel.status.name()}">
-                    </option>
-                  </select>
+                            <div class="col-12">
+                                <label for="notes" class="form-label">Notes</label>
+                                <textarea id="notes" name="notes" class="form-control" rows="3" th:text="*{notes}"></textarea>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-              </div>
 
-              <!-- Boundary Points -->
-              <div class="col-12">
-                <label for="boundariesJson" class="form-label">
-                  Boundary Points (JSON) <span class="text-danger">*</span>
-                </label>
-                <div class="input-group">
-                                    <span class="input-group-text">
-                                        <i class="bi bi-geo-alt"></i>
-                                    </span>
-                  <textarea id="boundariesJson"
-                            name="boundariesJson"
-                            class="form-control"
-                            rows="4"
-                            required>${form.boundariesJson}</textarea>
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="fw-bold text-navy mb-0">
+                            <i class="bi bi-geo-alt me-2"></i>Boundary Points
+                        </h6>
+                        <button type="button" class="btn btn-sm btn-outline-primary" onclick="addPoint()">
+                            <i class="bi bi-plus-circle me-1"></i>Add Point
+                        </button>
+                    </div>
+                    <div class="card-body p-4">
+                        <div id="pointsList" class="d-grid gap-3"></div>
+                        <input type="hidden" id="boundariesJson" name="boundariesJson" value="[]">
+                        <div class="d-flex justify-content-between mt-2 text-muted small">
+                            <span id="areaPreview">Area: —</span>
+                            <span id="perimeterPreview">Perimeter: —</span>
+                            <span id="loopStatus" class="text-danger">Boundary: Editing</span>
+                        </div>
+                    </div>
                 </div>
-              </div>
+
+                <div id="mapError" class="alert alert-warning d-none"></div>
+
+                <div class="d-flex gap-3 justify-content-end">
+                    <a th:href="@{/parcels/{id}(id=${parcel.id})}" class="btn btn-light px-4">
+                        <i class="bi bi-x me-1"></i>Cancel
+                    </a>
+                    <button type="submit" class="btn btn-navy px-4 fw-semibold" id="submitBtn">
+                        <i class="bi bi-save me-2"></i>Save Changes
+                    </button>
+                </div>
+                <div class="text-muted small mt-2 text-end">
+                    <span id="validationMessage" class="text-danger">Please keep at least 3 valid boundary points</span>
+                </div>
             </div>
-          </div>
-        </div>
 
-        <!-- Submit -->
-        <div class="d-flex gap-3 justify-content-end mt-4 mb-4">
-          <a th:href="@{/parcels/{id}(id=${parcel.id})}" class="btn btn-light px-4">
-            <i class="bi bi-x me-1"></i>Cancel
-          </a>
-          <button type="submit" class="btn btn-navy px-4 fw-semibold">
-            <i class="bi bi-save me-2"></i>Update Parcel
-          </button>
+            <div class="col-12 col-lg-7">
+                <div class="card border-0 shadow-sm h-100">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                            <h6 class="fw-bold text-navy mb-0">
+                                <i class="bi bi-map me-2"></i>Boundary Map
+                            </h6>
+                            <div class="text-muted small">
+                                Click the map to set the selected point • Drag markers to fine-tune
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body p-4">
+                        <div id="map"></div>
+                    </div>
+                </div>
+            </div>
         </div>
-      </form>
-    </div>
-  </div>
+    </form>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script th:inline="javascript">
+    const existingBoundaries = /*[[${form.boundaries != null ? form.boundaries : {}}]]*/ [];
+    const currentVillageId = /*[[${form.villageId != null ? form.villageId : null}]]*/ null;
+    const currentAuthorityId = /*[[${currentAuthorityId != null ? currentAuthorityId : null}]]*/ null;
+    const currentVillageName = /*[[${parcel.villageName != null ? parcel.villageName : ''}]]*/ '';
+    const currentHeadmanName = /*[[${parcel.headmanName != null ? parcel.headmanName : ''}]]*/ '';
+    const currentChiefName = /*[[${parcel.chiefName != null ? parcel.chiefName : ''}]]*/ '';
+    let gpsPoints = [];
+    let selectedSeq = null;
+    let polygonLayer = null;
+    let markers = [];
+    let map = null;
+
+    function normalizePoints(points) {
+        return (points || [])
+            .map((p, idx) => ({
+                sequence: Number.isFinite(Number(p.sequence)) ? Number(p.sequence) : idx + 1,
+                latitude: Number(p.latitude),
+                longitude: Number(p.longitude),
+                accuracy: p.accuracy ?? null,
+                source: p.source ?? 'EDIT'
+            }))
+            .filter(p => Number.isFinite(p.latitude) && Number.isFinite(p.longitude));
+    }
+
+    function parseInitialPoints(raw) {
+        if (!raw || raw === '[]') return [];
+        try {
+            return normalizePoints(raw);
+        } catch (e) {
+            console.warn('Failed to parse existing boundaries', e);
+            return [];
+        }
+    }
+
+    function haversineDistanceM(lat1, lon1, lat2, lon2) {
+        const R = 6371000;
+        const toRad = d => d * Math.PI / 180;
+        const dLat = toRad(lat2 - lat1);
+        const dLon = toRad(lon2 - lon1);
+        const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        return 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    }
+
+    function calculateArea(points) {
+        if (points.length < 3) return 0;
+        const ring = [...points, points[0]];
+        let area = 0;
+        for (let i = 0; i < ring.length - 1; i++) {
+            area += ring[i].latitude * ring[i + 1].longitude;
+            area -= ring[i + 1].latitude * ring[i].longitude;
+        }
+        area = Math.abs(area) / 2;
+        const latAvg = points.reduce((sum, p) => sum + p.latitude, 0) / points.length;
+        const metersPerDegLat = 111132;
+        const metersPerDegLng = 111320 * Math.cos(latAvg * Math.PI / 180);
+        return area * metersPerDegLat * metersPerDegLng;
+    }
+
+    function calculatePerimeter(points) {
+        if (points.length < 2) return 0;
+        let perimeter = 0;
+        for (let i = 0; i < points.length; i++) {
+            const j = (i + 1) % points.length;
+            perimeter += haversineDistanceM(points[i].latitude, points[i].longitude, points[j].latitude, points[j].longitude);
+        }
+        return perimeter;
+    }
+
+    function initMap() {
+        try {
+            map = L.map('map').setView([-25.0, 28.0], 8);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            map.on('click', function(e) {
+                if (!selectedSeq) return;
+                const point = gpsPoints.find(p => p.sequence === selectedSeq);
+                if (!point) return;
+                point.latitude = e.latlng.lat;
+                point.longitude = e.latlng.lng;
+                point.source = 'MAP';
+                syncJson();
+            });
+        } catch (err) {
+            console.error('Failed to initialize edit map', err);
+            const mapError = document.getElementById('mapError');
+            mapError.textContent = 'Map could not be loaded. Please refresh the page or check your browser console.';
+            mapError.classList.remove('d-none');
+        }
+    }
+
+    function syncJson() {
+        const sorted = [...gpsPoints].sort((a, b) => a.sequence - b.sequence);
+        document.getElementById('boundariesJson').value = JSON.stringify(sorted);
+        updateMap();
+        updateSummary();
+        renderPointCards();
+    }
+
+    function updateSummary() {
+        const points = [...gpsPoints].sort((a, b) => a.sequence - b.sequence);
+        const valid = points.filter(p => Number.isFinite(p.latitude) && Number.isFinite(p.longitude));
+
+        if (valid.length >= 3) {
+            document.getElementById('areaPreview').textContent = `Area: ${calculateArea(valid).toFixed(2)} m²`;
+            document.getElementById('perimeterPreview').textContent = `Perimeter: ${calculatePerimeter(valid).toFixed(2)} m`;
+            document.getElementById('loopStatus').textContent = 'Boundary: Ready';
+            document.getElementById('loopStatus').className = 'text-success';
+        } else {
+            document.getElementById('areaPreview').textContent = 'Area: —';
+            document.getElementById('perimeterPreview').textContent = 'Perimeter: —';
+            document.getElementById('loopStatus').textContent = 'Boundary: Editing';
+            document.getElementById('loopStatus').className = 'text-danger';
+        }
+
+        document.getElementById('submitBtn').disabled = valid.length < 3;
+        document.getElementById('validationMessage').textContent = valid.length < 3
+            ? 'Please keep at least 3 valid boundary points'
+            : 'Boundary looks valid. Save changes when ready.';
+        document.getElementById('validationMessage').className = valid.length < 3 ? 'text-danger' : 'text-success';
+    }
+
+    function setVillageInfo(village) {
+        const infoDiv = document.getElementById('villageInfo');
+        if (!village) {
+            infoDiv.style.display = 'none';
+            document.getElementById('headmanName').value = '';
+            document.getElementById('chiefName').value = '';
+            return;
+        }
+
+        document.getElementById('infoVillageName').textContent = village.villageName || '—';
+        document.getElementById('infoHeadman').textContent = village.headmanName || '—';
+        document.getElementById('infoChief').textContent = village.chiefName || '—';
+        document.getElementById('headmanName').value = village.headmanName || '';
+        document.getElementById('chiefName').value = village.chiefName || '';
+        infoDiv.style.display = 'block';
+    }
+
+    function showCurrentVillageImmediately() {
+        if (!currentVillageId) return;
+        setVillageInfo({
+            villageName: currentVillageName,
+            headmanName: currentHeadmanName,
+            chiefName: currentChiefName
+        });
+    }
+
+    function renderPointCards() {
+        const container = document.getElementById('pointsList');
+        const points = [...gpsPoints].sort((a, b) => a.sequence - b.sequence);
+
+        container.innerHTML = points.map(p => {
+            const captured = Number.isFinite(p.latitude) && Number.isFinite(p.longitude);
+            const active = selectedSeq === p.sequence;
+            return `
+                <div class="card gps-point-card ${captured ? 'captured' : 'pending'} ${active ? 'border-primary' : ''}" id="pointCard${p.sequence}">
+                    <div class="card-body p-3">
+                        <div class="d-flex align-items-start gap-3">
+                            <div class="gps-badge ${captured ? 'gps-badge-captured' : 'gps-badge-pending'} ${active ? 'gps-badge-active' : ''}">${p.sequence}</div>
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between align-items-center gap-2 mb-2">
+                                    <strong>Point ${p.sequence}</strong>
+                                    <span class="badge ${captured ? 'text-bg-success' : 'text-bg-secondary'}">${captured ? 'Captured' : 'Pending'}</span>
+                                </div>
+                                <div class="row g-2 mb-3">
+                                    <div class="col-12 col-md-6">
+                                        <label class="form-label small mb-1">Latitude</label>
+                                        <input type="number" step="any" class="form-control form-control-sm" value="${captured ? p.latitude : ''}" onchange="updatePointValue(${p.sequence}, 'latitude', this.value)">
+                                    </div>
+                                    <div class="col-12 col-md-6">
+                                        <label class="form-label small mb-1">Longitude</label>
+                                        <input type="number" step="any" class="form-control form-control-sm" value="${captured ? p.longitude : ''}" onchange="updatePointValue(${p.sequence}, 'longitude', this.value)">
+                                    </div>
+                                </div>
+                                <div class="coordinate-preview text-muted mb-2" id="coordText${p.sequence}">${captured ? `${p.latitude.toFixed(8)}, ${p.longitude.toFixed(8)}` : '—'}</div>
+                                <div class="d-flex gap-2 justify-content-end flex-wrap">
+                                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="selectPoint(${p.sequence})">Select</button>
+                                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="removePoint(${p.sequence})">Remove</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+        }).join('');
+    }
+
+    function selectPoint(seq) {
+        selectedSeq = seq;
+        document.querySelectorAll('[id^="pointCard"]').forEach(card => card.classList.remove('border-primary'));
+        const active = document.getElementById('pointCard' + seq);
+        if (active) active.classList.add('border-primary');
+    }
+
+    function addPoint() {
+        const nextSeq = gpsPoints.length ? Math.max(...gpsPoints.map(p => p.sequence)) + 1 : 1;
+        gpsPoints.push({ sequence: nextSeq, latitude: null, longitude: null, accuracy: null, source: 'MANUAL' });
+        selectPoint(nextSeq);
+        syncJson();
+    }
+
+    function removePoint(seq) {
+        gpsPoints = gpsPoints.filter(p => p.sequence !== seq);
+        if (selectedSeq === seq) selectedSeq = gpsPoints.length ? gpsPoints[gpsPoints.length - 1].sequence : null;
+        syncJson();
+    }
+
+    function updatePointValue(seq, field, value) {
+        const point = gpsPoints.find(p => p.sequence === seq);
+        if (!point) return;
+        point[field] = value === '' ? null : Number(value);
+        syncJson();
+    }
+
+    function updateMap() {
+        if (!map) return;
+        if (polygonLayer) {
+            map.removeLayer(polygonLayer);
+            polygonLayer = null;
+        }
+        markers.forEach(m => map.removeLayer(m));
+        markers = [];
+
+        const points = [...gpsPoints]
+            .sort((a, b) => a.sequence - b.sequence)
+            .filter(p => Number.isFinite(p.latitude) && Number.isFinite(p.longitude));
+
+        if (!points.length) return;
+
+        const latlngs = points.map(p => [p.latitude, p.longitude]);
+        polygonLayer = points.length >= 3
+            ? L.polygon(latlngs, { color: '#1B3A6B', weight: 3, fillColor: '#1B3A6B', fillOpacity: 0.15 }).addTo(map)
+            : L.polyline(latlngs, { color: '#1B3A6B', weight: 3, dashArray: '5,5' }).addTo(map);
+
+        points.forEach(p => {
+            const isSelected = p.sequence === selectedSeq;
+            const icon = L.divIcon({
+                className: 'point-marker' + (isSelected ? ' is-new' : ''),
+                html: p.sequence,
+                iconSize: [24, 24],
+                iconAnchor: [12, 12]
+            });
+            const marker = L.marker([p.latitude, p.longitude], { icon, draggable: true }).addTo(map);
+            marker.on('dragend', function(ev) {
+                p.latitude = ev.target.getLatLng().lat;
+                p.longitude = ev.target.getLatLng().lng;
+                p.source = 'DRAG';
+                syncJson();
+            });
+            marker.bindPopup(`Point ${p.sequence}<br>Lat: ${p.latitude.toFixed(8)}<br>Lng: ${p.longitude.toFixed(8)}`);
+            markers.push(marker);
+        });
+
+        const bounds = L.latLngBounds(latlngs);
+        if (bounds.isValid()) {
+            map.fitBounds(bounds, { padding: [30, 30] });
+        }
+    }
+
+    gpsPoints = parseInitialPoints(existingBoundaries);
+    if (gpsPoints.length) {
+        selectedSeq = gpsPoints[gpsPoints.length - 1].sequence;
+    }
+
+    initMap();
+    if (!gpsPoints.length) {
+        addPoint();
+    } else {
+        syncJson();
+    }
+
+    const authoritySelect = document.getElementById('traditionalAuthorityId');
+    const villageSelect = document.getElementById('villageId');
+
+    function loadVillages(authorityId, selectedVillageId = null) {
+        villageSelect.innerHTML = '<option value="">Loading...</option>';
+
+        if (!authorityId) {
+            villageSelect.innerHTML = '<option value="">— Select Authority First —</option>';
+            setVillageInfo(null);
+            return;
+        }
+
+        fetch('/parcels/villages/' + authorityId)
+            .then(r => {
+                if (!r.ok) throw new Error('Network response was not ok');
+                return r.json();
+            })
+            .then(villages => {
+                villageSelect.innerHTML = '<option value="">— Select Village —</option>';
+                if (!villages || villages.length === 0) {
+                    villageSelect.innerHTML = '<option value="">No villages for this authority</option>';
+                    setVillageInfo(null);
+                    return;
+                }
+
+                villages.sort((a, b) => a.villageName.localeCompare(b.villageName));
+                villages.forEach(v => {
+                    const opt = document.createElement('option');
+                    opt.value = v.id;
+                    opt.textContent = v.villageName;
+                    opt.dataset.headman = v.headmanName || '—';
+                    opt.dataset.chief = v.chiefName || '—';
+                    opt.dataset.villageName = v.villageName || '—';
+                    villageSelect.appendChild(opt);
+                });
+
+                if (selectedVillageId) {
+                    villageSelect.value = String(selectedVillageId);
+                    const selected = villageSelect.options[villageSelect.selectedIndex];
+                    if (selected && selected.value) {
+                        setVillageInfo({
+                            villageName: selected.dataset.villageName,
+                            headmanName: selected.dataset.headman,
+                            chiefName: selected.dataset.chief
+                        });
+                    }
+                }
+            })
+            .catch(err => {
+                console.error('Error loading villages:', err);
+                villageSelect.innerHTML = '<option value="">Error loading villages</option>';
+                setVillageInfo(null);
+            });
+    }
+
+    authoritySelect.addEventListener('change', function() {
+        loadVillages(this.value);
+    });
+
+    villageSelect.addEventListener('change', function() {
+        const selected = this.options[this.selectedIndex];
+        if (this.value) {
+            setVillageInfo({
+                villageName: selected.dataset.villageName || selected.textContent,
+                headmanName: selected.dataset.headman || '—',
+                chiefName: selected.dataset.chief || '—'
+            });
+        } else {
+            setVillageInfo(null);
+        }
+    });
+
+    if (currentAuthorityId) {
+        authoritySelect.value = String(currentAuthorityId);
+        loadVillages(currentAuthorityId, currentVillageId);
+    }
+
+    showCurrentVillageImmediately();
+
+    document.getElementById('parcelForm').addEventListener('submit', function(e) {
+        const valid = gpsPoints.filter(p => Number.isFinite(p.latitude) && Number.isFinite(p.longitude));
+        if (valid.length < 3) {
+            e.preventDefault();
+            alert('Please keep at least 3 valid boundary points before saving.');
+        }
+    });
+</script>
 </body>
 </html>

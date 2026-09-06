@@ -35,10 +35,37 @@
                     </h2>
 
                     <!-- Error message -->
-                    <div th:if="${param.error}"
-                         class="alert alert-danger py-2 small" role="alert">
-                        <i class="bi bi-exclamation-circle me-1"></i>
-                        Invalid username or password. Please try again.
+                    <div th:if="${param.error}" class="small" role="alert">
+                        <!-- Deactivated account -->
+                        <div th:if="${session.LOGIN_ERROR_MESSAGE == 'deactivated'}"
+                             class="alert alert-warning py-2" role="alert">
+                            <i class="bi bi-person-x me-1"></i>
+                            <strong>Account Deactivated</strong><br>
+                            Your account has been deactivated. Please contact your administrator for assistance.
+                        </div>
+                        <!-- Locked account -->
+                        <div th:unless="${session.LOGIN_ERROR_MESSAGE == 'deactivated'}"
+                             th:if="${session.LOGIN_ERROR_MESSAGE == 'locked'}"
+                             class="alert alert-danger py-2" role="alert">
+                            <i class="bi bi-lock me-1"></i>
+                            <strong>Account Locked</strong><br>
+                            Your account has been locked due to too many failed login attempts. Please contact your administrator.
+                        </div>
+                        <!-- Invalid credentials with remaining attempts -->
+                        <div th:unless="${session.LOGIN_ERROR_MESSAGE == 'deactivated' || session.LOGIN_ERROR_MESSAGE == 'locked'}"
+                             th:if="${session.LOGIN_ERROR_MESSAGE != null && session.LOGIN_ERROR_MESSAGE.startsWith('invalid_')}"
+                             class="alert alert-danger py-2" role="alert">
+                            <i class="bi bi-exclamation-circle me-1"></i>
+                            Invalid username or password.
+                            <span th:if="${#strings.substringAfter(session.LOGIN_ERROR_MESSAGE, 'invalid_') != ''}"
+                                  th:text="' You have ' + ${#strings.substringAfter(session.LOGIN_ERROR_MESSAGE, 'invalid_')} + ' attempt' + ${#strings.substringAfter(session.LOGIN_ERROR_MESSAGE, 'invalid_') != '1' ? 's' : ''} + ' remaining before your account is locked.'"></span>
+                        </div>
+                        <!-- Generic invalid (fallback) -->
+                        <div th:unless="${session.LOGIN_ERROR_MESSAGE == 'deactivated' || session.LOGIN_ERROR_MESSAGE == 'locked' || (session.LOGIN_ERROR_MESSAGE != null && session.LOGIN_ERROR_MESSAGE.startsWith('invalid_'))}"
+                             class="alert alert-danger py-2" role="alert">
+                            <i class="bi bi-exclamation-circle me-1"></i>
+                            Invalid username or password. Please try again.
+                        </div>
                     </div>
 
                     <!-- Logout message -->

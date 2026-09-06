@@ -7,6 +7,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import za.co.taloms.dashboard.application.service.DashboardService;
+import za.co.taloms.traditionalauthority.application.service.TraditionalAuthorityService;
+
+import java.util.Arrays;
 import java.util.Collections;
 
 @Slf4j
@@ -15,11 +18,14 @@ import java.util.Collections;
 public class DashboardController {
 
     private final DashboardService dashboardService;
+    private final TraditionalAuthorityService traditionalAuthorityService;
 
     @GetMapping({"/", "/dashboard"})
     public String dashboard(Model model, Authentication authentication) {
         try {
             var summary = dashboardService.getDashboardSummary();
+            boolean isAdmin = authentication != null && authentication.getAuthorities().stream()
+                    .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
 
             model.addAttribute("summary", summary);
             model.addAttribute("totalPtos", summary.getTotalPtos() != null ? summary.getTotalPtos() : 0L);
@@ -31,8 +37,8 @@ public class DashboardController {
             model.addAttribute("totalUsers", summary.getTotalUsers() != null ? summary.getTotalUsers() : 0L);
             model.addAttribute("activeUsers", summary.getActiveUsers() != null ? summary.getActiveUsers() : 0L);
             model.addAttribute("totalAuditLogs", summary.getTotalAuditLogs() != null ? summary.getTotalAuditLogs() : 0L);
-            model.addAttribute("availableParcels", summary.getAvailableParcels() != null ? summary.getAvailableParcels() : 0L);
-            model.addAttribute("allocatedParcels", summary.getAllocatedParcels() != null ? summary.getAllocatedParcels() : 0L);
+            model.addAttribute("showTotalAuthorities", isAdmin);
+            model.addAttribute("totalAuthorities", isAdmin ? traditionalAuthorityService.findAll().size() : null);
 
             var recentActivity = summary.getRecentActivity();
             model.addAttribute("recentActivity", recentActivity != null ? recentActivity : Collections.emptyList());
@@ -53,8 +59,8 @@ public class DashboardController {
             model.addAttribute("totalUsers", 0L);
             model.addAttribute("activeUsers", 0L);
             model.addAttribute("totalAuditLogs", 0L);
-            model.addAttribute("availableParcels", 0L);
-            model.addAttribute("allocatedParcels", 0L);
+            model.addAttribute("showTotalAuthorities", false);
+            model.addAttribute("totalAuthorities", 0L);
             model.addAttribute("recentActivity", Collections.emptyList());
             model.addAttribute("errorMessage", "Error loading dashboard: " + e.getMessage());
             model.addAttribute("pageTitle", "Dashboard");

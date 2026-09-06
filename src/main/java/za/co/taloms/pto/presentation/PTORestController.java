@@ -15,6 +15,7 @@ import za.co.taloms.pto.application.service.PTOCertificatePdfGenerator;
 import za.co.taloms.pto.domain.entity.PTOStatus;
 import za.co.taloms.security.application.service.AuthorityScopeService;
 import java.util.List;
+import java.util.Set;
 
 @RestController
 @RequestMapping("/api/ptos")
@@ -25,22 +26,26 @@ public class PTORestController {
     private final PTOCertificatePdfGenerator ptoCertificatePdfGenerator;
     private final AuthorityScopeService scopeService;
 
-    /** Throws SecurityException if the PTO's authority is outside the current user's scope. */
+    /** Throws SecurityException if the PTO is outside the current user's scope. */
     private void requirePtoAccess(Long ptoId) {
         var pto = ptoService.findById(ptoId);
-        scopeService.requireAuthorityAccess(pto.getTraditionalAuthorityId());
+        if (pto == null || pto.getVillageId() == null) {
+            throw new SecurityException("PTO not found or has no linked village.");
+        }
+        scopeService.requireVillageAccess(pto.getVillageId());
     }
 
     private List<PTOResponse> scoped(List<PTOResponse> all) {
         if (!scopeService.isCurrentUserChiefOrHeadsman()) {
             return all;
         }
-        Long linkedAuthorityId = scopeService.getCurrentUserAuthorityId();
-        if (linkedAuthorityId == null) {
+        Set<Long> scopedVillageIds = scopeService.scopedVillageIds();
+        if (scopedVillageIds == null || scopedVillageIds.isEmpty()) {
             return List.of();
         }
         return all.stream()
-                .filter(p -> linkedAuthorityId.equals(p.getTraditionalAuthorityId()))
+                .filter(p -> p.getVillageId() != null
+                        && scopedVillageIds.contains(p.getVillageId()))
                 .toList();
     }
 
@@ -50,9 +55,13 @@ public class PTORestController {
             @Valid @RequestBody PTORequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        // Chiefs/headsmen can only create PTOs for their own authority
+        // Chiefs/headsmen can only create PTOs in villages they manage
         if (scopeService.isCurrentUserChiefOrHeadsman()) {
-            scopeService.requireAuthorityAccess(request.getTraditionalAuthorityId());
+            if (request.getVillageId() != null) {
+                scopeService.requireVillageAccess(request.getVillageId());
+            } else {
+                scopeService.requireAuthorityAccess(request.getTraditionalAuthorityId());
+            }
         }
 
         var response = ptoService.createPTO(request, userDetails.getUsername());
@@ -79,7 +88,7 @@ public class PTORestController {
     public ResponseEntity<ApiResponse<PTOResponse>> getByNumber(@PathVariable String ptoNumber) {
         var pto = ptoService.findByPtoNumber(ptoNumber);
         if (scopeService.isCurrentUserChiefOrHeadsman()) {
-            scopeService.requireAuthorityAccess(pto.getTraditionalAuthorityId());
+            requirePtoAccess(pto.getId());
         }
         return ResponseEntity.ok(ApiResponse.success(pto, "PTO retrieved successfully"));
     }

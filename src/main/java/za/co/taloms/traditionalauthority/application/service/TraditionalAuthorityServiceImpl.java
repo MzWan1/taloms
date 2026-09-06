@@ -290,8 +290,8 @@ public class TraditionalAuthorityServiceImpl
                 excludeAuthorityId != null ? excludeAuthorityId : -1L)) {
             throw new BusinessValidationException(
                     headman.getFullName()
-                            + " is already the headman of a different Traditional Authority. "
-                            + "A headsman may only serve one authority.");
+                            + " is assigned to another Traditional Authority through an existing village. "
+                            + "Please choose a headsman who belongs to this authority, or remove the other village assignment first.");
         }
 
         // Headman of a village under a different authority?
@@ -312,8 +312,8 @@ public class TraditionalAuthorityServiceImpl
             if (!matches) {
                 throw new BusinessValidationException(
                         headman.getFullName()
-                                + " is already assigned to a different Traditional Authority. "
-                                + "A headsman may only serve one authority.");
+                                + " is assigned to another Traditional Authority. "
+                                + "Please choose a headsman who belongs to this authority, or clear their current authority assignment first.");
             }
         }
     }

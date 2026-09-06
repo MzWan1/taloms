@@ -94,7 +94,7 @@
                         <div class="small text-muted">Last Login</div>
                         <div class="small fw-semibold"
                              th:text="${user.lastLoginAt != null ?
-                                #temporals.format(user.lastLoginAt, 'dd MMM yyyy') : 'Never'}">
+                                 #temporals.format(user.lastLoginAt, 'dd MMM yyyy HH:mm') : 'Never'}">
                             Never
                         </div>
                         <div class="small text-muted mt-2">Member since</div>
@@ -208,11 +208,28 @@
                             </div>
                         </div>
 
-                        <!-- ── Account Controls ──────────────────────────── -->
-                        <div class="border rounded-3 p-3 bg-light mb-4">
-                            <div class="small fw-bold text-navy mb-3">
+                        <!-- Form Actions -->
+                        <div class="d-flex gap-3 justify-content-end">
+                            <a th:href="@{/users}"
+                               class="btn btn-light px-4">
+                                <i class="bi bi-arrow-left me-1"></i>Back
+                            </a>
+                            <button type="submit"
+                                    class="btn btn-navy px-4 fw-semibold">
+                                <i class="bi bi-check-circle me-2"></i>Save Changes
+                            </button>
+                        </div>
+
+                    </form>
+
+                    <!-- ── Account Controls ──────────────────────────── -->
+                    <div class="card border-0 shadow-sm mt-4">
+                        <div class="card-header bg-white border-bottom py-3">
+                            <h6 class="fw-bold text-navy mb-0">
                                 <i class="bi bi-gear me-2"></i>Account Controls
-                            </div>
+                            </h6>
+                        </div>
+                        <div class="card-body p-4">
                             <div class="row g-2">
 
                                 <!-- Lock Account -->
@@ -273,21 +290,8 @@
 
                             </div>
                         </div>
-                        <!-- ── End Account Controls ─────────────────────── -->
-
-                        <!-- Form Actions -->
-                        <div class="d-flex gap-3 justify-content-end">
-                            <a th:href="@{/users}"
-                               class="btn btn-light px-4">
-                                <i class="bi bi-arrow-left me-1"></i>Back
-                            </a>
-                            <button type="submit"
-                                    class="btn btn-navy px-4 fw-semibold">
-                                <i class="bi bi-check-circle me-2"></i>Save Changes
-                            </button>
-                        </div>
-
-                    </form>
+                    </div>
+                    <!-- ── End Account Controls ─────────────────────── -->
                 </div>
             </div>
 

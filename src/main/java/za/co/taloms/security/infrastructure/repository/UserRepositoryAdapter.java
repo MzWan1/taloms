@@ -88,7 +88,7 @@ public class UserRepositoryAdapter implements UserRepositoryPort {
 
     @Override
     public List<User> searchByNameOrEmailAndAuthorityScope(String query, Long authorityId) {
-        return userJpaRepository.searchByNameOrEmailAndAuthorityScope(query, authorityId);
+        return userJpaRepository.searchByNameOrEmailAndAuthorityScope(query, authorityId, "ROLE_HEADSMAN");
     }
 }
 

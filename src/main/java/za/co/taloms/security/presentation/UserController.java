@@ -119,6 +119,9 @@ public class UserController {
         List<User> users = (authorityId != null)
                 ? userRepository.searchByNameOrEmailAndAuthorityScope(q.trim(), authorityId)
                 : userRepository.searchByNameOrEmail(q.trim());
+        String message = (authorityId != null && users.isEmpty())
+                ? "No eligible headsmen found for this authority"
+                : "Search completed";
         List<UserSearchDto> results = users.stream()
                 .filter(u -> role == null || role.isBlank() ||
                         (!u.getRoles().isEmpty() && u.getRoles().stream()
@@ -131,8 +134,7 @@ public class UserController {
                                 u.getRoles().iterator().next().getName())
                         .build())
                 .collect(Collectors.toList());
-        return ResponseEntity.ok(ApiResponse.success(results,
-                "Search completed"));
+        return ResponseEntity.ok(ApiResponse.success(results, message));
     }
 
     @PostMapping("/forgot-password")

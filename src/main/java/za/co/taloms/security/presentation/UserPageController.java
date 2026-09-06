@@ -8,6 +8,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import za.co.taloms.security.application.dto.*;
 import za.co.taloms.security.application.service.UserService;
+import za.co.taloms.security.domain.repository.UserRepositoryPort;
 import za.co.taloms.security.infrastructure.repository.RoleJpaRepository;
 import za.co.taloms.traditionalauthority.application.dto.TraditionalAuthorityResponse;
 import za.co.taloms.traditionalauthority.application.service.TraditionalAuthorityService;
@@ -21,6 +22,7 @@ import java.util.List;
 public class UserPageController {
 
     private final UserService        userService;
+    private final UserRepositoryPort userRepository;
     private final RoleJpaRepository  roleRepository;
     private final TraditionalAuthorityService authorityService;
 
@@ -156,11 +158,8 @@ public class UserPageController {
             Principal principal,
             RedirectAttributes ra) {
         try {
-            var user = userService.findAll().stream()
-                    .filter(u -> u.getUsername()
-                            .equals(principal.getName()))
-                    .findFirst()
-                    .orElseThrow();
+            var user = userRepository.findByUsername(principal.getName())
+                    .orElseThrow(() -> new RuntimeException("User not found"));
             userService.changePassword(user.getId(), request);
             ra.addFlashAttribute("successMessage",
                     "Password changed successfully.");

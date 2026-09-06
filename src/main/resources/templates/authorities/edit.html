@@ -71,6 +71,7 @@
       <form th:action="@{/authorities/{id}/edit(id=${authorityId})}"
             th:object="${form}"
             method="post">
+        <input type="hidden" id="authorityId" th:value="${authorityId}">
 
         <!-- Authority Identity -->
         <div class="card border-0 shadow-sm mb-4">
@@ -277,6 +278,88 @@
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+  function setupUserSearch(searchInputId, resultsDivId, selectedDivId,
+                           selectedNameSpanId, hiddenInputId, role, authorityIdInputId) {
+    const searchInput = document.getElementById(searchInputId);
+    const resultsDiv = document.getElementById(resultsDivId);
+    const selectedDiv = document.getElementById(selectedDivId);
+    const selectedNameSpan = document.getElementById(selectedNameSpanId);
+    const hiddenInput = document.getElementById(hiddenInputId);
+    const authorityIdInput = authorityIdInputId ? document.getElementById(authorityIdInputId) : null;
+    let debounceTimer;
+
+    function buildUrl(query) {
+      let url = '/api/users/search?q=' + encodeURIComponent(query);
+      if (role) {
+        url += '&role=' + encodeURIComponent(role);
+      }
+      const authorityId = authorityIdInput ? authorityIdInput.value : '';
+      if (authorityId) {
+        url += '&authorityId=' + encodeURIComponent(authorityId);
+      }
+      return url;
+    }
+
+    searchInput.addEventListener('input', function () {
+      const query = this.value.trim();
+      clearTimeout(debounceTimer);
+      if (query.length < 3) {
+        resultsDiv.style.display = 'none';
+        return;
+      }
+      debounceTimer = setTimeout(() => {
+        fetch(buildUrl(query))
+          .then(r => r.json())
+          .then(data => {
+            resultsDiv.innerHTML = '';
+            if (data.data && data.data.length > 0) {
+              data.data.forEach(user => {
+                const item = document.createElement('button');
+                item.type = 'button';
+                item.className = 'list-group-item list-group-item-action';
+                item.innerHTML = '<strong>' + user.fullName + '</strong>' +
+                  '<br><small class="text-muted">' + user.email + '</small>';
+                item.addEventListener('click', function () {
+                  hiddenInput.value = user.id;
+                  selectedNameSpan.textContent = user.fullName;
+                  selectedDiv.style.display = 'block';
+                  resultsDiv.style.display = 'none';
+                  searchInput.value = '';
+                  searchInput.disabled = true;
+                });
+                resultsDiv.appendChild(item);
+              });
+              resultsDiv.style.display = 'block';
+            } else {
+              resultsDiv.innerHTML = '<div class="list-group-item text-muted">No users found</div>';
+              resultsDiv.style.display = 'block';
+            }
+          })
+          .catch(() => {
+            resultsDiv.innerHTML = '<div class="list-group-item text-danger">Search failed</div>';
+            resultsDiv.style.display = 'block';
+          });
+      }, 300);
+    });
+
+    document.addEventListener('click', function (e) {
+      if (!searchInput.contains(e.target) && !resultsDiv.contains(e.target)) {
+        resultsDiv.style.display = 'none';
+      }
+    });
+
+    selectedDiv.addEventListener('dblclick', function () {
+      hiddenInput.value = '';
+      selectedDiv.style.display = 'none';
+      searchInput.disabled = false;
+      searchInput.focus();
+    });
+  }
+
+  setupUserSearch('headmanSearch', 'headmanResults', 'headmanSelected',
+    'headmanSelectedName', 'headmanId', 'ROLE_HEADSMAN', 'authorityId');
+</script>
 </body>
 </html>
 

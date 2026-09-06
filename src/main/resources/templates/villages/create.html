@@ -84,9 +84,12 @@
                                            class="form-control"
                                            placeholder="Type 3+ characters to search (name or email)..."
                                            autocomplete="off">
-                                    <input type="hidden"
-                                           id="headmanId"
-                                           th:field="*{headmanId}">
+                                <input type="hidden"
+                                       id="headmanId"
+                                       th:field="*{headmanId}">
+                                <input type="hidden"
+                                       id="authorityId"
+                                       th:field="*{traditionalAuthorityId}">
                                 </div>
                                 <div id="headmanResults" class="list-group position-absolute w-100 shadow-sm"
                                      style="z-index: 1000; max-height: 200px; overflow-y: auto; display: none;">
@@ -142,6 +145,10 @@
                 let url = '/api/users/search?q=' + encodeURIComponent(query);
                 if (role) {
                     url += '&role=' + encodeURIComponent(role);
+        const authorityIdInput = document.getElementById('authorityId')?.value;
+                const authorityId = document.getElementById('authorityId')?.value;
+                if (authorityId) {
+                    url += '&authorityId=' + encodeURIComponent(authorityId);
                 }
                 fetch(url)
                     .then(r => r.json())
@@ -193,11 +200,33 @@
             searchInput.disabled = false;
             searchInput.focus();
         });
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const selectedId = hiddenInput.value;
+            const authorityId = document.getElementById('authorityId')?.value;
+            if (!selectedId || !authorityId) {
+                return;
+            }
+
+            fetch('/api/users/search?q=' + encodeURIComponent(selectedNameSpan.textContent || '')
+                + '&role=' + encodeURIComponent(role)
+                + '&authorityId=' + encodeURIComponent(authorityId))
+                .then(r => r.json())
+                .then(data => {
+                    const allowed = (data.data || []).some(user => String(user.id) === String(selectedId));
+                    if (!allowed) {
+                        hiddenInput.value = '';
+                        selectedDiv.style.display = 'none';
+                        searchInput.disabled = false;
+                    }
+                })
+                .catch(() => {});
+        });
     }
 
-    // Setup search for Headman (only HEADSMAN-role users)
+    // Setup search for Headman (only eligible HEADSMAN-role users)
     setupUserSearch('headmanSearch', 'headmanResults', 'headmanSelected',
-        'headmanSelectedName', 'headmanId', 'ROLE_HEADSMAN');
+        'headmanSelectedName', 'headmanId', 'ROLE_HEADSMAN', 'authorityId');
 </script>
 </body>
 </html>

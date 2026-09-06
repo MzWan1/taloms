@@ -61,6 +61,13 @@
     <div class="row justify-content-center">
         <div class="col-12 col-lg-7 col-xl-6">
 
+            <div th:if="${errorMessage}"
+                 class="alert alert-danger alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
+                <i class="bi bi-exclamation-circle-fill me-2"></i>
+                <span th:text="${errorMessage}"></span>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+
             <!-- Authority Info Banner -->
             <div class="card border-0 shadow-sm mb-4"
                  style="border-left: 4px solid #1B3A6B !important;">
@@ -138,6 +145,9 @@
                                 <input type="hidden"
                                        id="headmanId"
                                        th:field="*{headmanId}">
+                                <input type="hidden"
+                                       id="authorityId"
+                                       th:value="${authority.id}">
                             </div>
                             <div id="headmanResults" class="list-group position-absolute w-100 shadow-sm"
                                  style="z-index: 1000; max-height: 200px; overflow-y: auto; display: none;">
@@ -211,13 +221,29 @@
 <script>
     // ── User search for Headman ──────────────────────────────────────────
     function setupUserSearch(searchInputId, resultsDivId, selectedDivId,
-                             selectedNameSpanId, hiddenInputId, role) {
+                             selectedNameSpanId, hiddenInputId, role, authorityIdInputId) {
         const searchInput = document.getElementById(searchInputId);
         const resultsDiv = document.getElementById(resultsDivId);
         const selectedDiv = document.getElementById(selectedDivId);
         const selectedNameSpan = document.getElementById(selectedNameSpanId);
         const hiddenInput = document.getElementById(hiddenInputId);
+        const authorityIdInput = authorityIdInputId ? document.getElementById(authorityIdInputId) : null;
         let debounceTimer;
+
+        function getAuthorityId() {
+            return authorityIdInput ? authorityIdInput.value : '';
+        }
+
+        function clearSelection(message) {
+            hiddenInput.value = '';
+            selectedDiv.style.display = 'none';
+            selectedNameSpan.textContent = '';
+            searchInput.disabled = false;
+            if (message) {
+                resultsDiv.innerHTML = '<div class="list-group-item text-danger">' + message + '</div>';
+                resultsDiv.style.display = 'block';
+            }
+        }
 
         searchInput.addEventListener('input', function () {
             const query = this.value.trim();
@@ -232,6 +258,10 @@
                 let url = '/api/users/search?q=' + encodeURIComponent(query);
                 if (role) {
                     url += '&role=' + encodeURIComponent(role);
+                }
+                const authorityId = getAuthorityId();
+                if (authorityId) {
+                    url += '&authorityId=' + encodeURIComponent(authorityId);
                 }
                 fetch(url)
                     .then(r => r.json())
@@ -256,8 +286,9 @@
                             });
                             resultsDiv.style.display = 'block';
                         } else {
+                            const emptyMessage = data.message || 'No users found';
                             resultsDiv.innerHTML = '<div class="list-group-item text-muted">' +
-                                'No users found</div>';
+                                emptyMessage + '</div>';
                             resultsDiv.style.display = 'block';
                         }
                     })
@@ -278,16 +309,38 @@
 
         // Allow clearing selection
         selectedDiv.addEventListener('dblclick', function () {
-            hiddenInput.value = '';
-            selectedDiv.style.display = 'none';
-            searchInput.disabled = false;
+            clearSelection();
             searchInput.focus();
+        });
+
+        // If a headman was preloaded into the form, validate it against
+        // the current authority before allowing it to stay selected.
+        document.addEventListener('DOMContentLoaded', function () {
+            const selectedId = hiddenInput.value;
+            const authorityId = getAuthorityId();
+            if (!selectedId || !authorityId) {
+                return;
+            }
+
+            fetch('/api/users/search?q=' + encodeURIComponent(selectedNameSpan.textContent || '')
+                + '&role=' + encodeURIComponent(role)
+                + '&authorityId=' + encodeURIComponent(authorityId))
+                .then(r => r.json())
+                .then(data => {
+                    const allowed = (data.data || []).some(user => String(user.id) === String(selectedId));
+                    if (!allowed) {
+                        clearSelection('Selected headsman belongs to another Traditional Authority and was cleared. Please choose an eligible headsman.');
+                    }
+                })
+                .catch(() => {
+                    // Leave the selection visible if validation cannot be checked.
+                });
         });
     }
 
     // Setup search for Headman (only HEADSMAN-role users)
     setupUserSearch('headmanSearch', 'headmanResults', 'headmanSelected',
-        'headmanSelectedName', 'headmanId', 'ROLE_HEADSMAN');
+        'headmanSelectedName', 'headmanId', 'ROLE_HEADSMAN', 'authorityId');
 </script>
 </body>
 </html>

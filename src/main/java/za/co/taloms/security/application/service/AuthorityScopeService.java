@@ -9,6 +9,11 @@ import za.co.taloms.security.domain.entity.User;
 import za.co.taloms.security.domain.repository.UserRepositoryPort;
 import za.co.taloms.traditionalauthority.application.dto.TraditionalAuthorityResponse;
 import za.co.taloms.traditionalauthority.application.service.TraditionalAuthorityService;
+import za.co.taloms.traditionalauthority.application.service.VillageService;
+
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * Resolves which Traditional Authority the currently authenticated user
@@ -36,6 +41,7 @@ public class AuthorityScopeService {
 
     private final UserRepositoryPort          userRepository;
     private final TraditionalAuthorityService authorityService;
+    private final VillageService              villageService;
 
     /** Returns the currently authenticated User entity, or null if unauthenticated. */
     @Transactional(readOnly = true)
@@ -117,6 +123,65 @@ public class AuthorityScopeService {
         if (!canAccessAuthority(authorityId)) {
             throw new SecurityException(
                     "You are not authorized to access authority id: " + authorityId);
+        }
+    }
+
+    /**
+     * Returns the IDs of the villages the current chief/headman may manage,
+     * or {@code null} for unrestricted users (ADMIN etc.).
+     *
+     * Scoping rule:
+     *  - villages belonging to the user's linked authority (if any), AND
+     *  - villages the user is the headman of directly (village.headmanId == user.id).
+     *
+     * This accommodates an authority that has multiple villages and multiple
+     * headsmen, where a headsman may be linked to a village without an
+     * authority-level link.
+     */
+    @Transactional(readOnly = true)
+    public Set<Long> scopedVillageIds() {
+        if (!isCurrentUserChiefOrHeadsman()) {
+            return null; // unrestricted (admin etc.)
+        }
+        Set<Long> ids = new HashSet<>();
+
+        Long linkedAuthorityId = getCurrentUserAuthorityId();
+        if (linkedAuthorityId != null) {
+            ids.addAll(villageService.findByAuthority(linkedAuthorityId).stream()
+                    .map(v -> v.getId())
+                    .collect(Collectors.toSet()));
+        }
+
+        User currentUser = getCurrentUser();
+        if (currentUser != null && currentUser.getId() != null) {
+            ids.addAll(villageService.findByHeadmanId(currentUser.getId()).stream()
+                    .map(v -> v.getId())
+                    .collect(Collectors.toSet()));
+        }
+        return ids;
+    }
+
+    /** True if the current user may access the given village. Admins always may. */
+    @Transactional(readOnly = true)
+    public boolean canAccessVillage(Long villageId) {
+        if (villageId == null) {
+            return false;
+        }
+        User user = getCurrentUser();
+        if (user == null) {
+            return false;
+        }
+        if (isAdmin(user)) {
+            return true;
+        }
+        Set<Long> allowed = scopedVillageIds();
+        return allowed != null && allowed.contains(villageId);
+    }
+
+    /** Throws SecurityException if the current user may not access the village. */
+    public void requireVillageAccess(Long villageId) {
+        if (!canAccessVillage(villageId)) {
+            throw new SecurityException("You are not authorized to access this village.");
         }
     }
 

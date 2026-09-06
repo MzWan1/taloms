@@ -194,6 +194,12 @@
           id="parcelForm"
           novalidate>
 
+        <div th:if="${creationBlocked}" class="alert alert-danger border-0 shadow-sm mb-4">
+            <i class="bi bi-shield-exclamation me-2"></i>
+            You are not linked to any Traditional Authority, so you are not allowed to create parcels.
+            Contact an administrator to link you to an authority.
+        </div>
+
         <div class="row g-4">
 
             <!-- LEFT - Details -->
@@ -227,29 +233,7 @@
                                 <div class="form-text">Must be unique within the village</div>
                             </div>
 
-                            <!-- Traditional Authority -->
-                            <div class="col-12">
-                                <label for="traditionalAuthorityId" class="form-label">
-                                    Traditional Authority <span class="text-danger">*</span>
-                                </label>
-                                <div class="input-group">
-                                    <span class="input-group-text">
-                                        <i class="bi bi-building"></i>
-                                    </span>
-                                    <select id="traditionalAuthorityId"
-                                            name="traditionalAuthorityId"
-                                            class="form-select"
-                                            required>
-                                        <option value="">— Select Authority —</option>
-                                        <option th:each="a : ${authorities}"
-                                                th:value="${a.id}"
-                                                th:text="${a.authorityName}">
-                                        </option>
-                                    </select>
-                                </div>
-                            </div>
-
-                            <!-- Village -->
+                            <!-- Village (authority is derived from the user's link, so only village is asked) -->
                             <div class="col-12">
                                 <label for="villageId" class="form-label">
                                     Village <span class="text-danger">*</span>
@@ -261,8 +245,17 @@
                                     <select id="villageId"
                                             name="villageId"
                                             class="form-select"
-                                            required>
-                                        <option value="">— Select Authority First —</option>
+                                            required
+                                            th:disabled="${creationBlocked}">
+                                        <option value="">— Select Village —</option>
+                                        <option th:each="v : ${villages}"
+                                                th:value="${v.id}"
+                                                th:selected="${form.villageId == v.id}"
+                                                th:data-headman="${v.headmanName} ?: '—'"
+                                                th:data-chief="${v.chiefName} ?: '—'"
+                                                th:data-village-name="${v.villageName} ?: '—'"
+                                                th:text="${v.villageName}">
+                                        </option>
                                     </select>
                                 </div>
                                 <div id="villageInfo" class="mt-2" style="display:none;">
@@ -563,50 +556,19 @@
         }
     }
 
-    // ── Load Villages ────────────────────────────────────────────────────
-    document.getElementById('traditionalAuthorityId').addEventListener('change', function() {
-        const authorityId = this.value;
-        const villageSelect = document.getElementById('villageId');
-        villageSelect.innerHTML = '<option value="">Loading...</option>';
+    // ── Village Initialization ───────────────────────────────────────────
+    // Villages are already rendered server-side from the user's authority scope,
+    // so no separate authority selection or fetch is needed.
+    const villageSelectInit = document.getElementById('villageId');
+    const creationBlockedInit = /*[[${creationBlocked}]]*/ false;
 
-        if (!authorityId) {
-            villageSelect.innerHTML = '<option value="">— Select Authority First —</option>';
-            document.getElementById('villageInfo').style.display = 'none';
-            return;
-        }
-
-        fetch('/parcels/villages/' + authorityId)
-            .then(r => {
-                if (!r.ok) {
-                    throw new Error('Network response was not ok');
-                }
-                return r.json();
-            })
-            .then(villages => {
-                villageSelect.innerHTML = '<option value="">— Select Village —</option>';
-                if (!villages || villages.length === 0) {
-                    villageSelect.innerHTML = '<option value="">No villages for this authority</option>';
-                    document.getElementById('villageInfo').style.display = 'none';
-                    return;
-                }
-                villages.sort((a, b) => a.villageName.localeCompare(b.villageName));
-                villages.forEach(v => {
-                    const opt = document.createElement('option');
-                    opt.value = v.id;
-                    opt.textContent = v.villageName;
-                    opt.dataset.headman = v.headmanName || '—';
-                    opt.dataset.chief = v.chiefName || '—';
-                    opt.dataset.villageName = v.villageName || '—';
-                    villageSelect.appendChild(opt);
-                });
-                document.getElementById('villageInfo').style.display = 'none';
-            })
-            .catch(err => {
-                console.error('Error loading villages:', err);
-                villageSelect.innerHTML = '<option value="">Error loading villages</option>';
-                document.getElementById('villageInfo').style.display = 'none';
-            });
-    });
+    if (creationBlockedInit) {
+        // Not linked to any authority: block the whole parcel-creation form.
+        const form = document.getElementById('parcelForm');
+        if (form) form.classList.add('visually-hidden');
+        const submitInit = document.getElementById('submitBtn');
+        if (submitInit) submitInit.disabled = true;
+    }
 
     document.getElementById('villageId').addEventListener('change', function() {
         const selected = this.options[this.selectedIndex];
@@ -630,6 +592,10 @@
             document.getElementById('chiefName').value = '';
         }
     });
+
+    // Initialize the village info panel for any pre-selected village
+    // (e.g. when the form is redisplayed after a validation error).
+    document.getElementById('villageId').dispatchEvent(new Event('change'));
 
     // ── CRITICAL FIX: Force Fresh GPS with Multiple Strategies ──────────
     function getFreshGpsPosition(options) {

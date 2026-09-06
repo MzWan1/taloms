@@ -10,6 +10,7 @@ import za.co.taloms.gis.application.dto.GeoJsonResponse;
 import za.co.taloms.gis.application.dto.ParcelGeoJsonResponse;
 import za.co.taloms.gis.application.service.GisService;
 import za.co.taloms.parcel.domain.entity.ParcelStatus;
+import za.co.taloms.security.application.service.AuthorityScopeService;
 
 @Slf4j
 @RestController
@@ -18,6 +19,14 @@ import za.co.taloms.parcel.domain.entity.ParcelStatus;
 public class GisRestController {
 
     private final GisService gisService;
+    private final AuthorityScopeService scopeService;
+
+    @GetMapping("/parcels")
+    @PreAuthorize("hasAnyRole('ADMIN','CHIEF','HEADSMAN')")
+    public ResponseEntity<ApiResponse<ParcelGeoJsonResponse>> getAllParcels() {
+        var response = gisService.getParcelGeoJsonAll();
+        return ResponseEntity.ok(ApiResponse.success(response, "Parcel GeoJSON retrieved successfully"));
+    }
 
     @GetMapping("/parcels/village/{villageId}")
     @PreAuthorize("hasAnyRole('ADMIN','CHIEF','HEADSMAN')")
@@ -29,6 +38,7 @@ public class GisRestController {
     @GetMapping("/parcels/authority/{authorityId}")
     @PreAuthorize("hasAnyRole('ADMIN','CHIEF','HEADSMAN')")
     public ResponseEntity<ApiResponse<ParcelGeoJsonResponse>> getParcelsByAuthority(@PathVariable Long authorityId) {
+        scopeService.requireAuthorityAccess(authorityId);
         var response = gisService.getParcelGeoJsonByAuthority(authorityId);
         return ResponseEntity.ok(ApiResponse.success(response, "Parcel GeoJSON retrieved successfully"));
     }
@@ -57,6 +67,7 @@ public class GisRestController {
     @GetMapping("/geojson/authority/{authorityId}")
     @PreAuthorize("hasAnyRole('ADMIN','CHIEF','HEADSMAN')")
     public ResponseEntity<ApiResponse<GeoJsonResponse>> getGeoJsonByAuthority(@PathVariable Long authorityId) {
+        scopeService.requireAuthorityAccess(authorityId);
         var response = gisService.getGeoJsonForAuthority(authorityId);
         return ResponseEntity.ok(ApiResponse.success(response, "GeoJSON retrieved successfully"));
     }
@@ -86,6 +97,7 @@ public class GisRestController {
     @GetMapping("/community/authority/{authorityId}")
     @PreAuthorize("hasAnyRole('ADMIN','CHIEF','HEADSMAN')")
     public ResponseEntity<ApiResponse<GeoJsonResponse>> getCommunityLayoutByAuthority(@PathVariable Long authorityId) {
+        scopeService.requireAuthorityAccess(authorityId);
         var response = gisService.getCommunityLayoutByAuthority(authorityId);
         return ResponseEntity.ok(ApiResponse.success(response, "Community layout retrieved successfully"));
     }

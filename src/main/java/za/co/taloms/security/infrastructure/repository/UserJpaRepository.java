@@ -37,9 +37,12 @@ public interface UserJpaRepository extends JpaRepository<User, Long> {
     @Query("SELECT u FROM User u WHERE " +
            "(LOWER(u.fullName) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
            "LOWER(u.email) LIKE LOWER(CONCAT('%', :query, '%'))) " +
-                       "AND (u.traditionalAuthorityId IS NULL OR u.traditionalAuthorityId = :authorityId) " +
+           "AND EXISTS (SELECT 1 FROM User u2 JOIN u2.roles r " +
+           "            WHERE u2 = u AND r.name = :roleName) " +
+           "AND (:authorityId IS NULL OR u.traditionalAuthorityId IS NULL OR u.traditionalAuthorityId = :authorityId) " +
            "ORDER BY u.fullName")
     List<User> searchByNameOrEmailAndAuthorityScope(@Param("query") String query,
-                                                     @Param("authorityId") Long authorityId);
+                                                     @Param("authorityId") Long authorityId,
+                                                     @Param("roleName") String roleName);
 }
 

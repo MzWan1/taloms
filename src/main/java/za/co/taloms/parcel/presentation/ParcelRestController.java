@@ -14,10 +14,8 @@ import za.co.taloms.parcel.application.dto.ParcelResponse;
 import za.co.taloms.parcel.application.service.ParcelService;
 import za.co.taloms.parcel.domain.entity.ParcelStatus;
 import za.co.taloms.security.application.service.AuthorityScopeService;
-import za.co.taloms.traditionalauthority.application.service.VillageService;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/parcels")
@@ -25,21 +23,19 @@ import java.util.stream.Collectors;
 public class ParcelRestController {
 
     private final ParcelService parcelService;
-    private final VillageService villageService;
     private final AuthorityScopeService scopeService;
 
-    /** Returns the village IDs in the current chief/headman's authority, or null if unrestricted. */
+    /** Returns the village IDs the current chief/headman may manage, or null if unrestricted (admin). */
     private Set<Long> scopedVillageIds() {
-        if (!scopeService.isCurrentUserChiefOrHeadsman()) {
-            return null;
+        return scopeService.scopedVillageIds();
+    }
+
+    /** Throws SecurityException if the village is outside the current user's scope. */
+    private void requireVillageAccess(Long villageId) {
+        if (villageId == null) {
+            throw new SecurityException("A village must be selected.");
         }
-        Long linkedAuthorityId = scopeService.getCurrentUserAuthorityId();
-        if (linkedAuthorityId == null) {
-            return Set.of();
-        }
-        return villageService.findByAuthority(linkedAuthorityId).stream()
-                .map(v -> v.getId())
-                .collect(Collectors.toSet());
+        scopeService.requireVillageAccess(villageId);
     }
 
     private List<ParcelResponse> scoped(List<ParcelResponse> all) {
@@ -61,8 +57,7 @@ public class ParcelRestController {
         if (parcel.getVillageId() == null) {
             throw new SecurityException("Parcel has no linked village");
         }
-        var village = villageService.findById(parcel.getVillageId());
-        scopeService.requireAuthorityAccess(village.getTraditionalAuthorityId());
+        requireVillageAccess(parcel.getVillageId());
     }
 
     @PostMapping
@@ -71,13 +66,10 @@ public class ParcelRestController {
             @Valid @RequestBody ParcelRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        // Chiefs/headsmen can only create parcels in their own authority's villages
+        // Chiefs/headsmen can only create parcels in villages they are scoped to
+        // (via their linked authority and/or the villages they directly head)
         if (scopeService.isCurrentUserChiefOrHeadsman()) {
-            if (request.getVillageId() == null) {
-                throw new SecurityException("A village must be selected.");
-            }
-            var village = villageService.findById(request.getVillageId());
-            scopeService.requireAuthorityAccess(village.getTraditionalAuthorityId());
+            requireVillageAccess(request.getVillageId());
         }
 
         var response = parcelService.createParcel(request, userDetails.getUsername());
@@ -129,10 +121,9 @@ public class ParcelRestController {
 
     @GetMapping("/village/{villageId}")
     public ResponseEntity<ApiResponse<List<ParcelResponse>>> getByVillage(@PathVariable Long villageId) {
-        // Chiefs/headsmen may only view parcels of villages in their authority
+        // Chiefs/headsmen may only view parcels of villages they are scoped to
         if (scopeService.isCurrentUserChiefOrHeadsman()) {
-            var village = villageService.findById(villageId);
-            scopeService.requireAuthorityAccess(village.getTraditionalAuthorityId());
+            requireVillageAccess(villageId);
         }
         return ResponseEntity.ok(ApiResponse.success(parcelService.findByVillage(villageId),
                 "Parcels retrieved successfully"));
@@ -154,8 +145,7 @@ public class ParcelRestController {
     @GetMapping("/available/{villageId}")
     public ResponseEntity<ApiResponse<List<ParcelResponse>>> getAvailable(@PathVariable Long villageId) {
         if (scopeService.isCurrentUserChiefOrHeadsman()) {
-            var village = villageService.findById(villageId);
-            scopeService.requireAuthorityAccess(village.getTraditionalAuthorityId());
+            requireVillageAccess(villageId);
         }
         return ResponseEntity.ok(ApiResponse.success(parcelService.findAvailable(villageId),
                 "Available parcels retrieved successfully"));

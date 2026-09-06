@@ -17,6 +17,8 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import za.co.taloms.security.application.service.UserDetailsServiceImpl;
+import za.co.taloms.security.presentation.LoginFailureHandler;
+import za.co.taloms.security.presentation.LoginSuccessHandler;
 import za.co.taloms.security.presentation.JwtAuthenticationFilter;
 
 @Configuration
@@ -27,6 +29,8 @@ public class SecurityConfig {
 
     private final JwtAuthenticationFilter jwtAuthFilter;
     private final UserDetailsServiceImpl  userDetailsService;
+    private final LoginSuccessHandler      loginSuccessHandler;
+    private final LoginFailureHandler      loginFailureHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http)
@@ -52,6 +56,8 @@ public class SecurityConfig {
                                 "/images/**",
                                 "/favicon.ico"
                         ).permitAll()
+                        // Change password - accessible to all authenticated users
+                        .requestMatchers("/users/change-password").authenticated()
                         // Admin-only pages
                         .requestMatchers("/users", "/users/**").hasRole("ADMIN")
                         .requestMatchers("/audit", "/audit/**").hasRole("ADMIN")
@@ -76,8 +82,8 @@ public class SecurityConfig {
                 .formLogin(form -> form
                         .loginPage("/login")
                         .loginProcessingUrl("/login")
-                        .defaultSuccessUrl("/dashboard", true)
-                        .failureUrl("/login?error=true")
+                        .successHandler(loginSuccessHandler)
+                        .failureHandler(loginFailureHandler)
                         .usernameParameter("username")
                         .passwordParameter("password")
                         .permitAll()

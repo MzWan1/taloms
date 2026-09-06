@@ -65,6 +65,11 @@ public class ParcelRepositoryAdapter implements ParcelRepositoryPort {
     }
 
     @Override
+    public List<Parcel> findByAuthorityId(Long authorityId) {
+        return jpaRepository.findByAuthorityId(authorityId);
+    }
+
+    @Override
     public boolean existsByStandNumberAndVillageId(String standNumber, Long villageId) {
         return jpaRepository.existsByStandNumberAndVillageId(standNumber, villageId);
     }

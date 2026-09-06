@@ -129,6 +129,16 @@ public interface ParcelJpaRepository extends JpaRepository<Parcel, Long> {
             """, nativeQuery = true)
     boolean hasSelfIntersection(@Param("parcelId") Long parcelId);
 
+    @Query("""
+           SELECT DISTINCT p FROM Parcel p
+           LEFT JOIN FETCH p.boundaries b
+           LEFT JOIN FETCH p.village v
+           LEFT JOIN FETCH v.traditionalAuthority ta
+           LEFT JOIN FETCH p.pto
+           WHERE p.village.traditionalAuthority.id = :authorityId
+           """)
+    List<Parcel> findByAuthorityId(@Param("authorityId") Long authorityId);
+
     @Query(value = """
             SELECT p.id, p.parcel_number, p.stand_number,
                    ST_ClusterDBSCAN(ST_Centroid(p.geometry), eps := :epsMeters, minpoints := :minPts)
