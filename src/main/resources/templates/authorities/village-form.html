@@ -59,7 +59,7 @@
     </div>
 
     <div class="row justify-content-center">
-        <div class="col-12 col-lg-7 col-xl-6">
+        <div class="col-12 col-lg-10 col-xl-9">
 
             <div th:if="${errorMessage}"
                  class="alert alert-danger alert-dismissible fade show border-0 shadow-sm mb-4" role="alert">
@@ -187,6 +187,27 @@
                                       placeholder="Optional notes about this village..."></textarea>
                         </div>
 
+                        <!-- Village Boundary Map -->
+                        <input type="hidden" id="boundaryJson" name="boundaryJson" th:value="*{boundaryJson}">
+                        <div class="mb-4">
+                            <label class="form-label">
+                                Village Boundary <span class="text-danger">*</span>
+                            </label>
+                            <p class="text-muted small mb-2">
+                                The grey outline is the authority boundary — the village shape must
+                                stay inside it. Drag the
+                                <span class="text-danger fw-semibold">red handle</span> to move the
+                                whole shape, drag the <span class="fw-semibold">blue pins</span> to
+                                reshape it, <b>Add Point</b> to insert a new pin, and
+                                <b>double-click a pin</b> to remove it.
+                            </p>
+                            <div id="boundaryMap" style="height: 420px; border-radius: 8px; z-index: 0;"></div>
+                            <button type="button" id="boundaryAddPoint"
+                                    class="btn btn-outline-primary btn-sm mt-2">
+                                <i class="bi bi-plus-lg me-1"></i>Add Point
+                            </button>
+                        </div>
+
                         <!-- Actions -->
                         <div class="d-flex gap-3 justify-content-end">
                             <a th:href="@{/authorities/{id}(id=${authority.id})}"
@@ -218,6 +239,42 @@
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script th:src="@{/js/boundary-map.js}"></script>
+<script th:src="@{/js/form-draft.js}"></script>
+<script th:inline="javascript">
+    (function () {
+        var authorityBoundary = /*[[${authority.boundary}]]*/ null;
+        var context = [];
+        if (authorityBoundary && authorityBoundary.length >= 3) {
+            context.push({
+                points: authorityBoundary.map(function (c) { return [c.latitude, c.longitude]; }),
+                color: '#6c757d',
+                label: /*[[${authority.authorityName}]]*/ 'Authority'
+            });
+        }
+        var center = authorityBoundary && authorityBoundary.length >= 3
+            ? [authorityBoundary[0].latitude, authorityBoundary[0].longitude]
+            : [-28.8, 25.5];
+
+        TalomsBoundaryMap.initEditor({
+            mapId: 'boundaryMap',
+            hiddenInputId: 'boundaryJson',
+            addPointButtonId: 'boundaryAddPoint',
+            existing: /*[[${form.boundaryJson}]]*/ null,
+            center: center,
+            contextPolygons: context
+        });
+
+        // Refill the form after a reload or a failed save
+        TalomsFormDraft.attach('taloms-village-draft', [
+            'villageName', 'region', 'description',
+            { id: 'headmanId', labelSpanId: 'headmanSelectedName' },
+            'boundaryJson'
+        ]);
+    })();
+</script>
 <script>
     // ── User search for Headman ──────────────────────────────────────────
     function setupUserSearch(searchInputId, resultsDivId, selectedDivId,

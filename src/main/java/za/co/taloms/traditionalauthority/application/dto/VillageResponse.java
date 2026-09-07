@@ -17,5 +17,6 @@ public class VillageResponse {
     private Long          headmanId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    private java.util.List<CoordinateDto> boundary;
 }
 

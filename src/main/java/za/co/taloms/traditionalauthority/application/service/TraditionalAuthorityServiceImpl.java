@@ -25,6 +25,8 @@ public class TraditionalAuthorityServiceImpl
     private final TraditionalAuthorityRepositoryPort authorityRepository;
     private final VillageRepositoryPort              villageRepository;
     private final UserRepositoryPort                 userRepository;
+    private final SpatialBoundaryService             spatialBoundaryService;
+    private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
     @Override
     public TraditionalAuthorityResponse create(
@@ -37,6 +39,15 @@ public class TraditionalAuthorityServiceImpl
                     "name",
                     request.getAuthorityName());
         }
+
+        // Map-drawn boundary: must not overlap any other authority
+        var boundaryPoints = spatialBoundaryService.parseBoundary(
+                request.getBoundaryJson());
+        var boundaryProbe = TraditionalAuthority.builder()
+                .id(null)
+                .build();
+        spatialBoundaryService.validateAuthorityBoundary(
+                boundaryProbe, request.getBoundaryJson(), null);
 
         // A headsman belongs to exactly ONE authority — validate before saving
         if (request.getHeadmanId() != null) {
@@ -58,6 +69,7 @@ public class TraditionalAuthorityServiceImpl
                 .contactEmail(request.getContactEmail())
                 .physicalAddress(request.getPhysicalAddress())
                 .region(request.getRegion())
+                .boundaryJson(spatialBoundaryService.toJson(boundaryPoints))
                 .active(true)
                 .createdBy(createdBy)
                 .build();
@@ -94,6 +106,13 @@ public class TraditionalAuthorityServiceImpl
         }
 
         Long previousHeadmanId = authority.getHeadmanId();
+
+        // Map-drawn boundary: must not overlap other authorities and must
+        // still contain every village already registered under this authority
+        spatialBoundaryService.validateAuthorityBoundary(
+                authority, request.getBoundaryJson(), id);
+        authority.setBoundaryJson(spatialBoundaryService.toJson(
+                spatialBoundaryService.parseBoundary(request.getBoundaryJson())));
 
         // A headsman belongs to exactly ONE authority — validate before saving
         if (request.getHeadmanId() != null) {
@@ -360,7 +379,23 @@ public class TraditionalAuthorityServiceImpl
                 .createdBy(a.getCreatedBy())
                 .createdAt(a.getCreatedAt())
                 .updatedAt(a.getUpdatedAt())
+                .boundary(toBoundaryResponse(a.getBoundaryJson()))
                 .build();
+    }
+
+    /** Leniently converts stored boundaryJson to response coordinates. */
+    private List<CoordinateDto> toBoundaryResponse(String boundaryJson) {
+        if (boundaryJson == null || boundaryJson.isBlank()) {
+            return null;
+        }
+        try {
+            return objectMapper.readValue(boundaryJson,
+                    objectMapper.getTypeFactory()
+                            .constructCollectionType(List.class, CoordinateDto.class));
+        } catch (Exception e) {
+            log.warn("Could not parse stored authority boundary: {}", e.getMessage());
+            return null;
+        }
     }
 }
 

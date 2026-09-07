@@ -440,6 +440,20 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script th:inline="javascript">
+    // Convert the injected array [{id,boundary},...] into an id-keyed lookup
+    // map: {1: ordered lat,lng list, ...}. Only entries with >= 3 coords kept.
+    (function () {
+        var arr = JSON.parse(/*[[${villageBoundaryJson}]]*/ '[]');
+        var byId = {};
+        (arr || []).forEach(function (entry) {
+            if (entry && entry.boundary && entry.boundary.length >= 3) {
+                byId[String(entry.id)] = entry.boundary;
+            }
+        });
+        window.VILLAGE_BOUNDARIES = byId;
+    })();
+</script>
 <script>
     // ── State ──────────────────────────────────────────────────────────────
     const gpsPoints = [];
@@ -461,6 +475,30 @@
 
     let polygonLayer = null;
     let markers = [];
+    let villageBoundaryLayer = null; // outlines the selected village
+
+    // ── Village boundaries ────────────────────────────────────────────────
+    // window.VILLAGE_BOUNDARIES is populated in a small th:inline javascript
+    // block below, keyed by village id to its ordered lat,lng coordinate list,
+    // so the selected village can be outlined on the map.
+    const villageBoundaries = window.VILLAGE_BOUNDARIES || {};
+
+    function drawVillageBoundary(villageId) {
+        if (villageBoundaryLayer) {
+            map.removeLayer(villageBoundaryLayer);
+            villageBoundaryLayer = null;
+        }
+        var coords = villageBoundaries[villageId];
+        if (!coords) return;
+        villageBoundaryLayer = L.polygon(coords, {
+            color: '#1F6B3A',
+            weight: 2,
+            fillOpacity: 0.08,
+            dashArray: '6 4'
+        }).addTo(map);
+        villageBoundaryLayer.bindTooltip('Village boundary', { sticky: true });
+        map.fitBounds(villageBoundaryLayer.getBounds().pad(0.2));
+    }
 
     // ── Map Click → Fill Active Manual Point ─────────────────────────────
     // Clicking the map fills the coordinates of the point currently "open"
@@ -586,6 +624,8 @@
 
             document.getElementById('headmanName').value = headman === '—' ? '' : headman;
             document.getElementById('chiefName').value = chief === '—' ? '' : chief;
+
+            drawVillageBoundary(this.value);
         } else {
             infoDiv.style.display = 'none';
             document.getElementById('headmanName').value = '';

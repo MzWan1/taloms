@@ -19,5 +19,11 @@ public class VillageRequest {
 
     @NotNull(message = "Traditional Authority is required")
     private Long traditionalAuthorityId;
+
+    /**
+     * JSON array of mapped boundary vertices, e.g. [{"lat":-25.1,"lng":28.2},...].
+     * Required — a village must be mapped and fall inside its authority's boundary.
+     */
+    private String boundaryJson;
 }
 

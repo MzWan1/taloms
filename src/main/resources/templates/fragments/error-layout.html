@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en"
+      xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${pageTitle} + ' | TALOMS'">Error | TALOMS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link th:href="@{/css/taloms.css}" rel="stylesheet">
+    <style>
+        body { background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%); }
+        .error-card { max-width: 620px; }
+        .status-badge { width: 100px; height: 100px; font-size: 2.5rem; font-weight: 700;
+            border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; }
+        .error-icon-size { font-size: 3.5rem; }
+    </style>
+</head>
+<body class="min-vh-100 d-flex align-items-center justify-content-center py-4">
+<div th:fragment="page(icon, code, title, description, homeUrl, colorClass)">
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-12 error-card mx-auto">
+            <div class="card border-0 shadow-lg text-center">
+                <div class="card-body p-4 p-md-5">
+
+                    <!-- Status Icon -->
+                    <div class="mb-4">
+                        <i th:class="${icon + ' error-icon-size fw-bold'}"
+                           th:classappend="${colorClass != null ? colorClass : 'text-navy'}">
+                        </i>
+                    </div>
+
+                    <!-- Status Code Badge -->
+                    <div class="mb-4">
+                        <span class="badge bg-navy status-badge">
+                            <span th:text="${code}">500</span>
+                        </span>
+                    </div>
+
+                    <!-- Error Title -->
+                    <h1 class="h3 fw-bold text-navy mb-3" th:text="${title}">
+                        Something Went Wrong
+                    </h1>
+
+                    <!-- Error Description -->
+                    <p class="text-muted mb-4 fs-6" th:text="${description}">
+                        An unexpected error occurred.
+                    </p>
+
+                    <!-- Action Buttons -->
+                    <div class="d-grid gap-2 d-sm-flex justify-content-center mt-5 pt-3">
+                        <a th:if="${homeUrl != null}" th:href="@{${homeUrl}}"
+                           class="btn btn-navy btn-lg px-4">
+                            <i class="bi bi-house-door me-2"></i>Go Back Home
+                        </a>
+                        <a th:unless="${homeUrl != null}" th:href="@{/login}"
+                           class="btn btn-navy btn-lg px-4">
+                            <i class="bi bi-house-door me-2"></i>Go Back Home
+                        </a>
+                        <button type="button" class="btn btn-outline-secondary btn-lg px-4"
+                                onclick="history.back()">
+                            <i class="bi bi-arrow-left me-2"></i>Go Back
+                        </button>
+                    </div>
+
+                    <!-- Error Details (expandable) -->
+                    <div class="mt-5" th:if="${message != null and #strings.trim(message) != ''}">
+                        <div class="collapse" id="errorDetailsCollapse">
+                            <div class="card border-0 bg-light">
+                                <div class="card-body">
+                                    <h6 class="fw-bold mb-3 text-navy">
+                                        <i class="bi bi-info-circle me-2"></i>Error Details
+                                    </h6>
+                                    <div class="text-start small">
+                                        <div class="mb-2" th:if="${path != null}">
+                                            <span class="text-muted">Path:</span>
+                                            <span class="fw-medium" th:text="${path}">/path</span>
+                                        </div>
+                                        <div class="mb-2" th:if="${timestamp != null}">
+                                            <span class="text-muted">Timestamp:</span>
+                                            <span class="fw-medium" th:text="${timestamp}">—</span>
+                                        </div>
+                                        <div th:if="${message != null}">
+                                            <span class="text-muted">Message:</span>
+                                            <span class="fw-medium" th:text="${message}">—</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <a href="#errorDetailsCollapse" data-bs-toggle="collapse"
+                           class="small text-muted text-decoration-none">
+                            <i class="bi bi-chevron-down me-1"></i>Show error details
+                        </a>
+                    </div>
+
+                    <!-- Validation Errors -->
+                    <div class="mt-4" th:if="${errors != null}">
+                        <div class="alert alert-danger text-start mb-0">
+                            <h6 class="fw-bold mb-2">
+                                <i class="bi bi-exclamation-octagon me-1"></i>Validation Errors
+                            </h6>
+                            <ul class="mb-0 ps-3" th:each="err : ${errors}">
+                                <li class="small" th:text="${err.defaultMessage}">Validation error</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Footer -->
+                    <div class="mt-5 pt-4 border-top">
+                        <p class="text-muted small mb-0">
+                            &copy; 2026 TALOMS &mdash; Traditional Authority Land &amp; Occupancy Management System
+                        </p>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
+

@@ -41,6 +41,7 @@ public class ParcelServiceImpl implements ParcelService {
     private final ParcelAreaCalculator areaCalculator;
     private final ApplicationEventPublisher eventPublisher;
     private final BoundaryValidationService boundaryValidationService;
+    private final za.co.taloms.traditionalauthority.application.service.SpatialBoundaryService spatialBoundaryService;
     private final EntityManager entityManager;
 
     private static final String PARCEL_NUMBER_PREFIX = "PRC";
@@ -116,6 +117,9 @@ public class ParcelServiceImpl implements ParcelService {
         // Validate spatial integrity (coordinates in SA, etc.)
         boundaryValidationService.validateCoordinatesInSouthAfrica(closedBoundary);
 
+        // Reject parcels plotted outside the village's mapped boundary
+        validateParcelWithinVillage(closedBoundary, village);
+
         // Calculate area, centroid, and perimeter using the closed boundary
         Double areaM2 = areaCalculator.calculateAreaM2(closedBoundary);
 
@@ -186,6 +190,58 @@ public class ParcelServiceImpl implements ParcelService {
     /**
      * Removes consecutive duplicate points (same latitude and longitude).
      */
+    /**
+     * Rejects a parcel whose boundary falls outside the mapped boundary of its
+     * village, or that overlaps any other village. This mirrors the village
+     * rules (a village must sit inside its authority and not overlap any other
+     * village/authority): a parcel must sit inside its village and not cross
+     * into a neighbouring one. Villages without a mapped boundary (legacy
+     * records) are skipped so existing capture flows keep working.
+     */
+    private void validateParcelWithinVillage(List<BoundaryPointDto> closedBoundary,
+                                             za.co.taloms.traditionalauthority.domain.entity.Village village) {
+        if (village.getBoundaryJson() == null || village.getBoundaryJson().isBlank()) {
+            log.warn("Village {} has no mapped boundary — parcel containment check skipped",
+                    village.getVillageName());
+            return;
+        }
+
+        List<double[]> parcelPoints = closedBoundary.stream()
+                .map(p -> new double[]{p.getLatitude(), p.getLongitude()})
+                .toList();
+        var parcelPolygon = za.co.taloms.common.spatial.GeoBoundarySupport.toPolygon(parcelPoints);
+        var villagePolygon = za.co.taloms.common.spatial.GeoBoundarySupport.toPolygon(
+                spatialBoundaryService.parseBoundary(village.getBoundaryJson()));
+
+        if (parcelPolygon == null || villagePolygon == null
+                || !za.co.taloms.common.spatial.GeoBoundarySupport
+                        .covers(villagePolygon, parcelPolygon)) {
+            throw new BusinessValidationException(
+                    "The captured parcel boundary falls outside the mapped boundary of village '"
+                            + village.getVillageName()
+                            + "'. Parcels must be demarcated inside their village.");
+        }
+
+        // The parcel must not overlap any OTHER village (it belongs to exactly
+        // one village — the way a village belongs to exactly one authority).
+        for (var other : villageRepository.findAllActive()) {
+            if (other.getId() != null && other.getId().equals(village.getId())) {
+                continue;
+            }
+            if (other.getBoundaryJson() == null || other.getBoundaryJson().isBlank()) {
+                continue;
+            }
+            var otherPolygon = za.co.taloms.common.spatial.GeoBoundarySupport.toPolygon(
+                    spatialBoundaryService.parseBoundary(other.getBoundaryJson()));
+            if (za.co.taloms.common.spatial.GeoBoundarySupport.overlaps(parcelPolygon, otherPolygon)) {
+                throw new BusinessValidationException(
+                        "The captured parcel boundary overlaps village '"
+                                + other.getVillageName()
+                                + "'. A parcel may only fall inside a single village.");
+            }
+        }
+    }
+
     private List<BoundaryPointDto> removeDuplicateConsecutivePoints(List<BoundaryPointDto> points) {
         if (points == null || points.isEmpty()) {
             return points;

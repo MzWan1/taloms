@@ -34,6 +34,9 @@ public class Village {
     @Column(name = "description", columnDefinition = "TEXT")
     private String description;
 
+    @Column(name = "boundary_json", columnDefinition = "TEXT")
+    private String boundaryJson;
+
     @Column(nullable = false)
     @Builder.Default
     private Boolean active = true;

@@ -24,6 +24,8 @@ public class VillageServiceImpl implements VillageService {
     private final VillageRepositoryPort              villageRepository;
     private final TraditionalAuthorityRepositoryPort authorityRepository;
     private final UserRepositoryPort                 userRepository;
+    private final SpatialBoundaryService             spatialBoundaryService;
+    private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
     @Override
     public VillageResponse create(VillageRequest request) {
@@ -42,6 +44,15 @@ public class VillageServiceImpl implements VillageService {
                     "Village", "name", request.getVillageName());
         }
 
+        // Spatial rules: village must be mapped, sit fully inside its own
+        // authority's boundary and not overlap any other village/authority.
+        // This is what stops a village being placed in another province
+        // (e.g. Limpopo) when its authority is in Gauteng.
+        var boundaryPoints = spatialBoundaryService.parseBoundary(
+                request.getBoundaryJson());
+        spatialBoundaryService.validateVillageBoundary(
+                null, authority, request.getBoundaryJson(), null);
+
         // A headsman belongs to exactly ONE authority — validate before saving.
         // Assignment fixes the headsman's authority to this village's authority.
         if (request.getHeadmanId() != null) {
@@ -58,6 +69,7 @@ public class VillageServiceImpl implements VillageService {
                 .headmanName(headmanName)
                 .headmanId(request.getHeadmanId())
                 .description(request.getDescription())
+                .boundaryJson(spatialBoundaryService.toJson(boundaryPoints))
                 .active(true)
                 .traditionalAuthority(authority)
                 .build();
@@ -92,6 +104,13 @@ public class VillageServiceImpl implements VillageService {
         }
 
         Long previousHeadmanId = village.getHeadmanId();
+
+        // Spatial rules also apply on update (boundary may have been redrawn
+        // or the village moved to a different authority)
+        spatialBoundaryService.validateVillageBoundary(
+                village, authority, request.getBoundaryJson(), id);
+        village.setBoundaryJson(spatialBoundaryService.toJson(
+                spatialBoundaryService.parseBoundary(request.getBoundaryJson())));
 
         // A headsman belongs to exactly ONE authority — validate before saving.
         // excludeVillageId = this village, so re-saving the same assignment is allowed.
@@ -298,7 +317,23 @@ public class VillageServiceImpl implements VillageService {
                         v.getTraditionalAuthority().getAuthorityName())
                 .createdAt(v.getCreatedAt())
                 .updatedAt(v.getUpdatedAt())
+                .boundary(toBoundaryResponse(v.getBoundaryJson()))
                 .build();
+    }
+
+    /** Leniently converts stored boundaryJson to response coordinates. */
+    private java.util.List<CoordinateDto> toBoundaryResponse(String boundaryJson) {
+        if (boundaryJson == null || boundaryJson.isBlank()) {
+            return null;
+        }
+        try {
+            return objectMapper.readValue(boundaryJson,
+                    objectMapper.getTypeFactory()
+                            .constructCollectionType(java.util.List.class, CoordinateDto.class));
+        } catch (Exception e) {
+            log.warn("Could not parse stored village boundary: {}", e.getMessage());
+            return null;
+        }
     }
 }
 

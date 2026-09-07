@@ -46,6 +46,9 @@ public class TraditionalAuthority {
     @Column(name = "region", length = 100)
     private String region;
 
+    @Column(name = "boundary_json", columnDefinition = "TEXT")
+    private String boundaryJson;
+
     @Column(nullable = false)
     @Builder.Default
     private Boolean active = true;

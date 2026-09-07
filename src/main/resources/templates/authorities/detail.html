@@ -295,6 +295,25 @@
             
         </div>
     </div>
+
+    <!-- ── Mapped Boundary ───────────────────────────────────────────── -->
+    <div class="card border-0 shadow-sm mb-4" id="boundary-card">
+        <div class="card-header bg-white border-bottom py-3">
+            <h6 class="fw-bold text-navy mb-0">
+                <i class="bi bi-map me-2"></i>Mapped Boundary
+            </h6>
+        </div>
+        <div class="card-body p-4">
+            <div id="boundaryViewerMap"
+                 style="height: 420px; border-radius: 8px; z-index: 0;"></div>
+            <p class="text-muted small mt-2 mb-0">
+                <span style="display:inline-block;width:12px;height:12px;background:#1B3A6B;border-radius:2px;"></span>
+                Authority boundary &nbsp;
+                <span style="display:inline-block;width:12px;height:12px;background:#1F6B3A;border-radius:2px;"></span>
+                Villages
+            </p>
+        </div>
+    </div>
 </div>
 
 <style>
@@ -304,6 +323,40 @@
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script th:src="@{/js/boundary-map.js}"></script>
+<script th:inline="javascript">
+    (function () {
+        var polygons = [];
+        var ab = /*[[${authority.boundary}]]*/ null;
+        if (ab && ab.length >= 3) {
+            polygons.push({
+                points: ab.map(function (c) { return [c.latitude, c.longitude]; }),
+                color: '#1B3A6B',
+                label: /*[[${authority.authorityName}]]*/ ''
+            });
+        }
+        /*[# th:each="v : ${villageList}"]*/
+        var vb = /*[[${v.boundary}]]*/ null;
+        if (vb && vb.length >= 3) {
+            polygons.push({
+                points: vb.map(function (c) { return [c.latitude, c.longitude]; }),
+                color: '#1F6B3A',
+                label: /*[[${v.villageName}]]*/ ''
+            });
+        }
+        /*[/]*/
+        if (polygons.length) {
+            TalomsBoundaryMap.renderViewer({
+                mapId: 'boundaryViewerMap',
+                polygons: polygons
+            });
+        } else {
+            document.getElementById('boundary-card').style.display = 'none';
+        }
+    })();
+</script>
 </body>
 </html>
 

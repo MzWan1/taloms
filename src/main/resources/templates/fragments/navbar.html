@@ -37,9 +37,9 @@
                     </a>
                 </li>
 
-                <!-- Authorities (Admin and Chief) -->
+                <!-- Authorities (Admin only) -->
                 <li class="nav-item"
-                    sec:authorize="hasAnyRole('ADMIN','CHIEF')">
+                    sec:authorize="hasRole('ADMIN')">
                     <a class="nav-link rounded-2 px-3"
                        th:classappend="${currentPage == 'authorities'} ? 'active bg-white bg-opacity-10' : ''"
                        th:href="@{/authorities}">

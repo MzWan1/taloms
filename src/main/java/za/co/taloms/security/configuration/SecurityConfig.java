@@ -20,6 +20,8 @@ import za.co.taloms.security.application.service.UserDetailsServiceImpl;
 import za.co.taloms.security.presentation.LoginFailureHandler;
 import za.co.taloms.security.presentation.LoginSuccessHandler;
 import za.co.taloms.security.presentation.JwtAuthenticationFilter;
+import za.co.taloms.security.presentation.TalomsAccessDeniedHandler;
+import za.co.taloms.security.presentation.TalomsAuthenticationEntryPoint;
 
 @Configuration
 @EnableWebSecurity
@@ -27,10 +29,12 @@ import za.co.taloms.security.presentation.JwtAuthenticationFilter;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final JwtAuthenticationFilter jwtAuthFilter;
-    private final UserDetailsServiceImpl  userDetailsService;
-    private final LoginSuccessHandler      loginSuccessHandler;
-    private final LoginFailureHandler      loginFailureHandler;
+        private final JwtAuthenticationFilter         jwtAuthFilter;
+    private final UserDetailsServiceImpl         userDetailsService;
+    private final LoginSuccessHandler            loginSuccessHandler;
+    private final LoginFailureHandler            loginFailureHandler;
+    private final TalomsAuthenticationEntryPoint entryPoint;
+    private final TalomsAccessDeniedHandler      accessDeniedHandler;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http)
@@ -54,7 +58,9 @@ public class SecurityConfig {
                                 "/css/**",
                                 "/js/**",
                                 "/images/**",
-                                "/favicon.ico"
+                                                                "/favicon.ico",
+                                "/error",
+                                "/error/**"
                         ).permitAll()
                         // Change password - accessible to all authenticated users
                         .requestMatchers("/users/change-password").authenticated()
@@ -74,8 +80,11 @@ public class SecurityConfig {
                         // All authenticated users
                         .requestMatchers("/dashboard", "/ptos/**", "/parcels/**", "/gis/**", "/documents/**").authenticated()
                         .requestMatchers("/api/ptos/**", "/api/parcels/**", "/api/gis/**", "/api/documents/**").authenticated()
-                        .anyRequest().authenticated()
+                                                .anyRequest().authenticated()
                 )
+                .exceptionHandling(ex -> ex
+                        .authenticationEntryPoint(entryPoint)
+                        .accessDeniedHandler(accessDeniedHandler))
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
                 )

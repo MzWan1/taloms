@@ -49,7 +49,11 @@ public class TraditionalAuthorityPageController {
     @GetMapping("/create")
     @PreAuthorize("hasRole('ADMIN')")
     public String createForm(Model model) {
-        model.addAttribute("form",        new TraditionalAuthorityRequest());
+        // After a failed submit the submitted values (incl. the mapped
+        // boundary) arrive here as a flash attribute and refill the form
+        if (!model.containsAttribute("form")) {
+            model.addAttribute("form", new TraditionalAuthorityRequest());
+        }
         model.addAttribute("pageTitle",   "Create Authority");
         model.addAttribute("currentPage", "authorities");
         return "authorities/create";
@@ -68,6 +72,9 @@ public class TraditionalAuthorityPageController {
                             + "' created successfully.");
         } catch (Exception e) {
             ra.addFlashAttribute("errorMessage", e.getMessage());
+            // Keep everything the admin typed (including the mapped boundary)
+            // so the form can be refilled after the failure
+            ra.addFlashAttribute("form", request);
             return "redirect:/authorities/create";
         }
         return "redirect:/authorities";
@@ -125,6 +132,9 @@ public class TraditionalAuthorityPageController {
         }
 
         var authority = authorityService.findById(id);
+
+        // Boundaries (authority + villages) for the map viewer
+        model.addAttribute("villageList", villageService.findByAuthority(id));
 
         model.addAttribute("authority",   authority);
         model.addAttribute("pageTitle",   "Authority Detail");

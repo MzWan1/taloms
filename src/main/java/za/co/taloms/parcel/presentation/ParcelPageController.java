@@ -25,7 +25,9 @@ import za.co.taloms.traditionalauthority.application.service.VillageService;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -160,6 +162,7 @@ public class ParcelPageController {
             }
 
             model.addAttribute("villages", villages);
+            model.addAttribute("villageBoundaryJson", buildVillageBoundaryJson(villages));
             model.addAttribute("creationBlocked", creationBlocked);
             model.addAttribute("statuses", ParcelStatus.values());
             model.addAttribute("captureModes", CaptureMode.values());
@@ -411,6 +414,37 @@ public class ParcelPageController {
         } catch (Exception e) {
             log.error("Error loading villages for authority {}: {}", authorityId, e.getMessage(), e);
             return Collections.emptyList();
+        }
+    }
+
+    /**
+     * Serialises each village's mapped boundary to a JSON string of the form
+     * [{"id":1,"boundary":[[lat,lng],...]}, ...] so the map editor can draw the
+     * selected village's boundary. Only villages with >= 3 points are included.
+     */
+    private String buildVillageBoundaryJson(List<VillageResponse> villages) {
+        List<Map<String, Object>> out = new ArrayList<>();
+        for (VillageResponse v : villages) {
+            if (v.getBoundary() == null || v.getBoundary().size() < 3) {
+                continue;
+            }
+            List<List<Double>> coords = new ArrayList<>();
+            for (var c : v.getBoundary()) {
+                List<Double> pt = new ArrayList<>();
+                pt.add(c.getLatitude());
+                pt.add(c.getLongitude());
+                coords.add(pt);
+            }
+            Map<String, Object> entry = new LinkedHashMap<>();
+            entry.put("id", v.getId());
+            entry.put("boundary", coords);
+            out.add(entry);
+        }
+        try {
+            return objectMapper.writeValueAsString(out);
+        } catch (JsonProcessingException e) {
+            log.warn("Could not serialise village boundaries: {}", e.getMessage());
+            return "[]";
         }
     }
 

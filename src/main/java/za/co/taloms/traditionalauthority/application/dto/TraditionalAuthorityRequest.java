@@ -27,5 +27,11 @@ public class TraditionalAuthorityRequest {
 
     @Size(max = 100, message = "Region must not exceed 100 characters")
     private String region;
+
+    /**
+     * JSON array of mapped boundary vertices, e.g. [{"lat":-25.1,"lng":28.2},...].
+     * Captured on the interactive map; stored as-is for spatial validation.
+     */
+    private String boundaryJson;
 }
 

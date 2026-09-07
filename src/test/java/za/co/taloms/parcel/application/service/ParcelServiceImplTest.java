@@ -44,6 +44,7 @@ class ParcelServiceImplTest {
     @Mock private ParcelAreaCalculator areaCalculator;
     @Mock private ApplicationEventPublisher eventPublisher;
     @Mock private BoundaryValidationService boundaryValidationService;
+    @Mock private za.co.taloms.traditionalauthority.application.service.SpatialBoundaryService spatialBoundaryService;
     @Mock private EntityManager entityManager;
 
     private ParcelServiceImpl service;
@@ -53,7 +54,7 @@ class ParcelServiceImplTest {
         service = new ParcelServiceImpl(
                 parcelRepository, boundaryRepository, villageRepository,
                 ptoRepository, areaCalculator, eventPublisher,
-                boundaryValidationService, entityManager);
+                boundaryValidationService, spatialBoundaryService, entityManager);
     }
 
     @Test
@@ -158,6 +159,55 @@ class ParcelServiceImplTest {
                 .boundaries(List.of(
                         BoundaryPointDto.builder().sequence(1).latitude(-25.0).longitude(28.0).build()
                 ))
+                .build();
+
+        assertThrows(BusinessValidationException.class,
+                () -> service.createParcel(request, "testuser"));
+    }
+
+    @Test
+    void shouldFailWhenParcelOverlapsAnotherVillage() {
+        // SpatialBoundaryService is mocked, so wire parseBoundary to a real
+        // instance to get genuine geometry in this test.
+        var realSpatial = new za.co.taloms.traditionalauthority.application.service.SpatialBoundaryService(
+                new com.fasterxml.jackson.databind.ObjectMapper(), null, null);
+        when(spatialBoundaryService.parseBoundary(anyString()))
+                .thenAnswer(inv -> realSpatial.parseBoundary(inv.getArgument(0)));
+
+        // Village: a ~4km square centred on (-25.00, 28.00)
+        var village = Village.builder()
+                .id(1L)
+                .villageName("Test Village")
+                .boundaryJson("[{\"lat\":-24.98,\"lng\":27.98},{\"lat\":-24.98,\"lng\":28.02},"
+                        + "{\"lat\":-25.02,\"lng\":28.02},{\"lat\":-25.02,\"lng\":27.98}]")
+                .active(true)
+                .build();
+
+        // Neighbour overlaps the centre of the village
+        var neighbour = Village.builder()
+                .id(2L)
+                .villageName("Neighbour Village")
+                .boundaryJson("[{\"lat\":-24.99,\"lng\":27.99},{\"lat\":-24.99,\"lng\":28.01},"
+                        + "{\"lat\":-25.01,\"lng\":28.01},{\"lat\":-25.01,\"lng\":27.99}]")
+                .active(true)
+                .build();
+
+        when(villageRepository.findById(1L)).thenReturn(Optional.of(village));
+        when(parcelRepository.existsByStandNumberAndVillageId(anyString(), anyLong())).thenReturn(false);
+        when(villageRepository.findAllActive()).thenReturn(List.of(village, neighbour));
+
+        // Parcel fully inside the village, but sitting in the zone the
+        // neighbour also covers — rejected for straddling two villages.
+        var boundaries = List.of(
+                BoundaryPointDto.builder().sequence(1).latitude(-24.995).longitude(27.995).build(),
+                BoundaryPointDto.builder().sequence(2).latitude(-24.995).longitude(28.005).build(),
+                BoundaryPointDto.builder().sequence(3).latitude(-25.005).longitude(28.000).build()
+        );
+
+        var request = ParcelRequest.builder()
+                .standNumber("ST-002")
+                .villageId(1L)
+                .boundaries(boundaries)
                 .build();
 
         assertThrows(BusinessValidationException.class,

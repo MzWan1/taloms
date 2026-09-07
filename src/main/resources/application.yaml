@@ -73,10 +73,14 @@ server:
         http-only: true
         secure: false
         same-site: lax
-  error:
-    include-stacktrace: never
-    include-exception: false
-    include-message: always
+    error:
+      include-stacktrace: never
+      include-exception: false
+      include-message: always
+      include-binding-errors: always
+      whitelabel:
+        enabled: false
+      path: /error
 
 # Logging Configuration
 logging:

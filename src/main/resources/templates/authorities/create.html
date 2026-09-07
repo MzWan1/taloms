@@ -265,6 +265,32 @@
                     </div>
                 </div>
 
+                <!-- ── Authority Boundary Map ──────────────────────── -->
+                <input type="hidden" id="boundaryJson" name="boundaryJson" th:value="*{boundaryJson}">
+                <div class="card border-0 shadow-sm mb-4">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <h6 class="fw-bold text-navy mb-0">
+                            <i class="bi bi-map me-2"></i>
+                            Authority Boundary
+                        </h6>
+                    </div>
+                    <div class="card-body p-4">
+                        <p class="text-muted small mb-2">
+                            Drag the <span class="text-danger fw-semibold">red handle</span> to
+                            move the whole shape, drag the
+                            <span class="fw-semibold">blue pins</span> to reshape it,
+                            <b>Add Point</b> to insert a new pin, and
+                            <b>double-click a pin</b> to remove it.
+                            The boundary may not overlap another authority.
+                        </p>
+                        <div id="boundaryMap" style="height: 420px; border-radius: 8px; z-index: 0;"></div>
+                        <button type="button" id="boundaryAddPoint"
+                                class="btn btn-outline-primary btn-sm mt-2">
+                            <i class="bi bi-plus-lg me-1"></i>Add Point
+                        </button>
+                    </div>
+                </div>
+
                 <!-- ── Form Actions ────────────────────────────────── -->
                 <div class="d-flex gap-3 justify-content-end">
                     <a th:href="@{/authorities}"
@@ -289,6 +315,27 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script th:src="@{/js/boundary-map.js}"></script>
+<script th:src="@{/js/form-draft.js}"></script>
+<script th:inline="javascript">
+    TalomsBoundaryMap.initEditor({
+        mapId: 'boundaryMap',
+        hiddenInputId: 'boundaryJson',
+        addPointButtonId: 'boundaryAddPoint',
+        existing: /*[[${form.boundaryJson}]]*/ null
+    });
+
+    // Refill the form after a reload or a failed save
+    TalomsFormDraft.attach('taloms-authority-draft', [
+        'authorityName', 'region', 'contactPhone', 'contactEmail',
+        'physicalAddress',
+        { id: 'chiefId', labelSpanId: 'chiefSelectedName' },
+        { id: 'headmanId', labelSpanId: 'headmanSelectedName' },
+        'boundaryJson'
+    ]);
+</script>
 <script>
     // ── Phone number formatter ─────────────────────────────────────────────
     document.getElementById('contactPhone')
