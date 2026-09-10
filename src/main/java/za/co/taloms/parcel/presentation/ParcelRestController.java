@@ -11,9 +11,11 @@ import org.springframework.web.bind.annotation.*;
 import za.co.taloms.common.ApiResponse;
 import za.co.taloms.parcel.application.dto.ParcelRequest;
 import za.co.taloms.parcel.application.dto.ParcelResponse;
+import za.co.taloms.parcel.application.dto.ParcelSyncDto;
 import za.co.taloms.parcel.application.service.ParcelService;
 import za.co.taloms.parcel.domain.entity.ParcelStatus;
 import za.co.taloms.security.application.service.AuthorityScopeService;
+import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 
@@ -66,14 +68,13 @@ public class ParcelRestController {
             @Valid @RequestBody ParcelRequest request,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        // Chiefs/headsmen can only create parcels in villages they are scoped to
-        // (via their linked authority and/or the villages they directly head)
         if (scopeService.isCurrentUserChiefOrHeadsman()) {
             requireVillageAccess(request.getVillageId());
         }
 
         var response = parcelService.createParcel(request, userDetails.getUsername());
         return ResponseEntity.status(HttpStatus.CREATED)
+                .eTag(String.valueOf(response.getVersion()))
                 .body(ApiResponse.success(response, "Parcel created successfully"));
     }
 
@@ -82,15 +83,31 @@ public class ParcelRestController {
     public ResponseEntity<ApiResponse<ParcelResponse>> update(
             @PathVariable Long id,
             @Valid @RequestBody ParcelRequest request,
+            @RequestHeader(value = "If-Match", required = false) String ifMatch,
             @AuthenticationPrincipal UserDetails userDetails) {
 
-        // Chiefs/headsmen can only update parcels in their own authority
         if (scopeService.isCurrentUserChiefOrHeadsman()) {
             requireParcelAccess(parcelService.findById(id));
         }
 
+        if (ifMatch != null) {
+            try {
+                Long clientVersion = Long.parseLong(ifMatch);
+                var current = parcelService.findById(id);
+                if (!clientVersion.equals(current.getVersion())) {
+                    return ResponseEntity.status(HttpStatus.PRECONDITION_FAILED)
+                            .eTag(String.valueOf(current.getVersion()))
+                            .body(ApiResponse.error("Parcel has been modified by another user. Current version: " + current.getVersion()));
+                }
+            } catch (NumberFormatException e) {
+                // Invalid version format, ignore
+            }
+        }
+
         var response = parcelService.updateParcel(id, request, userDetails.getUsername());
-        return ResponseEntity.ok(ApiResponse.success(response, "Parcel updated successfully"));
+        return ResponseEntity.ok()
+                .eTag(String.valueOf(response.getVersion()))
+                .body(ApiResponse.success(response, "Parcel updated successfully"));
     }
 
     @GetMapping
@@ -102,11 +119,12 @@ public class ParcelRestController {
     @GetMapping("/{id}")
     public ResponseEntity<ApiResponse<ParcelResponse>> getById(@PathVariable Long id) {
         var parcel = parcelService.findById(id);
-        // Chiefs/headsmen may only view parcels in their authority
         if (scopeService.isCurrentUserChiefOrHeadsman()) {
             requireParcelAccess(parcel);
         }
-        return ResponseEntity.ok(ApiResponse.success(parcel, "Parcel retrieved successfully"));
+        return ResponseEntity.ok()
+                .eTag(String.valueOf(parcel.getVersion()))
+                .body(ApiResponse.success(parcel, "Parcel retrieved successfully"));
     }
 
     @GetMapping("/number/{parcelNumber}")
@@ -115,13 +133,13 @@ public class ParcelRestController {
         if (scopeService.isCurrentUserChiefOrHeadsman()) {
             requireParcelAccess(parcel);
         }
-        return ResponseEntity.ok(ApiResponse.success(parcel,
-                "Parcel retrieved successfully"));
+        return ResponseEntity.ok()
+                .eTag(String.valueOf(parcel.getVersion()))
+                .body(ApiResponse.success(parcel, "Parcel retrieved successfully"));
     }
 
     @GetMapping("/village/{villageId}")
     public ResponseEntity<ApiResponse<List<ParcelResponse>>> getByVillage(@PathVariable Long villageId) {
-        // Chiefs/headsmen may only view parcels of villages they are scoped to
         if (scopeService.isCurrentUserChiefOrHeadsman()) {
             requireVillageAccess(villageId);
         }
@@ -156,14 +174,31 @@ public class ParcelRestController {
     public ResponseEntity<ApiResponse<ParcelResponse>> updateStatus(
             @PathVariable Long id,
             @RequestParam ParcelStatus status,
+            @RequestHeader(value = "If-Match", required = false) String ifMatch,
             @AuthenticationPrincipal UserDetails userDetails) {
 
         if (scopeService.isCurrentUserChiefOrHeadsman()) {
             requireParcelAccess(parcelService.findById(id));
         }
 
+        if (ifMatch != null) {
+            try {
+                Long clientVersion = Long.parseLong(ifMatch);
+                var current = parcelService.findById(id);
+                if (!clientVersion.equals(current.getVersion())) {
+                    return ResponseEntity.status(HttpStatus.PRECONDITION_FAILED)
+                            .eTag(String.valueOf(current.getVersion()))
+                            .body(ApiResponse.error("Parcel has been modified by another user. Current version: " + current.getVersion()));
+                }
+            } catch (NumberFormatException e) {
+                // Invalid version format, ignore
+            }
+        }
+
         var response = parcelService.updateStatus(id, status, userDetails.getUsername());
-        return ResponseEntity.ok(ApiResponse.success(response, "Parcel status updated successfully"));
+        return ResponseEntity.ok()
+                .eTag(String.valueOf(response.getVersion()))
+                .body(ApiResponse.success(response, "Parcel status updated successfully"));
     }
 
     @PatchMapping("/{id}/allocate")
@@ -171,25 +206,132 @@ public class ParcelRestController {
     public ResponseEntity<ApiResponse<ParcelResponse>> allocate(
             @PathVariable Long id,
             @RequestParam Long ptoId,
+            @RequestHeader(value = "If-Match", required = false) String ifMatch,
             @AuthenticationPrincipal UserDetails userDetails) {
 
         if (scopeService.isCurrentUserChiefOrHeadsman()) {
             requireParcelAccess(parcelService.findById(id));
         }
 
+        if (ifMatch != null) {
+            try {
+                Long clientVersion = Long.parseLong(ifMatch);
+                var current = parcelService.findById(id);
+                if (!clientVersion.equals(current.getVersion())) {
+                    return ResponseEntity.status(HttpStatus.PRECONDITION_FAILED)
+                            .eTag(String.valueOf(current.getVersion()))
+                            .body(ApiResponse.error("Parcel has been modified by another user. Current version: " + current.getVersion()));
+                }
+            } catch (NumberFormatException e) {
+                // Invalid version format, ignore
+            }
+        }
+
         var response = parcelService.allocateParcel(id, ptoId, userDetails.getUsername());
-        return ResponseEntity.ok(ApiResponse.success(response, "Parcel allocated successfully"));
+        return ResponseEntity.ok()
+                .eTag(String.valueOf(response.getVersion()))
+                .body(ApiResponse.success(response, "Parcel allocated successfully"));
     }
 
     @DeleteMapping("/{id}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<ApiResponse<Void>> delete(
             @PathVariable Long id,
+            @RequestHeader(value = "If-Match", required = false) String ifMatch,
             @AuthenticationPrincipal UserDetails userDetails) {
+
+        if (ifMatch != null) {
+            try {
+                Long clientVersion = Long.parseLong(ifMatch);
+                var current = parcelService.findById(id);
+                if (!clientVersion.equals(current.getVersion())) {
+                    return ResponseEntity.status(HttpStatus.PRECONDITION_FAILED)
+                            .eTag(String.valueOf(current.getVersion()))
+                            .body(ApiResponse.error("Parcel has been modified by another user. Current version: " + current.getVersion()));
+                }
+            } catch (NumberFormatException e) {
+                // Invalid version format, ignore
+            }
+        }
 
         parcelService.deleteParcel(id, userDetails.getUsername());
         return ResponseEntity.ok(ApiResponse.success(null, "Parcel deleted successfully"));
     }
+
+    @GetMapping("/ping")
+    public ResponseEntity<ApiResponse<String>> ping() {
+        return ResponseEntity.ok(ApiResponse.success("pong", "TALOMS is reachable"));
+    }
+
+    // Sync endpoints
+    @GetMapping("/sync/delta")
+    public ResponseEntity<ApiResponse<SyncResponse>> getDelta(
+            @RequestParam(required = false) String lastSyncAt,
+            @RequestParam(defaultValue = "100") int pageSize) {
+
+        Instant since = null;
+        if (lastSyncAt != null && !lastSyncAt.isBlank()) {
+            try {
+                since = Instant.parse(lastSyncAt);
+            } catch (Exception e) {
+                // ignore invalid timestamp
+            }
+        }
+
+        List<ParcelSyncDto> changes = parcelService.findChangedSince(since, pageSize);
+        Instant serverTime = Instant.now();
+        
+        return ResponseEntity.ok(ApiResponse.success(
+                new SyncResponse(changes, serverTime), "Delta sync completed"));
+    }
+
+    @PostMapping("/sync/push")
+    @PreAuthorize("hasAnyRole('ADMIN','CHIEF','HEADSMAN')")
+    public ResponseEntity<ApiResponse<SyncResult>> pushChanges(
+            @Valid @RequestBody SyncPushRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        try {
+            parcelService.saveAll(request.changes(), userDetails.getUsername());
+            return ResponseEntity.ok(ApiResponse.success(
+                    new SyncResult(true, request.changes().size(), 0), "Push sync completed"));
+        } catch (za.co.taloms.common.BusinessValidationException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    @PostMapping("/batch")
+    @PreAuthorize("hasAnyRole('ADMIN','CHIEF','HEADSMAN')")
+    public ResponseEntity<ApiResponse<List<ParcelResponse>>> createBatch(
+            @Valid @RequestBody List<ParcelRequest> requests,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        if (scopeService.isCurrentUserChiefOrHeadsman()) {
+            for (ParcelRequest request : requests) {
+                requireVillageAccess(request.getVillageId());
+            }
+        }
+
+        List<ParcelResponse> responses = parcelService.createBatch(requests, userDetails.getUsername());
+        return ResponseEntity.status(HttpStatus.CREATED)
+                .body(ApiResponse.success(responses, "Batch create completed"));
+    }
+
+    @DeleteMapping("/batch")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<Void>> deleteBatch(
+            @RequestBody Set<Long> ids,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        parcelService.deleteBatch(ids, userDetails.getUsername());
+        return ResponseEntity.ok(ApiResponse.success(null, "Batch delete completed"));
+    }
+
+    // Sync DTOs
+    public record SyncResponse(List<ParcelSyncDto> data, Instant serverTime) {}
+    public record SyncPushRequest(List<ParcelSyncDto> changes) {}
+    public record SyncResult(boolean success, int processed, int failed) {}
 }
 
 

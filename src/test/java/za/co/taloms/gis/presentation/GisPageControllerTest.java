@@ -32,12 +32,12 @@ class GisPageControllerTest {
     @Test
     void chiefShouldOnlySeeOwnAuthorityAndVillages() {
         when(scopeService.isCurrentUserChiefOrHeadsman()).thenReturn(true);
+        when(scopeService.isCurrentUserAdmin()).thenReturn(false);
         when(scopeService.getCurrentUserAuthorityId()).thenReturn(10L);
         when(authorityService.findById(10L)).thenReturn(TraditionalAuthorityResponse.builder()
                 .id(10L).authorityName("Authority A").build());
         when(villageService.findByAuthority(10L)).thenReturn(List.of(
                 VillageResponse.builder().id(1L).villageName("Village A").build()));
-        when(parcelService.countAll()).thenReturn(5L);
 
         var model = new ConcurrentModel();
         var view = controller.index(model);
@@ -54,6 +54,7 @@ class GisPageControllerTest {
     @Test
     void adminShouldSeeAllAuthoritiesAndVillages() {
         when(scopeService.isCurrentUserChiefOrHeadsman()).thenReturn(false);
+        when(scopeService.isCurrentUserAdmin()).thenReturn(true);
         when(scopeService.getCurrentUserAuthorityId()).thenReturn(null);
         when(authorityService.findAllActive()).thenReturn(List.of(
                 TraditionalAuthorityResponse.builder().id(10L).authorityName("Authority A").build(),

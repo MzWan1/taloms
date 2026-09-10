@@ -2,8 +2,10 @@ package za.co.taloms.parcel.domain.repository;
 
 import za.co.taloms.parcel.domain.entity.Parcel;
 import za.co.taloms.parcel.domain.entity.ParcelStatus;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface ParcelRepositoryPort {
     Parcel save(Parcel parcel);
@@ -29,5 +31,11 @@ public interface ParcelRepositoryPort {
     boolean hasSelfIntersection(Long parcelId);
     List<Object[]> findParcelClusters(Long villageId, double epsMeters, int minPts);
     List<Object[]> findVoronoiCells(Long villageId);
+
+    // Sync & Batch operations
+    List<Parcel> findChangedSince(Instant since, int pageSize);
+    List<Parcel> findByIds(Set<Long> ids);
+    void saveAll(List<Parcel> parcels);
+    void deleteAllByIds(Set<Long> ids);
 }
 

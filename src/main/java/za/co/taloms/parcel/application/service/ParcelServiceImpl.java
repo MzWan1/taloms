@@ -12,6 +12,7 @@ import za.co.taloms.common.ResourceNotFoundException;
 import za.co.taloms.parcel.application.dto.BoundaryPointDto;
 import za.co.taloms.parcel.application.dto.ParcelRequest;
 import za.co.taloms.parcel.application.dto.ParcelResponse;
+import za.co.taloms.parcel.application.dto.ParcelSyncDto;
 import za.co.taloms.parcel.domain.entity.Parcel;
 import za.co.taloms.parcel.domain.entity.CaptureMode;
 import za.co.taloms.parcel.domain.entity.ParcelBoundary;
@@ -22,10 +23,12 @@ import za.co.taloms.pto.domain.entity.PTOStatus;
 import za.co.taloms.pto.domain.repository.PTORepositoryPort;
 import za.co.taloms.traditionalauthority.domain.repository.VillageRepositoryPort;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -620,9 +623,10 @@ public class ParcelServiceImpl implements ParcelService {
     }
 
     private String generateParcelNumber() {
+        Long seq = (Long) entityManager.createNativeQuery("SELECT nextval('parcel_number_seq')")
+                .getSingleResult();
         String year = String.valueOf(java.time.Year.now().getValue());
-        long count = parcelRepository.countAll() + 1;
-        return String.format("%s-%s-%05d", PARCEL_NUMBER_PREFIX, year, count);
+        return String.format("%s-%s-%05d", PARCEL_NUMBER_PREFIX, year, seq);
     }
 
     private ParcelResponse toResponse(Parcel parcel) {
@@ -662,6 +666,170 @@ public class ParcelServiceImpl implements ParcelService {
                 .captureMode(parcel.getCaptureMode())
                 .chiefName(parcel.getChiefName())
                 .headmanName(parcel.getHeadmanName())
+                .version(parcel.getVersion())
+                .build();
+    }
+
+    // Sync operations
+    @Override
+    @Transactional(readOnly = true)
+    public List<ParcelSyncDto> findChangedSince(Instant since, int pageSize) {
+        List<Parcel> parcels = parcelRepository.findChangedSince(since, pageSize);
+        return parcels.stream().map(this::toSyncDto).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ParcelSyncDto> findByIds(Set<Long> ids) {
+        List<Parcel> parcels = parcelRepository.findByIds(ids);
+        return parcels.stream().map(this::toSyncDto).collect(Collectors.toList());
+    }
+
+    @Override
+    public void saveAll(List<ParcelSyncDto> dtos, String savedBy) {
+        for (ParcelSyncDto dto : dtos) {
+            if (Boolean.TRUE.equals(dto.getDeleted())) {
+                parcelRepository.deleteById(dto.getId());
+                continue;
+            }
+
+            Parcel parcel;
+            if (dto.getId() != null && parcelRepository.findById(dto.getId()).isPresent()) {
+                // Update existing
+                parcel = parcelRepository.findById(dto.getId()).orElseThrow(
+                        () -> new ResourceNotFoundException("Parcel", dto.getId()));
+
+                // Optimistic locking check
+                if (dto.getVersion() != null && !dto.getVersion().equals(parcel.getVersion())) {
+                    throw new BusinessValidationException(
+                            "Parcel " + dto.getParcelNumber() + " has been modified by another user. " +
+                                    "Server version: " + parcel.getVersion() + ", client version: " + dto.getVersion());
+                }
+            } else {
+                // Create new
+                parcel = Parcel.builder().build();
+            }
+
+            var village = villageRepository.findById(dto.getVillageId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Village", dto.getVillageId()));
+
+            // Process boundaries
+            List<BoundaryPointDto> orderedBoundaries = dto.getBoundaries().stream()
+                    .sorted(Comparator.comparingInt(BoundaryPointDto::getSequence))
+                    .collect(Collectors.toList());
+
+            List<BoundaryPointDto> uniquePoints = removeDuplicateConsecutivePoints(orderedBoundaries);
+            List<BoundaryPointDto> simplified = BoundarySimplifier.simplify(uniquePoints, 0.5);
+            List<BoundaryPointDto> uniqueSimplified = removeDuplicateConsecutivePoints(simplified);
+            List<BoundaryPointDto> closedBoundary = ensureBoundaryIsClosed(uniqueSimplified);
+
+            boundaryValidationService.validateCoordinatesInSouthAfrica(closedBoundary);
+
+            Double areaM2 = areaCalculator.calculateAreaM2(closedBoundary);
+            Double areaHectares = areaCalculator.calculateAreaHectares(closedBoundary);
+            Double[] centroid = areaCalculator.calculateCentroid(closedBoundary);
+            Double perimeterM = areaCalculator.calculatePerimeterM(closedBoundary);
+
+            var chiefName = village.getTraditionalAuthority() != null
+                    ? village.getTraditionalAuthority().getChiefName() : null;
+            var headmanName = village.getHeadmanName();
+
+            if (parcel.getId() == null) {
+                // New parcel
+                parcel.setParcelNumber(dto.getParcelNumber() != null ? dto.getParcelNumber() : generateParcelNumber());
+                parcel.setStandNumber(dto.getStandNumber());
+                parcel.setParcelType(dto.getParcelType());
+                parcel.setStatus(dto.getStatus() != null ? dto.getStatus() : ParcelStatus.AVAILABLE);
+                parcel.setCaptureMode(dto.getCaptureMode() != null ? dto.getCaptureMode() : CaptureMode.MANUAL_TAP);
+                parcel.setVillage(village);
+                parcel.setChiefName(chiefName);
+                parcel.setHeadmanName(headmanName);
+                parcel.setNotes(dto.getNotes());
+                parcel.setCreatedBy(savedBy);
+            }
+
+            parcel.setAreaM2(areaM2);
+            parcel.setAreaHectares(areaHectares);
+            parcel.setCentroidLat(centroid[0]);
+            parcel.setCentroidLng(centroid[1]);
+            parcel.setPerimeterM(perimeterM);
+
+            var saved = parcelRepository.save(parcel);
+            entityManager.flush();
+
+            boundaryRepository.deleteByParcelId(saved.getId());
+
+            List<ParcelBoundary> boundaries = new ArrayList<>();
+            for (int i = 0; i < closedBoundary.size(); i++) {
+                BoundaryPointDto point = closedBoundary.get(i);
+                var boundary = ParcelBoundary.builder()
+                        .parcel(saved)
+                        .sequence(i + 1)
+                        .latitude(point.getLatitude())
+                        .longitude(point.getLongitude())
+                        .build();
+                boundaries.add(boundary);
+            }
+            boundaryRepository.saveAll(boundaries);
+            entityManager.flush();
+        }
+    }
+
+    @Override
+    public void deleteAllByIds(Set<Long> ids, String deletedBy) {
+        for (Long id : ids) {
+            var parcel = parcelRepository.findById(id)
+                    .orElseThrow(() -> new ResourceNotFoundException("Parcel", id));
+            if (parcel.isAllocated()) {
+                throw new BusinessValidationException("Cannot delete allocated parcel: " + parcel.getParcelNumber());
+            }
+            boundaryRepository.deleteByParcelId(id);
+            parcelRepository.deleteById(id);
+        }
+    }
+
+    // Batch operations
+    @Override
+    public List<ParcelResponse> createBatch(List<ParcelRequest> requests, String createdBy) {
+        return requests.stream()
+                .map(r -> createParcel(r, createdBy))
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    public void deleteBatch(Set<Long> ids, String deletedBy) {
+        deleteAllByIds(ids, deletedBy);
+    }
+
+    private ParcelSyncDto toSyncDto(Parcel parcel) {
+        List<BoundaryPointDto> boundaryPoints = parcel.getBoundaries().stream()
+                .map(b -> BoundaryPointDto.builder()
+                        .sequence(b.getSequence())
+                        .latitude(b.getLatitude())
+                        .longitude(b.getLongitude())
+                        .build())
+                .collect(Collectors.toList());
+
+        return ParcelSyncDto.builder()
+                .id(parcel.getId())
+                .parcelNumber(parcel.getParcelNumber())
+                .standNumber(parcel.getStandNumber())
+                .status(parcel.getStatus())
+                .parcelType(parcel.getParcelType())
+                .areaM2(parcel.getAreaM2())
+                .areaHectares(parcel.getAreaHectares())
+                .centroidLat(parcel.getCentroidLat())
+                .centroidLng(parcel.getCentroidLng())
+                .perimeterM(parcel.getPerimeterM())
+                .villageId(parcel.getVillage() != null ? parcel.getVillage().getId() : null)
+                .ptoId(parcel.getPto() != null ? parcel.getPto().getId() : null)
+                .notes(parcel.getNotes())
+                .captureMode(parcel.getCaptureMode())
+                .chiefName(parcel.getChiefName())
+                .headmanName(parcel.getHeadmanName())
+                .version(parcel.getVersion())
+                .updatedAt(parcel.getUpdatedAt())
+                .boundaries(boundaryPoints)
                 .build();
     }
 }

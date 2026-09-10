@@ -235,3 +235,31 @@ body { font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
         page-break-after: always;
     }
 }
+
+/* ── Offline Mode ────────────────────────────────────────────────────────── */
+#offline-banner {
+    z-index: 1050;
+    border-left: 4px solid var(--gold);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+#offline-banner.show {
+    display: block !important;
+}
+#outbox-count {
+    font-size: 12px;
+    animation: pulse 2s infinite;
+}
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.5; }
+    100% { opacity: 1; }
+}
+
+/* ── Reduced motion ─────────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}

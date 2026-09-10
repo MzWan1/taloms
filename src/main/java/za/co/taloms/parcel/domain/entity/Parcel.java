@@ -89,6 +89,11 @@ public class Parcel {
     @Builder.Default
     private List<ParcelBoundary> boundaries = new ArrayList<>();
 
+    @Version
+    @Column(name = "version", nullable = false)
+    @Builder.Default
+    private Long version = 0L;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

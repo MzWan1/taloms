@@ -4,10 +4,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#1B3A6B">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <link rel="manifest" th:href="@{/manifest.webmanifest}">
     <title>Create Parcel | TALOMS</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link th:href="@{/css/taloms.css}" rel="stylesheet">
+    <script>
+      (function() {
+        var conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+        var isSlow = !!(conn && (conn.effectiveType === '2g' || conn.effectiveType === 'slow-2g' || conn.saveData));
+        function loadCss(href) {
+          var link = document.createElement('link');
+          link.rel = 'stylesheet';
+          link.href = href;
+          document.head.appendChild(link);
+        }
+        loadCss('https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css');
+        loadCss('https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css');
+        if (isSlow) {
+          console.log('Slow connection detected — using lighter map tiles');
+        }
+      })();
+    </script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
         #map {
@@ -439,6 +457,8 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/offline-db.js}"></script>
+<script th:src="@{/js/taloms.js}"></script>
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script th:inline="javascript">
     // Convert the injected array [{id,boundary},...] into an id-keyed lookup
@@ -463,14 +483,77 @@
     let isAutoWalkMode = false;
     let gpsWatchId = null;
     let lastGpsPosition = null;
-    let gpsCaptureCount = 0;  // Track number of GPS captures to force fresh readings
-    let activePointSeq = null; // The manual point currently "open" — map clicks fill this one
+    let gpsCaptureCount = 0;
+    let activePointSeq = null;
+    let gpsAutoSaveTimer = null;
+
+    // ── IndexedDB GPS Persistence ────────────────────────────────────────
+    function saveGpsDraft() {
+      if (!window.TalomsDB) return;
+      const valid = gpsPoints.filter(p => p.latitude !== null && p.longitude !== null);
+      TalomsDB.putMetadata('parcel-create-gps-draft', {
+        points: valid,
+        loopClosed: loopClosed,
+        nextPointId: nextPointId
+      }).catch(function () {});
+    }
+
+    function restoreGpsDraft() {
+      if (!window.TalomsDB) return;
+      TalomsDB.getMetadata('parcel-create-gps-draft').then(function (draft) {
+        if (!draft || !draft.points || !draft.points.length) return;
+        draft.points.forEach(function (p) {
+          gpsPoints.push(p);
+          if (p.sequence >= nextPointId) nextPointId = p.sequence + 1;
+          addPointCard(p.sequence, p.latitude, p.longitude, p.accuracy || null, !!p.autoCaptured);
+        });
+        if (draft.loopClosed) {
+          finishCapture();
+        }
+        updateDisplay();
+      }).catch(function () {});
+    }
+
+    function startGpsAutoSave() {
+      stopGpsAutoSave();
+      gpsAutoSaveTimer = setInterval(saveGpsDraft, 2000);
+    }
+
+    function stopGpsAutoSave() {
+      if (gpsAutoSaveTimer) {
+        clearInterval(gpsAutoSaveTimer);
+        gpsAutoSaveTimer = null;
+      }
+    }
 
     // ── Map Setup ──────────────────────────────────────────────────────────
+
+    function isSlowConnection() {
+        var conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+        return !!(conn && (conn.effectiveType === '2g' || conn.effectiveType === 'slow-2g' || conn.saveData));
+    }
+
+    function getTileUrl() {
+        return isSlowConnection()
+            ? 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
+            : 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+    }
+
+    function getTileAttribution() {
+        return isSlowConnection()
+            ? '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>'
+            : '&copy; OpenStreetMap contributors';
+    }
+
+    function getMaxZoom() {
+        return isSlowConnection() ? 16 : 19;
+    }
+
     const map = L.map('map').setView([-25.0, 28.0], 8);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
+    L.tileLayer(getTileUrl(), {
+        maxZoom: getMaxZoom(),
+        attribution: getTileAttribution()
     }).addTo(map);
 
     let polygonLayer = null;
@@ -908,6 +991,7 @@
             }
 
             updateDisplay();
+            startGpsAutoSave();
             console.log(`✅ Point ${pointNumber} captured successfully`);
 
         } catch (error) {
@@ -1032,6 +1116,7 @@
                 // Add a card for this point
                 addPointCard(seq, lat, lng, accuracy, true);
                 updateDisplay();
+                startGpsAutoSave();
                 return;
             }
 
@@ -1088,6 +1173,7 @@
 
                 addPointCard(seq, lat, lng, accuracy, true);
                 updateDisplay();
+                startGpsAutoSave();
 
                 if (statusEl) {
                     statusEl.innerHTML = '<span class="text-success walking-indicator"><i class="bi bi-record-circle me-1"></i>Captured point ' + gpsPoints.length + ' &bull; ' + Math.round(distFromLast) + 'm from last</span>';
@@ -1126,6 +1212,7 @@
         autoWalkInitialized = false;
         isAutoWalkMode = false;
         autoCapturedPoints = [];
+        stopGpsAutoSave();
 
         const statusEl = document.getElementById('autoWalkStatus');
         const stopBtn = document.getElementById('stopAutoWalk');
@@ -1427,6 +1514,7 @@ accuracyClass = 'accuracy-poor';
 
         loopClosed = true;
         stopAutoWalkInternal();
+        stopGpsAutoSave();
         activePointSeq = null;
 
         document.getElementById('loopClosedBadge').style.display = 'inline-block';
@@ -1659,6 +1747,13 @@ accuracyClass = 'accuracy-poor';
         isSubmitting = true;
         document.getElementById('submitBtn').disabled = true;
         document.getElementById('submitBtn').innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Creating...';
+        stopGpsAutoSave();
+        if (window.TalomsDB) {
+          TalomsDB.deleteMetadata('parcel-create-gps-draft').catch(function () {});
+        }
+        if (window.Taloms && Taloms.Network) {
+          Taloms.Network.updateOutboxCount();
+        }
         return true;
     });
 
@@ -1687,6 +1782,7 @@ accuracyClass = 'accuracy-poor';
 
     // ── Initialize ──────────────────────────────────────────────────────
     updateCaptureMode();
+    restoreGpsDraft();
     console.log('✅ Parcel creation ready.');
     console.log('✅ GPS will use maximumAge: 0 to force fresh readings.');
     console.log('✅ Open browser console (F12) to see GPS debug info.');
@@ -1697,6 +1793,11 @@ accuracyClass = 'accuracy-poor';
     } else {
         document.getElementById('gpsStatusText').textContent = 'GPS Status: NOT AVAILABLE - Please enter coordinates manually';
         document.getElementById('gpsStatusIndicator').className = 'alert alert-danger mb-3';
+    }
+
+    if (window.Taloms && Taloms.Network) {
+      Taloms.Network.init();
+      Taloms.Network.updateOutboxCount();
     }
 </script>
 </body>

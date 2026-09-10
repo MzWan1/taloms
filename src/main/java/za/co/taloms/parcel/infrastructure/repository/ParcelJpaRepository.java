@@ -5,8 +5,10 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import za.co.taloms.parcel.domain.entity.Parcel;
 import za.co.taloms.parcel.domain.entity.ParcelStatus;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface ParcelJpaRepository extends JpaRepository<Parcel, Long> {
 
@@ -166,5 +168,29 @@ public interface ParcelJpaRepository extends JpaRepository<Parcel, Long> {
               AND ST_IsValid(p.geometry)
             """, nativeQuery = true)
     List<Object[]> findVoronoiCells(@Param("villageId") Long villageId);
+
+    // Sync & Batch operations
+    @Query("""
+           SELECT DISTINCT p FROM Parcel p
+           LEFT JOIN FETCH p.boundaries b
+           LEFT JOIN FETCH p.village v
+           LEFT JOIN FETCH v.traditionalAuthority ta
+           LEFT JOIN FETCH p.pto
+           WHERE p.updatedAt >= :since
+           ORDER BY p.updatedAt ASC
+           """)
+    List<Parcel> findChangedSince(@Param("since") Instant since, @Param("pageSize") int pageSize);
+
+    @Query("""
+           SELECT DISTINCT p FROM Parcel p
+           LEFT JOIN FETCH p.boundaries b
+           LEFT JOIN FETCH p.village v
+           LEFT JOIN FETCH v.traditionalAuthority ta
+           LEFT JOIN FETCH p.pto
+           WHERE p.id IN :ids
+           """)
+    List<Parcel> findByIds(@Param("ids") Set<Long> ids);
+
+    void deleteAllByIdInBatch(Iterable<Long> ids);
 }
 

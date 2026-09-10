@@ -15,6 +15,29 @@
   var PIN_COUNT = 10;
   var MIN_PINS = 3;
 
+  function isSlowConnection() {
+    var conn = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+    return !!(conn && (conn.effectiveType === '2g' || conn.effectiveType === 'slow-2g' || conn.saveData));
+  }
+
+  function getTileUrl() {
+    if (isSlowConnection()) {
+      return 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png';
+    }
+    return 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+  }
+
+  function getTileAttribution() {
+    if (isSlowConnection()) {
+      return '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>';
+    }
+    return '&copy; OpenStreetMap contributors';
+  }
+
+  function getMaxZoom() {
+    return isSlowConnection() ? 16 : 19;
+  }
+
   function circlePoints(center, radiusDeg, count) {
     var pts = [];
     for (var i = 0; i < count; i++) {
@@ -40,9 +63,9 @@
    */
   function initEditor(opts) {
     var map = L.map(opts.mapId).setView(opts.center || DEFAULT_CENTER, 10);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '&copy; OpenStreetMap contributors'
+    L.tileLayer(getTileUrl(), {
+      maxZoom: getMaxZoom(),
+      attribution: getTileAttribution()
     }).addTo(map);
 
     var hidden = document.getElementById(opts.hiddenInputId);
@@ -191,9 +214,9 @@
 
     var group = L.featureGroup(layers);
     var map = L.map(opts.mapId, { scrollWheelZoom: false });
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      maxZoom: 19,
-      attribution: '&copy; OpenStreetMap contributors'
+    L.tileLayer(getTileUrl(), {
+      maxZoom: getMaxZoom(),
+      attribution: getTileAttribution()
     }).addTo(map);
     layers.forEach(function (l) { l.addTo(map); });
     map.fitBounds(group.getBounds().pad(0.35));

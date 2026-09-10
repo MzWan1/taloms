@@ -12,6 +12,7 @@ import za.co.taloms.common.ResourceNotFoundException;
 import za.co.taloms.parcel.application.dto.BoundaryPointDto;
 import za.co.taloms.parcel.application.dto.ParcelRequest;
 import za.co.taloms.parcel.application.dto.ParcelResponse;
+import za.co.taloms.parcel.application.dto.ParcelSyncDto;
 import za.co.taloms.parcel.domain.entity.CaptureMode;
 import za.co.taloms.parcel.domain.entity.Parcel;
 import za.co.taloms.parcel.domain.entity.ParcelBoundary;
@@ -25,9 +26,12 @@ import org.springframework.context.ApplicationEventPublisher;
 import jakarta.persistence.EntityManager;
 
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -67,6 +71,10 @@ class ParcelServiceImplTest {
 
         when(villageRepository.findById(1L)).thenReturn(Optional.of(village));
         when(parcelRepository.existsByStandNumberAndVillageId(anyString(), anyLong())).thenReturn(false);
+
+        var mockQuery = mock(jakarta.persistence.Query.class);
+        when(entityManager.createNativeQuery(anyString())).thenReturn(mockQuery);
+        when(mockQuery.getSingleResult()).thenReturn(1L);
 
         var boundaries = List.of(
                 BoundaryPointDto.builder().sequence(1).latitude(-25.0).longitude(28.0).build(),
@@ -212,5 +220,214 @@ class ParcelServiceImplTest {
 
         assertThrows(BusinessValidationException.class,
                 () -> service.createParcel(request, "testuser"));
+    }
+
+    // ── Delta Sync Tests ────────────────────────────────────────────────────
+
+    @Test
+    void shouldReturnChangedParcelsSinceTimestamp() {
+        Instant since = Instant.now().minusSeconds(3600);
+        var parcel = Parcel.builder()
+                .id(1L)
+                .parcelNumber("PRC-2026-00001")
+                .standNumber("ST-001")
+                .status(ParcelStatus.AVAILABLE)
+                .version(1L)
+                .build();
+
+        when(parcelRepository.findChangedSince(since, 100)).thenReturn(List.of(parcel));
+
+        List<ParcelSyncDto> result = service.findChangedSince(since, 100);
+
+        assertEquals(1, result.size());
+        assertEquals("PRC-2026-00001", result.get(0).getParcelNumber());
+        assertEquals(1L, result.get(0).getVersion());
+        verify(parcelRepository).findChangedSince(since, 100);
+    }
+
+    @Test
+    void shouldReturnEmptyListWhenNoChanges() {
+        Instant since = Instant.now().minusSeconds(3600);
+        when(parcelRepository.findChangedSince(since, 100)).thenReturn(List.of());
+
+        List<ParcelSyncDto> result = service.findChangedSince(since, 100);
+
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    void shouldReturnParcelsByIds() {
+        var parcel1 = Parcel.builder().id(1L).parcelNumber("PRC-001").status(ParcelStatus.AVAILABLE).version(1L).build();
+        var parcel2 = Parcel.builder().id(2L).parcelNumber("PRC-002").status(ParcelStatus.ALLOCATED).version(2L).build();
+
+        when(parcelRepository.findByIds(Set.of(1L, 2L))).thenReturn(List.of(parcel1, parcel2));
+
+        List<ParcelSyncDto> result = service.findByIds(Set.of(1L, 2L));
+
+        assertEquals(2, result.size());
+        assertEquals("PRC-001", result.get(0).getParcelNumber());
+        assertEquals("PRC-002", result.get(1).getParcelNumber());
+    }
+
+    // ── Sync Push (saveAll) Tests ───────────────────────────────────────────
+
+    @Test
+    void shouldSaveNewParcelFromSyncDto() {
+        var village = Village.builder().id(1L).villageName("Test Village").active(true).build();
+        var dto = ParcelSyncDto.builder()
+                .id(null)
+                .parcelNumber("PRC-2026-00099")
+                .standNumber("ST-999")
+                .villageId(1L)
+                .parcelType(za.co.taloms.parcel.domain.entity.ParcelType.AGRICULTURAL)
+                .status(ParcelStatus.AVAILABLE)
+                .captureMode(CaptureMode.MANUAL_TAP)
+                .version(0L)
+                .boundaries(List.of(
+                        BoundaryPointDto.builder().sequence(1).latitude(-25.0).longitude(28.0).build(),
+                        BoundaryPointDto.builder().sequence(2).latitude(-25.01).longitude(28.01).build(),
+                        BoundaryPointDto.builder().sequence(3).latitude(-25.02).longitude(28.0).build()
+                ))
+                .build();
+
+        when(villageRepository.findById(1L)).thenReturn(Optional.of(village));
+        when(areaCalculator.calculateAreaM2(any())).thenReturn(10000.0);
+        when(areaCalculator.calculateAreaHectares(any())).thenReturn(1.0);
+        when(areaCalculator.calculateCentroid(any())).thenReturn(new Double[]{-25.01, 28.003});
+        when(areaCalculator.calculatePerimeterM(any())).thenReturn(500.0);
+
+        var savedParcel = Parcel.builder()
+                .id(99L)
+                .parcelNumber("PRC-2026-00099")
+                .standNumber("ST-999")
+                .status(ParcelStatus.AVAILABLE)
+                .version(1L)
+                .village(village)
+                .build();
+        when(parcelRepository.save(any(Parcel.class))).thenReturn(savedParcel);
+
+        service.saveAll(List.of(dto), "syncuser");
+
+        verify(parcelRepository).save(any(Parcel.class));
+        verify(boundaryRepository).saveAll(anyList());
+    }
+
+    @Test
+    void shouldThrowConflictOnVersionMismatch() {
+        var village = Village.builder().id(1L).villageName("Test Village").active(true).build();
+        var existingParcel = Parcel.builder()
+                .id(1L)
+                .parcelNumber("PRC-001")
+                .standNumber("ST-001")
+                .status(ParcelStatus.AVAILABLE)
+                .version(2L)
+                .village(village)
+                .build();
+
+        var dto = ParcelSyncDto.builder()
+                .id(1L)
+                .parcelNumber("PRC-001")
+                .standNumber("ST-001")
+                .villageId(1L)
+                .version(1L)
+                .build();
+
+        when(parcelRepository.findById(1L)).thenReturn(Optional.of(existingParcel));
+
+        assertThrows(BusinessValidationException.class,
+                () -> service.saveAll(List.of(dto), "syncuser"));
+
+        verify(parcelRepository, never()).save(any());
+    }
+
+    @Test
+    void shouldDeleteParcelMarkedAsDeletedInSync() {
+        var dto = ParcelSyncDto.builder()
+                .id(1L)
+                .deleted(true)
+                .version(1L)
+                .build();
+
+        service.saveAll(List.of(dto), "syncuser");
+
+        verify(parcelRepository).deleteById(1L);
+        verify(parcelRepository, never()).save(any());
+    }
+
+    // ── Batch Operations Tests ──────────────────────────────────────────────
+
+    @Test
+    void shouldCreateMultipleParcelsInBatch() {
+        var village = Village.builder().id(1L).villageName("Test Village").active(true).build();
+        var boundaries = List.of(
+                BoundaryPointDto.builder().sequence(1).latitude(-25.0).longitude(28.0).build(),
+                BoundaryPointDto.builder().sequence(2).latitude(-25.01).longitude(28.01).build(),
+                BoundaryPointDto.builder().sequence(3).latitude(-25.02).longitude(28.0).build()
+        );
+
+        when(villageRepository.findById(1L)).thenReturn(Optional.of(village));
+        when(parcelRepository.existsByStandNumberAndVillageId(anyString(), anyLong())).thenReturn(false);
+        when(areaCalculator.calculateAreaM2(any())).thenReturn(10000.0);
+        when(areaCalculator.calculateAreaHectares(any())).thenReturn(1.0);
+        when(areaCalculator.calculateCentroid(any())).thenReturn(new Double[]{-25.01, 28.003});
+        when(areaCalculator.calculatePerimeterM(any())).thenReturn(500.0);
+
+        var mockQuery = mock(jakarta.persistence.Query.class);
+        when(entityManager.createNativeQuery(anyString())).thenReturn(mockQuery);
+        when(mockQuery.getSingleResult()).thenReturn(999L);
+
+        when(parcelRepository.save(any(Parcel.class))).thenAnswer(inv -> {
+            Parcel p = inv.getArgument(0);
+            p.setId((long) (int) (Math.random() * 1000 + 1));
+            return p;
+        });
+
+        var request1 = ParcelRequest.builder()
+                .standNumber("ST-001")
+                .villageId(1L)
+                .boundaries(boundaries)
+                .captureMode(CaptureMode.MANUAL_TAP)
+                .build();
+        var request2 = ParcelRequest.builder()
+                .standNumber("ST-002")
+                .villageId(1L)
+                .boundaries(boundaries)
+                .captureMode(CaptureMode.MANUAL_TAP)
+                .build();
+
+        List<ParcelResponse> responses = service.createBatch(List.of(request1, request2), "batchuser");
+
+        assertEquals(2, responses.size());
+        verify(parcelRepository, times(2)).save(any(Parcel.class));
+    }
+
+    @Test
+    void shouldDeleteMultipleParcelsInBatch() {
+        var parcel1 = Parcel.builder().id(1L).parcelNumber("PRC-001").status(ParcelStatus.AVAILABLE).build();
+        var parcel2 = Parcel.builder().id(2L).parcelNumber("PRC-002").status(ParcelStatus.AVAILABLE).build();
+
+        when(parcelRepository.findById(1L)).thenReturn(Optional.of(parcel1));
+        when(parcelRepository.findById(2L)).thenReturn(Optional.of(parcel2));
+
+        service.deleteBatch(Set.of(1L, 2L), "admin");
+
+        verify(parcelRepository).deleteById(1L);
+        verify(parcelRepository).deleteById(2L);
+    }
+
+    @Test
+    void shouldFailBatchDeleteForAllocatedParcel() {
+        var allocatedParcel = Parcel.builder()
+                .id(1L)
+                .parcelNumber("PRC-001")
+                .status(ParcelStatus.ALLOCATED)
+                .build();
+
+        when(parcelRepository.findById(1L)).thenReturn(Optional.of(allocatedParcel));
+
+        assertThrows(BusinessValidationException.class,
+                () -> service.deleteBatch(Set.of(1L), "admin"));
+
+        verify(parcelRepository, never()).deleteById(anyLong());
     }
 }

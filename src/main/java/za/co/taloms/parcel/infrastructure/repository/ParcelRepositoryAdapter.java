@@ -5,8 +5,10 @@ import org.springframework.stereotype.Repository;
 import za.co.taloms.parcel.domain.entity.Parcel;
 import za.co.taloms.parcel.domain.entity.ParcelStatus;
 import za.co.taloms.parcel.domain.repository.ParcelRepositoryPort;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 @RequiredArgsConstructor
@@ -127,6 +129,27 @@ public class ParcelRepositoryAdapter implements ParcelRepositoryPort {
     @Override
     public List<Object[]> findVoronoiCells(Long villageId) {
         return jpaRepository.findVoronoiCells(villageId);
+    }
+
+    // Sync & Batch operations
+    @Override
+    public List<Parcel> findChangedSince(Instant since, int pageSize) {
+        return jpaRepository.findChangedSince(since, pageSize);
+    }
+
+    @Override
+    public List<Parcel> findByIds(Set<Long> ids) {
+        return jpaRepository.findByIds(ids);
+    }
+
+    @Override
+    public void saveAll(List<Parcel> parcels) {
+        jpaRepository.saveAll(parcels);
+    }
+
+    @Override
+    public void deleteAllByIds(Set<Long> ids) {
+        jpaRepository.deleteAllByIdInBatch(ids);
     }
 }
 
