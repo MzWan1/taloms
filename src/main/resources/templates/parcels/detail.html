@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="${'Parcel ' + parcel.parcelNumber + ' | TALOMS'}">Parcel Detail | TALOMS</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <link href="/css/bootstrap-icons.css" rel="stylesheet">
     <link th:href="@{/css/taloms.css}" rel="stylesheet">
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="/css/leaflet.min.css" />
     <style>
         #map { height: 460px; border-radius: 8px; margin-top: 10px; }
         .info-card { border-left: 4px solid #1B3A6B; }
@@ -117,8 +117,8 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="/js/bootstrap.bundle.min.js"></script>
+<script src="/js/leaflet.min.js"></script>
 <script th:inline="javascript">
     const boundaryPoints = /*[[${parcel.boundaries != null ? parcel.boundaries : {}}]]*/ [];
     const points = (boundaryPoints || [])

@@ -14,22 +14,29 @@
  * Message: accept cache management commands from the page.
  */
 
-const CACHE_NAME = 'taloms-shell-v2';
+const CACHE_NAME = 'taloms-shell-v3';
 const TILE_CACHE = 'taloms-tiles-v1';
 const API_CACHE = 'taloms-api-v1';
 const OFFLINE_PAGE = '/offline.html';
 
 const PRECACHE_URLS = [
   '/',
+  '/login',
+  '/offline.html',
+  '/css/bootstrap.min.css',
+  '/css/bootstrap-icons.css',
   '/css/taloms.css',
+  '/css/leaflet.min.css',
+  '/css/error.css',
+  '/js/bootstrap.bundle.min.js',
   '/js/taloms.js',
   '/js/offline-db.js',
   '/js/boundary-map.js',
   '/js/form-draft.js',
+  '/js/leaflet.min.js',
   '/favicon.ico',
   '/manifest.webmanifest',
   '/icons/icon.svg',
-  OFFLINE_PAGE
 ];
 
 self.addEventListener('install', (event) => {
