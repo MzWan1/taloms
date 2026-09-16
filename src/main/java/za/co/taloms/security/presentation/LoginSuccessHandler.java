@@ -22,7 +22,7 @@ public class LoginSuccessHandler extends SavedRequestAwareAuthenticationSuccessH
     private final LoginAuditService loginAuditService;
     private final UserRepositoryPort userRepository;
 
-    @Override
+        @Override
     public void onAuthenticationSuccess(HttpServletRequest request,
                                         HttpServletResponse response,
                                         Authentication authentication)
@@ -42,6 +42,23 @@ public class LoginSuccessHandler extends SavedRequestAwareAuthenticationSuccessH
         });
 
         loginAuditService.recordSuccessfulLogin(username);
-        super.onAuthenticationSuccess(request, response, authentication);
+
+        // Preserve saved-request behaviour (e.g. user clicked a link to /portal
+        // while unauthenticated → forwarded to /login → should return there).
+        // When there is no saved request, redirect by role:
+        //   ROLE_ADMIN/ROLE_CHIEF/ROLE_HEADSMAN    → /dashboard
+        //   ROLE_COMPANY                            → /dashboard (company self-service)
+        //   ROLE_USER-only                         → /portal   (self-service resident portal)
+        String targetUrl = determineTargetUrl(request, response, authentication);
+        if (targetUrl == null || targetUrl.isEmpty() || "/".equals(targetUrl)) {
+            boolean isAdminOrStaffOrCompany = authentication.getAuthorities().stream()
+                    .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority())
+                            || "ROLE_CHIEF".equals(a.getAuthority())
+                            || "ROLE_HEADSMAN".equals(a.getAuthority())
+                            || "ROLE_COMPANY".equals(a.getAuthority()));
+            targetUrl = isAdminOrStaffOrCompany ? "/dashboard" : "/portal";
+        }
+
+        getRedirectStrategy().sendRedirect(request, response, targetUrl);
     }
 }

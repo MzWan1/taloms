@@ -1,6 +1,9 @@
 package za.co.taloms.resident.application.dto;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import lombok.*;
+import za.co.taloms.common.MaskedIdNumberSerializer;
+import za.co.taloms.common.MaskedLongSerializer;
 import za.co.taloms.resident.domain.entity.Gender;
 import za.co.taloms.resident.domain.entity.RelationshipType;
 import java.time.LocalDate;
@@ -12,8 +15,10 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class ResidentResponse {
 
+    @JsonSerialize(using = MaskedLongSerializer.class)
     private Long id;
     private String fullName;
+    @JsonSerialize(using = MaskedIdNumberSerializer.class)
     private String idNumber;
     private LocalDate dateOfBirth;
     private Integer age;
@@ -25,8 +30,10 @@ public class ResidentResponse {
     private String occupation;
     private String contactPhone;
     private String contactEmail;
+    @JsonSerialize(using = MaskedLongSerializer.class)
     private Long householdId;
     private String householdHeadName;
+    @JsonSerialize(using = MaskedLongSerializer.class)
     private Long businessId;
     private String businessName;
     private String standNumber;

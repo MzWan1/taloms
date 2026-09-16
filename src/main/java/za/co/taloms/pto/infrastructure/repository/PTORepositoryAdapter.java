@@ -8,6 +8,7 @@ import za.co.taloms.pto.domain.entity.PTOStatus;
 import za.co.taloms.pto.domain.repository.PTORepositoryPort;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 @RequiredArgsConstructor
@@ -154,6 +155,16 @@ public class PTORepositoryAdapter implements PTORepositoryPort {
     @Override
     public List<PTO> findDeleted() {
         return jpaRepository.findDeleted();
+    }
+
+    @Override
+    public List<PTO> findChangedSince(java.time.LocalDateTime since) {
+        return jpaRepository.findChangedSince(since);
+    }
+
+    @Override
+    public List<PTO> findByIds(Set<Long> ids) {
+        return jpaRepository.findByIds(ids);
     }
 }
 

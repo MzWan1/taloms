@@ -30,5 +30,10 @@ public interface PTOService {
     void reinstate(Long id, String reason);
     void deletePTO(Long id, String deletedBy);
     List<PTOResponse> findDeleted();
+
+    // Sync operations
+    List<PTOSyncDto> findChangedSince(java.time.Instant since, int pageSize);
+    List<PTOSyncDto> findByIds(java.util.Set<Long> ids);
+    void saveAll(List<PTOSyncDto> ptos, String savedBy);
 }
 

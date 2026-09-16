@@ -6,8 +6,10 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import za.co.taloms.pto.domain.entity.PTO;
 import za.co.taloms.pto.domain.entity.PTOStatus;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface PTOJpaRepository extends JpaRepository<PTO, Long> {
 
@@ -106,5 +108,23 @@ public interface PTOJpaRepository extends JpaRepository<PTO, Long> {
 
     @Query("SELECT p FROM PTO p WHERE p.deletedAt IS NOT NULL ORDER BY p.deletedAt DESC")
     List<PTO> findDeleted();
+
+    // Sync & Batch operations
+    @Query("""
+            SELECT p FROM PTO p
+            LEFT JOIN FETCH p.village v
+            LEFT JOIN FETCH v.traditionalAuthority ta
+            WHERE (:since IS NULL OR p.updatedAt >= :since)
+            ORDER BY p.updatedAt ASC
+            """)
+    List<PTO> findChangedSince(@Param("since") LocalDateTime since);
+
+    @Query("""
+            SELECT p FROM PTO p
+            LEFT JOIN FETCH p.village v
+            LEFT JOIN FETCH v.traditionalAuthority ta
+            WHERE p.id IN :ids
+            """)
+    List<PTO> findByIds(@Param("ids") Set<Long> ids);
 }
 

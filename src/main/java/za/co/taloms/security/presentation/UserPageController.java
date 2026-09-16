@@ -67,6 +67,7 @@ public class UserPageController {
                 .email(user.getEmail())
                 .roleName(user.getRoles().iterator().next())
                 .traditionalAuthorityId(user.getTraditionalAuthorityId())
+                .idNumber(user.getIdNumber())
                 .build();
         model.addAttribute("userForm",  req);
         model.addAttribute("userId",    id);

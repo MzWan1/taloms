@@ -1,0 +1,18 @@
+package za.co.taloms.security.application.dto;
+
+import com.fasterxml.jackson.annotation.JsonSerialize;
+import lombok.*;
+import za.co.taloms.common.MaskedLongSerializer;
+
+/**
+ * Lightweight DTO for user search results.
+ * Does NOT expose username for privacy.
+ */
+@Data @Builder @NoArgsConstructor @AllArgsConstructor
+public class UserSearchDto {
+    @JsonSerialize(using = MaskedLongSerializer.class)
+    private Long    id;
+    private String  fullName;
+    private String  email;
+    private String  roleName;
+}

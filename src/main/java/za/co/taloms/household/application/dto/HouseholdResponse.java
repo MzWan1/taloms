@@ -1,6 +1,9 @@
 package za.co.taloms.household.application.dto;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import lombok.*;
+import za.co.taloms.common.MaskedIdNumberSerializer;
+import za.co.taloms.common.MaskedLongSerializer;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
@@ -10,16 +13,20 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class HouseholdResponse {
 
+    @JsonSerialize(using = MaskedLongSerializer.class)
     private Long id;
     private String householdHeadName;
+    @JsonSerialize(using = MaskedIdNumberSerializer.class)
     private String householdHeadIdNumber;
     private String contactPhone;
     private String contactEmail;
+    @JsonSerialize(using = MaskedLongSerializer.class)
     private Long parcelId;
     private String standNumber;
     private String parcelNumber;
     private String villageName;
     private String authorityName;
+    @JsonSerialize(using = MaskedLongSerializer.class)
     private Long ptoId;
     private String ptoNumber;
     private String ptoHolderName;

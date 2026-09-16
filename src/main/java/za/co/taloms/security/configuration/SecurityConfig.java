@@ -16,6 +16,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.context.SecurityContextHolderFilter;
+import za.co.taloms.company.presentation.CompanyApiKeyAuthenticationFilter;
 import za.co.taloms.security.application.service.UserDetailsServiceImpl;
 import za.co.taloms.security.presentation.LoginFailureHandler;
 import za.co.taloms.security.presentation.LoginSuccessHandler;
@@ -35,6 +37,7 @@ public class SecurityConfig {
     private final LoginFailureHandler            loginFailureHandler;
     private final TalomsAuthenticationEntryPoint entryPoint;
     private final TalomsAccessDeniedHandler      accessDeniedHandler;
+    private final CompanyApiKeyAuthenticationFilter companyApiKeyFilter;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http)
@@ -45,6 +48,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
                                 "/login",
+                                "/register",
+                                "/register/**",
                                 "/forgot-password",
                                 "/reset-password",
                                 "/api/auth/**",
@@ -58,9 +63,14 @@ public class SecurityConfig {
                                 "/css/**",
                                 "/js/**",
                                 "/images/**",
+                                "/icons/**",
+                                "/sw.js",
+                                "/manifest.webmanifest",
+                                "/offline.html",
                                                                 "/favicon.ico",
                                 "/error",
-                                "/error/**"
+                                "/error/**",
+                                "/.well-known/**"
                         ).permitAll()
                         // Change password - accessible to all authenticated users
                         .requestMatchers("/users/change-password").authenticated()
@@ -77,10 +87,34 @@ public class SecurityConfig {
                         // Villages - CHIEF-only (admin cannot view or manage villages)
                         .requestMatchers("/villages", "/villages/**").hasRole("CHIEF")
                         .requestMatchers("/api/villages", "/api/villages/**").hasRole("CHIEF")
-                        // All authenticated users
-                        .requestMatchers("/dashboard", "/ptos/**", "/parcels/**", "/gis/**", "/documents/**").authenticated()
-                        .requestMatchers("/api/ptos/**", "/api/parcels/**", "/api/gis/**", "/api/documents/**").authenticated()
-                                                .anyRequest().authenticated()
+                        // All authenticated users (read-only dashboard for every role)
+                        .requestMatchers("/dashboard", "/api/dashboard/**").authenticated()
+                        // Company self-service (ROLE_COMPANY can view/manage their own account)
+                        .requestMatchers("/company", "/company/**").hasRole("COMPANY")
+                        .requestMatchers("/api/company", "/api/company/**").hasRole("COMPANY")
+                        // Resident portal - ROLE_USER self-service
+                        .requestMatchers("/portal", "/portal/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers("/api/portal/**").hasAnyRole("USER", "ADMIN")
+                        // Staff-only operational pages - ROLE_USER cannot read/modify PTOs, parcels, etc.
+                        .requestMatchers("/ptos/**", "/parcels/**", "/gis/**", "/documents/**")
+                                .hasAnyRole("ADMIN", "CHIEF", "HEADSMAN")
+                        .requestMatchers("/api/ptos/**", "/api/parcels/**", "/api/gis/**", "/api/documents/**")
+                                .hasAnyRole("ADMIN", "CHIEF", "HEADSMAN")
+                        // ── External company API ───────────────────────────────────────
+                        // Dedicated API-key authentication (CompanyApiKeyAuthenticationFilter).
+                        // A COMPANY authority is only ever granted by that filter, so a
+                        // browser/JWT session can never reach these endpoints.
+                        .requestMatchers("/api/external/**").hasRole("COMPANY")
+                        // ── Company self-service (ROLE_COMPANY browser login) ─────────────
+                        // Companies that log in via form authentication can manage their own
+                        // API keys and view usage statistics here.
+                        .requestMatchers("/company", "/company/**").hasRole("COMPANY")
+                        .requestMatchers("/api/company/**").hasRole("COMPANY")
+                        // ── Company administration ─────────────────────────────────────
+                        // Companies must never reach these: ADMIN only.
+                        .requestMatchers("/companies", "/companies/**").hasRole("ADMIN")
+                        .requestMatchers("/api/companies", "/api/companies/**").hasRole("ADMIN")
+                        .anyRequest().authenticated()
                 )
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(entryPoint)
@@ -111,6 +145,10 @@ public class SecurityConfig {
                         .rememberMeParameter("remember-me")
                 )
                 .authenticationProvider(authenticationProvider())
+                .addFilterAfter(
+                        companyApiKeyFilter,
+                        SecurityContextHolderFilter.class
+                )
                 .addFilterBefore(
                         jwtAuthFilter,
                         UsernamePasswordAuthenticationFilter.class

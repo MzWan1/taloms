@@ -1,6 +1,7 @@
 package za.co.taloms.dashboard.application.dto;
 
 import lombok.*;
+import za.co.taloms.common.MaskedLongSerializer;
 import java.util.List;
 
 @Data
@@ -8,28 +9,28 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class DashboardSummaryDto {
-    // PTO KPIs
+    // PTO KPIs - these are counts, not masked
     private Long totalPtos;
     private Long activePtos;
     private Long pendingPtos;
     private Long suspendedPtos;
     private Long revokedPtos;
 
-    // Parcel KPIs
+    // Parcel KPIs - these are counts, not masked
     private Long totalParcels;
     private Long availableParcels;
     private Long allocatedParcels;
     private Long disputedParcels;
     private Long reservedParcels;
 
-    // Document KPIs
+    // Document KPIs - this is a count, not masked
     private Long totalDocuments;
 
-    // User KPIs (Admin only)
+    // User KPIs (Admin only) - these are counts, not masked
     private Long totalUsers;
     private Long activeUsers;
 
-    // Audit KPIs
+    // Audit KPIs - this is a count, not masked
     private Long totalAuditLogs;
 
     // Approval Queue

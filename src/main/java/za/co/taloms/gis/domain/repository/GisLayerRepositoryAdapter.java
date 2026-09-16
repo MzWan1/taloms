@@ -1,10 +1,11 @@
-package za.co.taloms.gis.infrastructure.repository;
+package za.co.taloms.gis.domain.repository;
 
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 import za.co.taloms.gis.domain.entity.GisLayer;
 import za.co.taloms.gis.domain.entity.LayerType;
 import za.co.taloms.gis.domain.repository.GisLayerRepositoryPort;
+import za.co.taloms.gis.infrastructure.repository.GisLayerJpaRepository;
 import java.util.List;
 import java.util.Optional;
 

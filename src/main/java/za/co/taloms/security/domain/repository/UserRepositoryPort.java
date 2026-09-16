@@ -10,11 +10,13 @@ public interface UserRepositoryPort {
     Optional<User> findById(Long id);
     Optional<User> findByUsername(String username);
     Optional<User> findByEmail(String email);
+    Optional<User> findByIdNumber(String idNumber);
     List<User> findAll();
     List<User> findByRoleName(String roleName);
     List<User> findAllActive();
     boolean existsByUsername(String username);
     boolean existsByEmail(String email);
+    boolean existsByIdNumber(String idNumber);
     void delete(User user);
     long countAll();
     long countByActiveTrue();

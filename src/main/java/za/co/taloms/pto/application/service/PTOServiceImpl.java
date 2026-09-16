@@ -438,8 +438,15 @@ public class PTOServiceImpl implements PTOService {
                     "PTO can only be edited when status is PENDING or SUSPENDED");
         }
 
-        var parcel = parcelRepository.findById(request.getParcelId())
-                .orElseThrow(() -> new ResourceNotFoundException("Parcel", request.getParcelId()));
+        // Fall back to the PTO's current parcel when the request does not
+        // specify one (the edit form keeps the existing parcel).
+        var parcel = request.getParcelId() != null
+                ? parcelRepository.findById(request.getParcelId())
+                        .orElseThrow(() -> new ResourceNotFoundException("Parcel", request.getParcelId()))
+                : pto.getParcel();
+        if (parcel == null) {
+            throw new ResourceNotFoundException("Parcel", null);
+        }
 
         var authority = authorityRepository.findById(request.getTraditionalAuthorityId())
                 .orElseThrow(() -> new ResourceNotFoundException("Traditional Authority", request.getTraditionalAuthorityId()));
@@ -457,7 +464,8 @@ public class PTOServiceImpl implements PTOService {
                     "Parcel does not belong to this Village");
         }
 
-        if (!parcel.getStandNumber().equals(request.getStandNumber())) {
+        if (request.getStandNumber() != null
+                && !parcel.getStandNumber().equals(request.getStandNumber())) {
             throw new BusinessValidationException(
                     "Stand number does not match for this parcel");
         }
@@ -585,6 +593,9 @@ public class PTOServiceImpl implements PTOService {
                 .villageName(p.getVillage() != null ? p.getVillage().getVillageName() : null)
                 .traditionalAuthorityId(p.getTraditionalAuthority() != null ? p.getTraditionalAuthority().getId() : null)
                 .authorityName(p.getTraditionalAuthority() != null ? p.getTraditionalAuthority().getAuthorityName() : null)
+                .parcelId(p.getParcel() != null ? p.getParcel().getId() : null)
+                .standNumber(p.getParcel() != null ? p.getParcel().getStandNumber() : null)
+                .parcelNumber(p.getParcel() != null ? p.getParcel().getParcelNumber() : null)
                 .approvedBy(p.getApprovedBy())
                 .approvedAt(p.getApprovedAt())
                 .suspendedBy(p.getSuspendedBy())
@@ -611,6 +622,104 @@ public class PTOServiceImpl implements PTOService {
                 .updatedAt(p.getUpdatedAt())
                 .deletedAt(p.getDeletedAt())
                 .deletedBy(p.getDeletedBy())
+                .build();
+    }
+
+    private void applySyncDto(PTOSyncDto dto, String savedBy) {
+        PTO pto;
+        if (dto.getId() != null && ptoRepository.findById(dto.getId()).isPresent()) {
+            // Update existing
+            pto = ptoRepository.findById(dto.getId()).orElseThrow(
+                    () -> new ResourceNotFoundException("PTO", dto.getId()));
+        } else {
+            // Create new
+            pto = PTO.builder().build();
+            pto.setCreatedBy(dto.getCreatedBy() != null ? dto.getCreatedBy() : savedBy);
+            pto.setPtoNumber(dto.getPtoNumber() != null && !dto.getPtoNumber().isBlank()
+                    ? dto.getPtoNumber()
+                    : numberGenerator.generate());
+        }
+
+        pto.setPtoHolderName(dto.getPtoHolderName());
+        pto.setIdNumber(dto.getIdNumber());
+        pto.setContactPhone(dto.getContactPhone());
+        pto.setContactEmail(dto.getContactEmail());
+        pto.setPurpose(dto.getPurpose());
+        pto.setStatus(dto.getStatus() != null ? dto.getStatus() : PTOStatus.PENDING);
+        pto.setIssueDate(dto.getIssueDate() != null ? dto.getIssueDate() : LocalDate.now());
+        pto.setExpiryDate(dto.getExpiryDate());
+        pto.setNotes(dto.getNotes());
+        pto.setApprovedBy(dto.getApprovedBy());
+        pto.setApprovedAt(dto.getApprovedAt());
+        pto.setApprovalNotes(dto.getApprovalNotes());
+        pto.setRevokedBy(dto.getRevokedBy());
+        pto.setRevokedAt(dto.getRevokedAt());
+        pto.setRevokeReason(dto.getRevokeReason());
+        pto.setAllocatedBy(dto.getAllocatedBy());
+        pto.setAllocationDate(dto.getAllocationDate());
+        pto.setStandArea(dto.getStandArea());
+        pto.setSurveyReference(dto.getSurveyReference());
+        pto.setBoundaryDescription(dto.getBoundaryDescription());
+        pto.setAllocationFeeReceipt(dto.getAllocationFeeReceipt());
+        pto.setTaRecommendationRef(dto.getTaRecommendationRef());
+        pto.setCommunityResolutionRequired(dto.getCommunityResolutionRequired());
+
+        // Linked references
+        if (dto.getVillageId() != null) {
+            pto.setVillage(villageRepository.findById(dto.getVillageId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Village", dto.getVillageId())));
+        }
+        if (dto.getTraditionalAuthorityId() != null) {
+            pto.setTraditionalAuthority(authorityRepository.findById(dto.getTraditionalAuthorityId())
+                    .orElseThrow(() -> new ResourceNotFoundException(
+                            "TraditionalAuthority", dto.getTraditionalAuthorityId())));
+        } else if (pto.getVillage() != null) {
+            pto.setTraditionalAuthority(pto.getVillage().getTraditionalAuthority());
+        }
+        if (dto.getParcelId() != null) {
+            pto.setParcel(parcelRepository.findById(dto.getParcelId())
+                    .orElseThrow(() -> new ResourceNotFoundException("Parcel", dto.getParcelId())));
+        }
+
+        ptoRepository.save(pto);
+    }
+
+    private PTOSyncDto toSyncDto(PTO p) {
+        return PTOSyncDto.builder()
+                .id(p.getId())
+                .ptoNumber(p.getPtoNumber())
+                .ptoHolderName(p.getPtoHolderName())
+                .idNumber(p.getIdNumber())
+                .contactPhone(p.getContactPhone())
+                .contactEmail(p.getContactEmail())
+                .purpose(p.getPurpose())
+                .status(p.getStatus())
+                .issueDate(p.getIssueDate())
+                .expiryDate(p.getExpiryDate())
+                .notes(p.getNotes())
+                .villageId(p.getVillage() != null ? p.getVillage().getId() : null)
+                .traditionalAuthorityId(p.getTraditionalAuthority() != null
+                        ? p.getTraditionalAuthority().getId() : null)
+                .parcelId(p.getParcel() != null ? p.getParcel().getId() : null)
+                .approvedBy(p.getApprovedBy())
+                .approvedAt(p.getApprovedAt())
+                .approvalNotes(p.getApprovalNotes())
+                .revokedBy(p.getRevokedBy())
+                .revokedAt(p.getRevokedAt())
+                .revokeReason(p.getRevokeReason())
+                .allocatedBy(p.getAllocatedBy())
+                .allocationDate(p.getAllocationDate())
+                .standArea(p.getStandArea())
+                .surveyReference(p.getSurveyReference())
+                .boundaryDescription(p.getBoundaryDescription())
+                .allocationFeeReceipt(p.getAllocationFeeReceipt())
+                .taRecommendationRef(p.getTaRecommendationRef())
+                .communityResolutionRequired(p.getCommunityResolutionRequired())
+                .createdBy(p.getCreatedBy())
+                .createdAt(p.getCreatedAt())
+                .updatedAt(p.getUpdatedAt())
+                .deletedAt(p.getDeletedAt())
+                .deleted(p.isDeleted())
                 .build();
     }
 
@@ -655,6 +764,47 @@ public class PTOServiceImpl implements PTOService {
     private boolean hasRole(User user, String roleName) {
         return user.getRoles() != null
                 && user.getRoles().stream().anyMatch(r -> roleName.equals(r.getName()));
+    }
+
+    @Override
+    public void saveAll(List<PTOSyncDto> dtos, String savedBy) {
+        for (PTOSyncDto dto : dtos) {
+            if (Boolean.TRUE.equals(dto.getDeleted())) {
+                if (dto.getId() != null && ptoRepository.findById(dto.getId()).isPresent()
+                        && !ptoRepository.findById(dto.getId()).get().isDeleted()) {
+                    ptoRepository.softDeleteById(dto.getId(), savedBy);
+                }
+                continue;
+            }
+            applySyncDto(dto, savedBy);
+        }
+    }
+
+    // ===== Sync operations =====
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PTOSyncDto> findChangedSince(java.time.Instant since, int pageSize) {
+        LocalDateTime sinceDateTime = null;
+        if (since != null) {
+            sinceDateTime = LocalDateTime.ofInstant(since, java.time.ZoneId.systemDefault());
+        }
+        List<PTO> ptos = ptoRepository.findChangedSince(sinceDateTime);
+        if (pageSize > 0 && ptos.size() > pageSize) {
+            ptos = ptos.subList(0, pageSize);
+        }
+        return ptos.stream().map(this::toSyncDto).collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<PTOSyncDto> findByIds(java.util.Set<Long> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+        return ptoRepository.findByIds(ids).stream()
+                .map(this::toSyncDto)
+                .collect(Collectors.toList());
     }
 }
 

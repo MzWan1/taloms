@@ -8,6 +8,7 @@ public interface UserService {
 
     // User CRUD
     UserResponse createUser(UserCreateRequest request);
+    UserResponse register(RegisterRequest request);
     UserResponse updateUser(Long id, UserUpdateRequest request);
     UserResponse findById(Long id);
     List<UserResponse> findAll();

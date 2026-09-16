@@ -1,10 +1,13 @@
 package za.co.taloms.traditionalauthority.application.dto;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import lombok.*;
+import za.co.taloms.common.MaskedLongSerializer;
 import java.time.LocalDateTime;
 
 @Data @Builder @NoArgsConstructor @AllArgsConstructor
 public class VillageResponse {
+    @JsonSerialize(using = MaskedLongSerializer.class)
     private Long          id;
     private String        villageName;
     private String        region;
@@ -12,8 +15,10 @@ public class VillageResponse {
     private String        chiefName;
     private String        description;
     private Boolean       active;
+    @JsonSerialize(using = MaskedLongSerializer.class)
     private Long          traditionalAuthorityId;
     private String        authorityName;
+    @JsonSerialize(using = MaskedLongSerializer.class)
     private Long          headmanId;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

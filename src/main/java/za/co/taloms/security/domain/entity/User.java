@@ -2,6 +2,8 @@ package za.co.taloms.security.domain.entity;
 
 import jakarta.persistence.*;
 import lombok.*;
+import za.co.taloms.company.domain.entity.Company;
+
 import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.Set;
@@ -54,6 +56,13 @@ public class User {
 
     @Column(name = "traditional_authority_id")
     private Long traditionalAuthorityId;
+
+    @Column(name = "id_number", length = 13, unique = true)
+    private String idNumber;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "company_id")
+    private Company company;
 
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(

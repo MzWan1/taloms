@@ -182,6 +182,126 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/offline-db.js}"></script>
+<script th:src="@{/js/taloms.js}"></script>
+<style>
+    /* Highlight locally-saved (cached / offline) parcel rows in yellow/amber */
+    tr.parcel-pending-row {
+        background-color: #fff7d6;
+        border-left: 4px solid #ffc107;
+        box-shadow: 0 0 0 1px rgba(255, 193, 7, 0.45);
+    }
+    tr.parcel-pending-row:hover { background-color: #fff1b3; }
+    .parcel-pending-badge {
+        background-color: #ffc107;
+        color: #6b4e00;
+        font-weight: 600;
+    }
+    #offlineLegend {
+        border-left: 4px solid #ffc107;
+        background-color: #fff7d6;
+    }
+</style>
+<script>
+    (function () {
+        // Render parcels that were saved locally (offline outbox queue) and are
+        // still waiting to be uploaded to the server once connectivity returns.
+        function renderOfflinePendingRows() {
+            if (!window.TalomsDB) return;
+
+            var tbody = document.querySelector('#parcelTable tbody');
+            if (!tbody) return;
+
+            window.TalomsDB.getAllOutbox().then(function (items) {
+                items = items || [];
+                var pending = items.filter(function (it) {
+                    return it
+                        && it.method === 'POST'
+                        && it.url && it.url.indexOf('/api/parcels') !== -1
+                        && (it.status === 'PENDING' || it.status === 'FAILED' || it.status === 'SYNCING');
+                });
+                if (!pending.length) return;
+
+                var rowsHtml = '';
+                pending.forEach(function (item) {
+                    var body = {};
+                    try { body = JSON.parse(item.body || '{}'); } catch (e) {}
+                    var stand = body.standNumber || '—';
+                    var village = body.villageName || 'Offline';
+                    var time = item.createdAt ? new Date(item.createdAt).toLocaleTimeString() : '';
+
+                    rowsHtml +=
+                        '<tr class="parcel-row parcel-pending-row" ' +
+                        'data-parcel-number="PENDING" ' +
+                        'data-stand-number="' + (body.standNumber || '').toLowerCase() + '" ' +
+                        'data-village-name="" ' +
+                        'data-status="PENDING" data-area="">' +
+                        '<td class="px-4 text-warning" title="Saved on this device, waiting to be uploaded">' +
+                        '<i class="bi bi-cloud-arrow-up me-1"></i>' +
+                        '<span class="fw-bold">Pending Sync</span>' +
+                        '</td>' +
+                        '<td class="fw-semibold small">' + stand + '</td>' +
+                        '<td class="small"><i class="bi bi-wifi-off me-1"></i>' + village + '</td>' +
+                        '<td><span class="badge parcel-pending-badge">' +
+                        '<i class="bi bi-hourglass-split me-1"></i>Saved locally</span></td>' +
+                        '<td class="small text-muted">—</td>' +
+                        '<td class="text-center text-muted small" title="Saved at ' + time + '">' +
+                        '<i class="bi bi-clock-history"></i></td>' +
+                        '<td class="text-center">' +
+                        '<span class="badge bg-warning text-dark px-2 py-1 small" title="Uploads when back online">' +
+                        '<i class="bi bi-upload me-1"></i>Queued</span>' +
+                        '</td>';
+                });
+
+                var insertBefore = tbody.querySelector('tr.parcel-row:not(.parcel-pending-row)');
+                if (insertBefore) {
+                    tbody.insertAdjacentHTML('beforebegin', rowsHtml);
+                } else {
+                    tbody.insertAdjacentHTML('beforeend', rowsHtml);
+                }
+
+                // Hide the "no parcels" empty state if we only have offline rows.
+                var noParcels = document.getElementById('noParcelsRow');
+                if (noParcels && noParcels.style) {
+                    var serverRows = tbody.querySelectorAll('tr.parcel-row:not(.parcel-pending-row)');
+                    if (serverRows.length === 0) noParcels.style.display = 'none';
+                }
+
+                // Add an explanatory legend near the top so users know what yellow rows mean.
+                var header = document.querySelector('#parcelTable');
+                if (header && !document.getElementById('offlineLegend')) {
+                    var legend = document.createElement('div');
+                    legend.id = 'offlineLegend';
+                    legend.className = 'alert mb-1 py-2 small d-flex align-items-center';
+                    legend.innerHTML =
+                        '<i class="bi bi-cloud-arrow-up me-2 text-warning"></i>' +
+                        '<span><strong>' + pending.length + ' saved locally</strong> &mdash; ' +
+                        'these were captured on this device and will upload automatically ' +
+                        'when you are back online.</span>';
+                    var card = header.closest('.card-body');
+                    (card || header.parentElement).insertBefore(legend, header);
+                }
+            }).catch(function () { /* IndexedDB unavailable — ignore */ });
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', renderOfflinePendingRows);
+        } else {
+            renderOfflinePendingRows();
+        }
+    })();
+</script>
+<script>
+  // Start the connectivity monitor + periodic outbox flush. This is what makes
+  // offline-captured parcels upload automatically once the device comes back
+  // online (the parcels list is where the user lands right after an offline save).
+  document.addEventListener('DOMContentLoaded', function () {
+    if (window.Taloms && Taloms.Network) {
+      Taloms.Network.init();
+      if (window.Taloms.Sync) Taloms.Sync.init();
+    }
+  });
+</script>
 <script>
     (function () {
         const form = document.querySelector('form[action$="/parcels"]');
@@ -239,6 +359,13 @@
 
         filterRows();
     })();
+</script>
+<script>
+  if (typeof navigator !== 'undefined' && navigator.serviceWorker) {
+    navigator.serviceWorker.register('/sw.js')
+      .then(function () { console.log('SW registered'); })
+      .catch(function (err) { console.error('SW registration failed:', err); });
+  }
 </script>
 </body>
 </html>

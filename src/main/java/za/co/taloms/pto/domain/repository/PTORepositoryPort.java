@@ -4,6 +4,7 @@ import za.co.taloms.pto.domain.entity.PTO;
 import za.co.taloms.pto.domain.entity.PTOStatus;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 public interface PTORepositoryPort {
     PTO save(PTO pto);
@@ -35,5 +36,9 @@ public interface PTORepositoryPort {
     void softDeleteById(Long id, String deletedBy);
     List<PTO> findAllIncludingDeleted();
     List<PTO> findDeleted();
+
+    // Sync operations
+    List<PTO> findChangedSince(java.time.LocalDateTime since);
+    List<PTO> findByIds(Set<Long> ids);
 }
 

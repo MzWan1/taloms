@@ -1,7 +1,9 @@
 package za.co.taloms.audit.application.dto;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import lombok.*;
 import za.co.taloms.audit.domain.entity.AuditAction;
+import za.co.taloms.common.MaskedLongSerializer;
 import java.time.LocalDateTime;
 
 @Data
@@ -10,9 +12,11 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class AuditLogResponse {
 
+    @JsonSerialize(using = MaskedLongSerializer.class)
     private Long id;
     private String entityType;
     private String entityTypeDisplay;
+    @JsonSerialize(using = MaskedLongSerializer.class)
     private Long entityId;
     private AuditAction action;
     private String actionDisplay;

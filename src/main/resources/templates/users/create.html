@@ -78,6 +78,25 @@
                             </div>
                         </div>
 
+                        <!-- SA ID Number -->
+                        <div class="mb-3">
+                            <label for="idNumber" class="form-label">
+                                SA ID Number
+                                <span class="text-muted small fw-normal">(13 digits — links a resident to their PTOs)</span>
+                            </label>
+                            <div class="input-group">
+                                <span class="input-group-text">
+                                    <i class="bi bi-credit-card-2-front"></i>
+                                </span>
+                                <input type="text"
+                                       id="idNumber"
+                                       th:field="*{idNumber}"
+                                       class="form-control"
+                                       maxlength="13"
+                                       placeholder="e.g. 8001015800087">
+                            </div>
+                        </div>
+
                         <!-- Username -->
                         <div class="mb-3">
                             <label for="username" class="form-label">
@@ -306,6 +325,7 @@
         'ROLE_ADMIN':     'Full system access — user management, authorities, all modules, system config.',
         'ROLE_CHIEF':     'Manage own authority: add villages, attach headsmen, create and approve PTOs, add parcels.',
         'ROLE_HEADSMAN':  'Manage villages in own authority: add parcels and create PTOs (cannot approve).',
+        'ROLE_USER':      'Resident / citizen — self-service proof-of-residence access for PTOs linked to them.',
     };
     document.getElementById('roleName').addEventListener('change', function () {
         const box  = document.getElementById('roleInfoBox');

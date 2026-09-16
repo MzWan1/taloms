@@ -246,5 +246,12 @@
         })
         .catch(err => console.error('Error loading GIS parcels:', err));
 </script>
+<script>
+  if (typeof navigator !== 'undefined' && navigator.serviceWorker) {
+    navigator.serviceWorker.register('/sw.js')
+      .then(function () { console.log('SW registered'); })
+      .catch(function (err) { console.error('SW registration failed:', err); });
+  }
+</script>
 </body>
 </html>

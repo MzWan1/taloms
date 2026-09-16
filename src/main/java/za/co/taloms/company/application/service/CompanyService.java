@@ -1,0 +1,27 @@
+package za.co.taloms.company.application.service;
+
+import za.co.taloms.company.application.dto.CompanyCreateRequest;
+import za.co.taloms.company.application.dto.CompanyResponse;
+
+import java.util.List;
+
+/**
+ * Administrative lifecycle management for external companies.
+ *
+ * Every mutating operation is an ADMIN-only action: company registration,
+ * activation and deactivation. There is intentionally no "self-activate" path.
+ */
+public interface CompanyService {
+
+    CompanyResponse createCompany(CompanyCreateRequest request, String actorUsername);
+
+    List<CompanyResponse> findAll();
+
+    CompanyResponse findById(Long id);
+
+    CompanyResponse findByUsername(String username);
+
+    CompanyResponse disableCompany(Long id, String reason, String actorUsername);
+
+    CompanyResponse activateCompany(Long id, String actorUsername);
+}

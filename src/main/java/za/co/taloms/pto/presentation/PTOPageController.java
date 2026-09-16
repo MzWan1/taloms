@@ -9,6 +9,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import za.co.taloms.common.IdMasker;
 import za.co.taloms.document.application.dto.DocumentResponse;
 import za.co.taloms.document.application.service.DocumentService;
 import za.co.taloms.document.domain.entity.EntityType;
@@ -208,7 +209,7 @@ public class PTOPageController {
             RedirectAttributes ra) {
 
         log.info("Creating PTO - Holder: {}, ID: {}, Parcel: {}, Purpose: {}",
-                ptoHolderName, idNumber, parcelId, purpose);
+                ptoHolderName, IdMasker.maskIdNumber(idNumber), parcelId, purpose);
 
         try {
             // Get the parcel to validate and populate stand/parcel details

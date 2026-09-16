@@ -1,11 +1,16 @@
 package za.co.taloms.security.application.dto;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import lombok.*;
+import za.co.taloms.common.MaskedIdNumberSerializer;
+import za.co.taloms.common.MaskedLongSerializer;
+
 import java.time.LocalDateTime;
 import java.util.Set;
 
 @Data @Builder @NoArgsConstructor @AllArgsConstructor
 public class UserResponse {
+    @JsonSerialize(using = MaskedLongSerializer.class)
     private Long          id;
     private String        username;
     private String        email;
@@ -15,7 +20,10 @@ public class UserResponse {
     private Integer       failedLoginAttempts;
     private LocalDateTime lastLoginAt;
     private LocalDateTime createdAt;
+    @JsonSerialize(using = MaskedLongSerializer.class)
     private Long          traditionalAuthorityId;
+    @JsonSerialize(using = MaskedIdNumberSerializer.class)
+    private String        idNumber;
     private Set<String>   roles;
 }
 

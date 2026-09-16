@@ -202,5 +202,12 @@
         document.getElementById('perimeterPreview').textContent = `Perimeter: ${calculatePerimeter(points).toFixed(2)} m`;
     }
 </script>
+<script>
+  if (typeof navigator !== 'undefined' && navigator.serviceWorker) {
+    navigator.serviceWorker.register('/sw.js')
+      .then(function () { console.log('SW registered'); })
+      .catch(function (err) { console.error('SW registration failed:', err); });
+  }
+</script>
 </body>
 </html>

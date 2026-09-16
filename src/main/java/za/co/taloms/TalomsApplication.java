@@ -8,6 +8,8 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 @SpringBootApplication
 @EnableScheduling
@@ -15,6 +17,18 @@ import java.net.UnknownHostException;
 public class TalomsApplication {
 
     public static void main(String[] args) throws UnknownHostException {
+        // PDFBox 3.0.0 workaround: set font directory BEFORE any PDFBox classes load
+        // to avoid FileSystemFontProvider crashes on macOS malformed fonts
+        try {
+            Path safeFontDir = Files.createTempDirectory("pdfbox-fonts");
+            System.setProperty("pdfbox.fontdir", safeFontDir.toString());
+            log.info("PDFBox font directory set to: {}", safeFontDir);
+        } catch (Exception e) {
+            Path fallbackDir = Path.of(System.getProperty("java.io.tmpdir"));
+            System.setProperty("pdfbox.fontdir", fallbackDir.toString());
+            log.warn("Failed to create PDFBox font directory, using fallback: {}", fallbackDir);
+        }
+
         var app = SpringApplication.run(TalomsApplication.class, args);
         var env = app.getEnvironment();
         log.info("============================================");
