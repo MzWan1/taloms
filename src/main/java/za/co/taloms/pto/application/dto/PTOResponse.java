@@ -1,6 +1,9 @@
 package za.co.taloms.pto.application.dto;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import lombok.*;
+import za.co.taloms.common.MaskedIdNumberSerializer;
+import za.co.taloms.common.MaskedLongSerializer;
 import za.co.taloms.pto.domain.entity.PTOPurpose;
 import za.co.taloms.pto.domain.entity.PTOStatus;
 import java.time.LocalDate;
@@ -11,9 +14,11 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PTOResponse {
+    @JsonSerialize(using = MaskedLongSerializer.class)
     private Long id;
     private String ptoNumber;
     private String ptoHolderName;
+    @JsonSerialize(using = MaskedIdNumberSerializer.class)
     private String idNumber;
     private String contactPhone;
     private String contactEmail;
@@ -25,10 +30,16 @@ public class PTOResponse {
     private LocalDate issueDate;
     private LocalDate expiryDate;
     private String notes;
+    @JsonSerialize(using = MaskedLongSerializer.class)
     private Long villageId;
     private String villageName;
+    @JsonSerialize(using = MaskedLongSerializer.class)
     private Long traditionalAuthorityId;
     private String authorityName;
+    @JsonSerialize(using = MaskedLongSerializer.class)
+    private Long parcelId;
+    private String standNumber;
+    private String parcelNumber;
 
     // Approval fields
     private String approvedBy;

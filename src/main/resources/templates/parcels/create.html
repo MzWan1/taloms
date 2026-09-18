@@ -1786,5 +1786,130 @@ accuracyClass = 'accuracy-poor';
       Taloms.Network.updateOutboxCount();
     }
 </script>
+
+<script>
+  if (typeof navigator !== 'undefined' && navigator.serviceWorker) {
+    navigator.serviceWorker.register('/sw.js')
+      .then(function () { console.log('SW registered'); })
+      .catch(function (err) { console.error('SW registration failed:', err); });
+  }
+</script>
+<script>
+  // ── Offline Form Submission ──────────────────────────────────────
+  (function () {
+    var form = document.getElementById('parcelForm');
+    if (!form) return;
+
+    // Shared "Saved Offline" feedback used by both the success-guard and the
+    // failure/queue path, so the behaviour is identical either way.
+    function showSavedOffline(submitBtn) {
+      submitBtn.innerHTML = '<i class="bi bi-check me-2"></i>Saved Offline';
+      submitBtn.classList.remove('btn-navy');
+      submitBtn.classList.add('btn-success');
+      setTimeout(function () {
+        window.location.href = '/parcels';
+      }, 2000);
+    }
+
+    form.addEventListener('submit', function (e) {
+      // The validation handler above runs first and sets isSubmitting=true
+      // only when the form is valid. If invalid, that handler already called
+      // preventDefault() and showed the error, so do nothing here.
+      if (typeof isSubmitting === 'undefined' || !isSubmitting) {
+        return;
+      }
+
+      // Always prevent the native form POST. The browser POST navigation is
+      // what fails offline (ERR_INTERNET_DISCONNECTED). Instead we send the
+      // JSON to the REST API and fall back to the outbox when offline.
+      e.preventDefault();
+
+      // Collect form data as JSON (matches ParcelRequest / BoundaryPointDto)
+      var boundariesJson = document.getElementById('boundariesJson').value || '[]';
+      var boundaries = [];
+      try {
+        var raw = JSON.parse(boundariesJson);
+        boundaries = raw.map(function (p, i) {
+          return {
+            sequence: i + 1,
+            latitude: p.latitude,
+            longitude: p.longitude,
+            accuracy: p.accuracy || null,
+            autoCaptured: p.autoCaptured || false,
+            timestamp: p.timestamp || null
+          };
+        });
+      } catch (err) {
+        console.error('Invalid boundaries JSON:', err);
+      }
+
+      var villageSelect = form.querySelector('[name="villageId"]');
+      var requestBody = {
+        standNumber: form.querySelector('[name="standNumber"]').value,
+        villageId: villageSelect ? parseInt(villageSelect.value, 10) : null,
+        notes: form.querySelector('[name="notes"]').value || null,
+        boundaries: boundaries,
+        captureMode: form.querySelector('[name="captureMode"]').value,
+        parcelType: form.querySelector('[name="parcelType"]') ? form.querySelector('[name="parcelType"]').value : 'RESIDENTIAL',
+        chiefName: form.querySelector('[name="chiefName"]') ? form.querySelector('[name="chiefName"]').value : null,
+        headmanName: form.querySelector('[name="headmanName"]') ? form.querySelector('[name="headmanName"]').value : null
+      };
+
+      // REST create endpoint — accepts JSON ParcelRequest and is what the
+      // outbox replay (Taloms.Outbox.processItem) hits on re-connect.
+      var url = '/api/parcels';
+      var submitBtn = document.getElementById('submitBtn');
+      var originalText = submitBtn.innerHTML;
+
+      // Try online submission first
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
+
+      fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody),
+        credentials: 'same-origin'
+      })
+        .then(function (response) {
+          if (response.ok) {
+            return response.json().then(function (data) {
+              // If the fetch interceptor (taloms.js) already queued this
+              // request offline, it returns a synthetic 202 {queued:true}.
+              // Treat that as an offline-save success, not a real redirect.
+              if (data && data.queued) {
+                return showSavedOffline(submitBtn);
+              }
+              // Success - redirect to parcel detail
+              var id = data.data && data.data.id ? data.data.id : '';
+              window.location.href = '/parcels/' + id;
+            });
+          }
+          return Promise.reject(new Error('Server error: ' + response.status));
+        })
+        .catch(function (err) {
+          console.warn('Online save failed, queuing for sync:', err.message);
+          // Queue the REST create in the outbox for later sync
+          if (window.Taloms && Taloms.Outbox) {
+            Taloms.Outbox.enqueue('POST', url, JSON.stringify(requestBody), { 'Content-Type': 'application/json' })
+              .then(function () {
+                showSavedOffline(submitBtn);
+              })
+              .catch(function () {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+                if (typeof isSubmitting !== 'undefined') isSubmitting = false;
+                alert('Failed to save offline. Please try again.');
+              });
+          } else {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+            if (typeof isSubmitting !== 'undefined') isSubmitting = false;
+            alert('Cannot save offline. Please check your connection.');
+          }
+        });
+    });
+  })();
+</script>
 </body>
 </html>

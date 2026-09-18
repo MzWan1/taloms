@@ -1,0 +1,38 @@
+package za.co.taloms.company.application.dto;
+
+import com.fasterxml.jackson.annotation.JsonSerialize;
+import lombok.*;
+import za.co.taloms.common.MaskedLongSerializer;
+import za.co.taloms.company.domain.entity.ApiKeyStatus;
+import za.co.taloms.company.domain.entity.ApiScope;
+
+import java.time.LocalDateTime;
+import java.util.Set;
+
+/**
+ * Response returned ONLY when a key is generated. It is the single place the raw
+ * {@link #apiKey} value is exposed — it is never persisted and never returned by
+ * any read endpoint.
+ */
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class CompanyApiKeyResponse {
+
+    @JsonSerialize(using = MaskedLongSerializer.class)
+    private Long id;
+    @JsonSerialize(using = MaskedLongSerializer.class)
+    private Long companyId;
+    private String label;
+    private String keyPrefix;
+    private Set<ApiScope> scopes;
+    private ApiKeyStatus status;
+    private LocalDateTime createdAt;
+
+    /** Raw API key — shown once, at generation time only. */
+    private String apiKey;
+
+    /** Warning shown to the administrator alongside the one-time key. */
+    private String notice;
+}

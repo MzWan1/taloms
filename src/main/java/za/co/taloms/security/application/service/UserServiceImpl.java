@@ -39,6 +39,11 @@ public class UserServiceImpl implements UserService {
                     request.getEmail());
         }
 
+        if (request.getIdNumber() != null && !request.getIdNumber().isBlank()
+                && userRepository.existsByIdNumber(request.getIdNumber())) {
+            throw duplicateIdNumber(request.getIdNumber());
+        }
+
         var role = roleRepository.findByName(request.getRoleName())
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Role not found: " + request.getRoleName()));
@@ -52,6 +57,7 @@ public class UserServiceImpl implements UserService {
                 .accountLocked(false)
                 .failedLoginAttempts(0)
                 .traditionalAuthorityId(request.getTraditionalAuthorityId())
+                .idNumber(request.getIdNumber())
                 .roles(new HashSet<>(Set.of(role)))
                 .build();
 
@@ -70,12 +76,61 @@ public class UserServiceImpl implements UserService {
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Role not found: " + request.getRoleName()));
 
+        if (request.getIdNumber() != null && !request.getIdNumber().isBlank()) {
+            userRepository.findByIdNumber(request.getIdNumber())
+                    .filter(existing -> !existing.getId().equals(id))
+                    .ifPresent(existing -> {
+                        throw duplicateIdNumber(request.getIdNumber());
+                    });
+        }
+
         user.setFullName(request.getFullName());
         user.setEmail(request.getEmail());
         user.setTraditionalAuthorityId(request.getTraditionalAuthorityId());
+        user.setIdNumber(request.getIdNumber());
         user.setRoles(new HashSet<>(Set.of(role)));
 
         return toResponse(userRepository.save(user));
+    }
+
+    /**
+     * Self-service registration. The role is ALWAYS ROLE_USER — registration
+     * can never grant a privileged role, regardless of what the client sends.
+     */
+    @Override
+    public UserResponse register(RegisterRequest request) {
+        if (userRepository.existsByUsername(request.getUsername())) {
+            throw new DuplicateRecordException("User", "username",
+                    request.getUsername());
+        }
+        if (userRepository.existsByEmail(request.getEmail())) {
+            throw new DuplicateRecordException("User", "email",
+                    request.getEmail());
+        }
+        if (request.getIdNumber() != null && !request.getIdNumber().isBlank()
+                && userRepository.existsByIdNumber(request.getIdNumber())) {
+            throw duplicateIdNumber(request.getIdNumber());
+        }
+
+        var userRole = roleRepository.findByName("ROLE_USER")
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Role not found: ROLE_USER"));
+
+        var user = User.builder()
+                .username(request.getUsername())
+                .email(request.getEmail())
+                .fullName(request.getFullName())
+                .idNumber(request.getIdNumber())
+                .passwordHash(passwordEncoder.encode(request.getPassword()))
+                .enabled(true)
+                .accountLocked(false)
+                .failedLoginAttempts(0)
+                .roles(new HashSet<>(Set.of(userRole)))
+                .build();
+
+        var saved = userRepository.save(user);
+        log.info("Self-registered user: {}", saved.getUsername());
+        return toResponse(saved);
     }
 
     @Override
@@ -257,6 +312,15 @@ public class UserServiceImpl implements UserService {
         return roleRepository.findAll();
     }
 
+    /**
+     * Build a duplicate-ID error whose message never contains the full ID
+     * number; the masked form is enough to identify the conflict to a user.
+     */
+    private static DuplicateRecordException duplicateIdNumber(String idNumber) {
+        return new DuplicateRecordException(
+                "User already exists with idNumber: " + IdMasker.maskIdNumber(idNumber));
+    }
+
     private UserResponse toResponse(User user) {
         var roles = user.getRoles().stream()
                 .map(Role::getName)
@@ -273,6 +337,7 @@ public class UserServiceImpl implements UserService {
                 .lastLoginAt(user.getLastLoginAt())
                 .createdAt(user.getCreatedAt())
                 .traditionalAuthorityId(user.getTraditionalAuthorityId())
+                .idNumber(user.getIdNumber())
                 .roles(roles)
                 .build();
     }

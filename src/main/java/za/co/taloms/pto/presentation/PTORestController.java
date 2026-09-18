@@ -229,6 +229,23 @@ public class PTORestController {
         return ResponseEntity.ok(ApiResponse.success(response, "PTO reinstated successfully"));
     }
 
+    @PutMapping("/{id}")
+    @PreAuthorize("hasAnyRole('ADMIN','CHIEF','HEADSMAN')")
+    public ResponseEntity<ApiResponse<PTOResponse>> update(
+            @PathVariable Long id,
+            @RequestBody PTORequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        // Chiefs/headsmen may only edit PTOs of their own authority
+        if (scopeService.isCurrentUserChiefOrHeadsman()) {
+            requirePtoAccess(id);
+        }
+
+        var response = ptoService.updatePTO(id, request, userDetails.getUsername());
+        return ResponseEntity.ok(ApiResponse.success(response, "PTO updated successfully"));
+    }
+
+
     @DeleteMapping("/{id}")
     @PreAuthorize("hasAnyRole('ADMIN','CHIEF')")
     public ResponseEntity<ApiResponse<Void>> delete(
@@ -242,6 +259,49 @@ public class PTORestController {
         ptoService.deletePTO(id, userDetails.getUsername());
         return ResponseEntity.ok(ApiResponse.success(null, "PTO deleted successfully"));
     }
+
+    // Sync endpoints
+    @GetMapping("/sync/delta")
+    public ResponseEntity<ApiResponse<PTOSyncResponse>> getDelta(
+            @RequestParam(required = false) String lastSyncAt,
+            @RequestParam(defaultValue = "100") int pageSize) {
+
+        java.time.Instant since = null;
+        if (lastSyncAt != null && !lastSyncAt.isBlank()) {
+            try {
+                since = java.time.Instant.parse(lastSyncAt);
+            } catch (Exception e) {
+                // ignore invalid timestamp
+            }
+        }
+
+        List<PTOSyncDto> changes = ptoService.findChangedSince(since, pageSize);
+        java.time.Instant serverTime = java.time.Instant.now();
+
+        return ResponseEntity.ok(ApiResponse.success(
+                new PTOSyncResponse(changes, serverTime), "PTO delta sync completed"));
+    }
+
+    @PostMapping("/sync/push")
+    @PreAuthorize("hasAnyRole('ADMIN','CHIEF','HEADSMAN')")
+    public ResponseEntity<ApiResponse<PTOSyncResult>> pushChanges(
+            @Valid @RequestBody PTOSyncPushRequest request,
+            @AuthenticationPrincipal UserDetails userDetails) {
+
+        try {
+            ptoService.saveAll(request.changes(), userDetails.getUsername());
+            return ResponseEntity.ok(ApiResponse.success(
+                    new PTOSyncResult(true, request.changes().size(), 0), "PTO push sync completed"));
+        } catch (za.co.taloms.common.BusinessValidationException e) {
+            return ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(ApiResponse.error(e.getMessage()));
+        }
+    }
+
+    // Sync DTOs
+    public record PTOSyncResponse(List<PTOSyncDto> data, java.time.Instant serverTime) {}
+    public record PTOSyncPushRequest(List<PTOSyncDto> changes) {}
+    public record PTOSyncResult(boolean success, int processed, int failed) {}
 
     @GetMapping("/deleted")
     @PreAuthorize("hasAnyRole('ADMIN','CHIEF')")

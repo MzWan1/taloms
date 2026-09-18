@@ -38,6 +38,7 @@ public class AuthorityScopeService {
     public static final String ROLE_ADMIN    = "ROLE_ADMIN";
     public static final String ROLE_CHIEF    = "ROLE_CHIEF";
     public static final String ROLE_HEADSMAN = "ROLE_HEADSMAN";
+    public static final String ROLE_USER     = "ROLE_USER";
 
     private final UserRepositoryPort          userRepository;
     private final TraditionalAuthorityService authorityService;
@@ -69,6 +70,13 @@ public class AuthorityScopeService {
         return user != null && user.getRoles().stream()
                 .anyMatch(r -> ROLE_CHIEF.equals(r.getName())
                             || ROLE_HEADSMAN.equals(r.getName()));
+    }
+
+    /** True if the current user holds the ROLE_USER (resident) role. */
+    public boolean isCurrentUserUser() {
+        User user = getCurrentUser();
+        return user != null && user.getRoles().stream()
+                .anyMatch(r -> ROLE_USER.equals(r.getName()));
     }
 
     /**

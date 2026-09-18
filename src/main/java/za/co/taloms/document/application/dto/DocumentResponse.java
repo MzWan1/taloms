@@ -1,6 +1,8 @@
 package za.co.taloms.document.application.dto;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import lombok.*;
+import za.co.taloms.common.MaskedLongSerializer;
 import za.co.taloms.document.domain.entity.DocumentType;
 import za.co.taloms.document.domain.entity.EntityType;
 import java.time.LocalDateTime;
@@ -11,6 +13,7 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class DocumentResponse {
 
+    @JsonSerialize(using = MaskedLongSerializer.class)
     private Long id;
     private String originalFilename;
     private String storedFilename;
@@ -23,6 +26,7 @@ public class DocumentResponse {
     private String documentTypeIcon;
     private EntityType relatedEntityType;
     private String entityTypeDisplay;
+    @JsonSerialize(using = MaskedLongSerializer.class)
     private Long relatedEntityId;
     private String description;
     private String uploadedBy;

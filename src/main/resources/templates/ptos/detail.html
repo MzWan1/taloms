@@ -174,7 +174,7 @@
                             <div class="row">
                                 <div class="col-5 col-md-4 text-muted small fw-semibold">SA ID Number</div>
                                 <div class="col-7 col-md-8">
-                                    <code th:text="${pto.idNumber}">ID</code>
+                                    <code th:text="${T(za.co.taloms.common.IdMasker).maskIdNumber(pto.idNumber)}">ID</code>
                                 </div>
                             </div>
                         </li>
@@ -1074,6 +1074,13 @@
     document.getElementById('revokeModal').addEventListener('shown.bs.modal', function () {
         document.getElementById('revokeReason').focus();
     });
+</script>
+<script>
+  if (typeof navigator !== 'undefined' && navigator.serviceWorker) {
+    navigator.serviceWorker.register('/sw.js')
+      .then(function () { console.log('SW registered'); })
+      .catch(function (err) { console.error('SW registration failed:', err); });
+  }
 </script>
 </body>
 </html>

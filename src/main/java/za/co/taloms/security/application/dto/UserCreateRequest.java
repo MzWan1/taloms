@@ -28,5 +28,8 @@ public class UserCreateRequest {
     private String roleName;
 
     private Long traditionalAuthorityId;
+
+    @Pattern(regexp = "\\d{13}", message = "ID number must be 13 digits (for proof-of-residence ownership)")
+    private String idNumber;
 }
 

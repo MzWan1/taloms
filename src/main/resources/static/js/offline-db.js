@@ -13,7 +13,7 @@
   'use strict';
 
   const DB_NAME = 'taloms-offline';
-  const DB_VERSION = 1;
+  const DB_VERSION = 2;
 
   function open() {
     return new Promise((resolve, reject) => {
@@ -28,6 +28,13 @@
           ps.createIndex('villageId', 'villageId', { unique: false });
           ps.createIndex('status', 'status', { unique: false });
           ps.createIndex('updatedAt', 'updatedAt', { unique: false });
+        }
+        if (!db.objectStoreNames.contains('ptos')) {
+          const pts = db.createObjectStore('ptos', { keyPath: 'id' });
+          pts.createIndex('ptoNumber', 'ptoNumber', { unique: true });
+          pts.createIndex('villageId', 'villageId', { unique: false });
+          pts.createIndex('status', 'status', { unique: false });
+          pts.createIndex('updatedAt', 'updatedAt', { unique: false });
         }
         if (!db.objectStoreNames.contains('boundaries')) {
           const bs = db.createObjectStore('boundaries', { keyPath: ['parcelId', 'sequence'] });
@@ -89,6 +96,38 @@
       const store = tx(db, 'parcels', 'readonly');
       const index = store.index('villageId');
       return promisifyRequest(index.getAll(villageId));
+    },
+
+    // ── ptos ────────────────────────────────────────────────────────────
+    async putPto(pto) {
+      const db = await this.getDb();
+      const store = tx(db, 'ptos', 'readwrite');
+      return promisifyRequest(store.put(pto));
+    },
+
+    async getPto(id) {
+      const db = await this.getDb();
+      const store = tx(db, 'ptos', 'readonly');
+      return promisifyRequest(store.get(id));
+    },
+
+    async getAllPtos() {
+      const db = await this.getDb();
+      const store = tx(db, 'ptos', 'readonly');
+      return promisifyRequest(store.getAll());
+    },
+
+    async getPtosByVillage(villageId) {
+      const db = await this.getDb();
+      const store = tx(db, 'ptos', 'readonly');
+      const index = store.index('villageId');
+      return promisifyRequest(index.getAll(villageId));
+    },
+
+    async deletePto(id) {
+      const db = await this.getDb();
+      const store = tx(db, 'ptos', 'readwrite');
+      return promisifyRequest(store.delete(id));
     },
 
     async deleteParcel(id) {
@@ -244,7 +283,7 @@
 
     async clearAll() {
       const db = await this.getDb();
-      const names = ['parcels', 'boundaries', 'outbox', 'metadata'];
+      const names = ['parcels', 'ptos', 'boundaries', 'outbox', 'metadata'];
       for (const name of names) {
         tx(db, name, 'readwrite').clear();
       }

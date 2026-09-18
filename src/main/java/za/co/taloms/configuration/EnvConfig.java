@@ -18,7 +18,7 @@ public class EnvConfig {
     @Value("${DB_USERNAME:taloms_user}")
     private String dbUsername;
 
-    @Value("${DB_PASSWORD:taloms_pass}")
+    @Value("${DB_PASSWORD:taloms_password}")
     private String dbPassword;
 
     @Value("${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}")

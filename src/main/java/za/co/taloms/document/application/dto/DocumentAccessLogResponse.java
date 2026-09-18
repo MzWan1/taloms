@@ -1,6 +1,8 @@
 package za.co.taloms.document.application.dto;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import lombok.*;
+import za.co.taloms.common.MaskedLongSerializer;
 import java.time.LocalDateTime;
 
 @Data
@@ -9,7 +11,9 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class DocumentAccessLogResponse {
 
+    @JsonSerialize(using = MaskedLongSerializer.class)
     private Long id;
+    @JsonSerialize(using = MaskedLongSerializer.class)
     private Long documentId;
     private String accessedBy;
     private String accessType;

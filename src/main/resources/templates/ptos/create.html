@@ -117,6 +117,8 @@
                                 th:data-village="${p.villageName}"
                                 th:data-authority="${p.authorityName}"
                                 th:data-village-id="${p.villageId}"
+                                th:data-stand-number="${p.standNumber}"
+                                th:data-parcel-number="${p.parcelNumber}"
                                 th:data-area="${p.areaM2}"
                                 th:data-headman="${p.headmanName}"
                                 th:data-chief="${p.chiefName}">
@@ -192,6 +194,8 @@
                              class="form-control"
                              placeholder="13-digit ID number"
                              maxlength="13"
+                             pattern="\d{13}"
+                             title="SA ID number must be exactly 13 digits"
                              required>
                     </div>
                     <div class="mt-1" id="idFeedback" style="display:none"></div>
@@ -427,9 +431,27 @@
   </div>
 </div>
 
-<script src="/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+<script th:src="@{/js/offline-db.js}"></script>
+<script th:src="@{/js/taloms.js}"></script>
 <script>
   document.addEventListener('DOMContentLoaded', function() {
+    // Initialise the offline connectivity monitor + outbox auto-sync so that
+    // PTOs captured while offline are uploaded automatically when back online.
+    if (window.Taloms && Taloms.Network) {
+      Taloms.Network.init();
+      if (window.Taloms.Sync) Taloms.Sync.init();
+    }
+
+    // Use navigator.onLine as a fast synchronous proxy for offline state — the
+    // async probe (Network.checkOnline) takes 4s+ and the user might submit the
+    // form before it resolves. navigator.onLine on macOS is true only when WiFi
+    // is actually connected, so on a MacBook Pro with WiFi off it immediately
+    // tells us we are offline without waiting for the probe.
+    var navOnline = navigator.onLine;
+    if (window.Taloms && Taloms.Network) {
+      Taloms.Network.isOnline = navOnline;
+    }
     const issueDate = document.getElementById('issueDate');
     const allocationDate = document.getElementById('allocationDate');
     if (!issueDate.value) issueDate.value = new Date().toISOString().split('T')[0];
@@ -528,7 +550,7 @@
       const val = this.value.replace(/\D/g, '');
       this.value = val;
       const fb = document.getElementById('idFeedback');
-      if (val.length === 13) {
+      if (val.length !== 13) {
         const valid = luhn(val);
         fb.style.display = 'block';
         fb.innerHTML = valid
@@ -577,6 +599,269 @@
       }
     });
   });
+</script>
+<script>
+  // ── Offline PTO Form Submission ────────────────────────────────────
+  // The PTO form is multipart/form-data because it uploads files. When online we
+  // leave the native submit alone (files are uploaded server-side). When offline
+  // we intercept, queue the JSON payload to the outbox, and sync on reconnect.
+  (function () {
+    var form = document.getElementById('ptoForm');
+    if (!form) return;
+
+    var luhn = function (id) {
+      var sum = 0;
+      for (var i = 0; i < 13; i++) {
+        var d = parseInt(id[i], 10);
+        if (i % 2 === 1) { d *= 2; if (d > 9) d -= 9; }
+        sum += d;
+      }
+      return sum % 10 === 0;
+    };
+
+    form.addEventListener('submit', function (e) {
+      // SA ID must be exactly 13 digits (server enforces this too).
+      // NOTE: idInput is resolved ONCE here at the top (same as the parcel form
+      // resolving its elements before use) — declaring it inside the branch
+      // below leaves it undefined on the happy path, and the reference at the
+      // bottom of this listener would throw before preventDefault() runs,
+      // letting the native POST navigation proceed (which fails offline with
+      // ERR_INTERNET_DISCONNECTED).
+      var idInput = document.getElementById('idNumber');
+      var idVal = ((idInput && idInput.value) || '').replace(/\D/g, '');
+      var fb = document.getElementById('idFeedback');
+      if (idVal.length !== 13) {
+        e.preventDefault();
+        if (fb) {
+          fb.style.display = 'block';
+          fb.innerHTML = '<small class="text-danger"><i class="bi bi-x-circle me-1"></i>SA ID number must be exactly 13 digits (currently ' + idVal.length + ')</small>';
+        }
+        if (idInput) {
+          idInput.classList.add('is-invalid');
+          idInput.focus();
+        }
+        return;
+      }
+      // Luhn checksum is advisory only — the server only requires 13 digits.
+      if (!luhn(idVal) && fb) {
+        fb.style.display = 'block';
+        fb.innerHTML = '<small class="text-warning"><i class="bi bi-exclamation-triangle me-1"></i>Warning: checksum invalid, but 13 digits OK — submitting anyway</small>';
+      } else if (fb) {
+        fb.style.display = 'block';
+        fb.innerHTML = '<small class="text-success"><i class="bi bi-check-circle me-1"></i>Valid SA ID</small>';
+      }
+      if (idInput) idInput.classList.remove('is-invalid');
+
+      // Match the parcel procedure: ALWAYS prevent the native form POST —
+      // browser POST navigation is what fails offline with
+      // ERR_INTERNET_DISCONNECTED. Instead we send JSON to the REST API and
+      // fall back to the outbox when the fetch fails.
+      e.preventDefault();
+      var submitBtn = document.getElementById('submitBtn');
+      var originalText = submitBtn.innerHTML;
+
+      // Derive villageId / authority from the selected parcel option.
+      // NOTE: Thymeleaf renders th:data-village-id as data-village-id, which
+      // appears in dataset as `villageId` in modern browsers — but older /
+      // embedded WebViews expose it as `villageid` (all lowercase). Check
+      // BOTH spellings so offline saves never lose the village link.
+      var parcelSel = document.getElementById('parcelId');
+      var opt = (parcelSel && parcelSel.selectedIndex >= 0)
+        ? parcelSel.options[parcelSel.selectedIndex]
+        : null;
+      var ds = (opt && opt.dataset) ? opt.dataset : {};
+      var villageRaw = ds.villageId || ds.villageid
+        || (opt ? opt.getAttribute('data-village-id') : null);
+      var villageId = villageRaw ? parseInt(villageRaw, 10) : null;
+      if (villageId !== null && isNaN(villageId)) villageId = null;
+      var standNumber = ds.standNumber || ds.standnumber
+        || (opt ? opt.getAttribute('data-stand-number') : '') || '';
+      var parcelNumber = ds.parcelNumber || ds.parcelnumber
+        || (opt ? opt.getAttribute('data-parcel-number') : '') || '';
+      // Hidden-checkbox pattern: the visible checkbox posts its own value;
+      // the hidden input's 'false' is also posted — defaultChecked tells us
+      // which one reflects the user's actual choice.
+      var commEl = document.getElementById('communityResolutionRequired');
+      var communityResolutionRequired = commEl
+        ? (commEl.type === 'checkbox' ? commEl.checked : (commEl.value === 'true'))
+        : false;
+
+      var requestBody = {
+        ptoHolderName: document.getElementById('ptoHolderName').value.trim(),
+        idNumber: (document.getElementById('idNumber').value || '').replace(/\D/g, ''),
+        contactPhone: document.getElementById('contactPhone').value.trim() || null,
+        contactEmail: document.getElementById('contactEmail').value.trim() || null,
+        purpose: document.getElementById('purpose').value,
+        issueDate: document.getElementById('issueDate').value || null,
+        expiryDate: document.getElementById('expiryDate').value || null,
+        notes: document.getElementById('notes').value.trim() || null,
+        parcelId: parcelSel && parcelSel.value ? parseInt(parcelSel.value, 10) : null,
+        standNumber: (standNumber || '').trim() || null,
+        parcelNumber: (parcelNumber || '').trim() || null,
+        villageId: villageId,
+        allocatedBy: document.getElementById('allocatedBy').value.trim() || null,
+        allocationDate: document.getElementById('allocationDate').value || null,
+        standArea: parseFloat(document.getElementById('standArea').value) || null,
+        surveyReference: document.getElementById('surveyReference').value || null,
+        boundaryDescription: document.getElementById('boundaryDescription').value || null,
+        allocationFeeReceipt: document.getElementById('allocationFeeReceipt').value || null,
+        taRecommendationRef: document.getElementById('taRecommendationRef').value || null,
+        communityResolutionRequired: communityResolutionRequired
+      };
+
+      // Multipart-capable path: if files were attached, stash their names so
+      // the offline banner can tell the user to re-attach them after sync
+      // (file bytes cannot be stored in the JSON outbox).
+      var attachedFiles = [];
+      ['idCopy', 'taAllocationLetter', 'siteSketch'].forEach(function (fid) {
+        var fi = document.getElementById(fid);
+        if (fi && fi.files && fi.files.length) attachedFiles.push(fid + ':' + fi.files[0].name);
+      });
+      if (attachedFiles.length) requestBody._attachments = attachedFiles;
+
+      var url = '/api/ptos';
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Saving...';
+
+      fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody),
+        credentials: 'same-origin'
+      })
+        .then(function (response) {
+          if (response.ok) {
+            return response.json().then(function (data) {
+              if (data && data.queued) {
+                return showSavedOffline(submitBtn);
+              }
+              var id = data.data && data.data.id ? data.data.id : '';
+              // Online path: now upload the supporting files — approval is
+              // blocked until ID_COPY + TA_ALLOCATION_LETTER + SITE_SKETCH
+              // exist, and the JSON create above carries no file bytes.
+              return uploadPtoDocuments(id, submitBtn, originalText);
+            });
+          }
+          // Surface the REAL server error (validation message) instead of a
+          // generic "Server error: 400" so the user can fix the field.
+          return response.json().then(function (errData) {
+            var msg = (errData && (errData.message || errData.error))
+              || ('Server error: ' + response.status);
+            if (errData && errData.data && typeof errData.data === 'object') {
+              var details = Object.keys(errData.data).map(function (k) {
+                return k + ': ' + errData.data[k];
+              }).join('; ');
+              if (details) msg += ' — ' + details;
+            }
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+            alert('Could not save PTO: ' + msg);
+            var vErr = new Error(msg);
+            vErr._validationShown = true;
+            return Promise.reject(vErr);
+          }).catch(function (parseErr) {
+            // Response wasn't JSON (e.g. login redirect) — fall through to
+            // the offline queue path below.
+            return Promise.reject(parseErr);
+          });
+        })
+        .catch(function (err) {
+          // Already handled a validation error above (button restored) —
+          // don't queue invalid payloads for later.
+          if (err && err._validationShown) return;
+          console.warn('Online PTO save failed, queuing for sync:', err.message);
+          if (window.Taloms && Taloms.Outbox) {
+            Taloms.Outbox.enqueue('POST', url, JSON.stringify(requestBody), { 'Content-Type': 'application/json' })
+              .then(function () {
+                showSavedOffline(submitBtn);
+              })
+              .catch(function () {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+                alert('Failed to save offline. Please try again.');
+              });
+          } else {
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+            alert('Cannot save offline. Please check your connection.');
+          }
+        });
+    });
+
+    function showSavedOffline(submitBtn) {
+      submitBtn.innerHTML = '<i class="bi bi-check me-2"></i>Saved Offline';
+      submitBtn.classList.remove('btn-navy');
+      submitBtn.classList.add('btn-success');
+      setTimeout(function () {
+        window.location.href = '/ptos';
+      }, 2000);
+    }
+
+    // Upload ID copy / TA letter / site sketch for a newly created PTO.
+    // Uses the multipart /api/documents/upload endpoint (JSON cannot carry
+    // file bytes). Missing-but-required files block approval, so surface a
+    // clear message listing what still needs uploading.
+    function uploadPtoDocuments(ptoId, submitBtn, originalText) {
+      var specs = [
+        { inputId: 'idCopy', docType: 'ID_COPY', label: 'ID / Passport copy' },
+        { inputId: 'taAllocationLetter', docType: 'TA_ALLOCATION_LETTER', label: 'TA Allocation Letter' },
+        { inputId: 'siteSketch', docType: 'SITE_SKETCH', label: 'Site Sketch / Plan' }
+      ];
+      var pending = specs.filter(function (s) {
+        var el = document.getElementById(s.inputId);
+        return el && el.files && el.files.length > 0;
+      });
+      if (!ptoId) {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+        alert('PTO created but no ID returned — please check the PTO list.');
+        return Promise.resolve();
+      }
+      if (!pending.length) {
+        window.location.href = '/ptos/' + ptoId;
+        return Promise.resolve();
+      }
+      submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Uploading documents...';
+      var chain = Promise.resolve();
+      var failed = [];
+      pending.forEach(function (s) {
+        chain = chain.then(function () {
+          var file = document.getElementById(s.inputId).files[0];
+          var fd = new FormData();
+          fd.append('file', file);
+          fd.append('documentType', s.docType);
+          fd.append('entityType', 'PTO');
+          fd.append('entityId', String(ptoId));
+          fd.append('description', s.label + ' — PTO ' + ptoId);
+          return fetch('/api/documents/upload', {
+            method: 'POST',
+            body: fd,
+            credentials: 'same-origin'
+          }).then(function (resp) {
+            if (!resp.ok) failed.push(s.label);
+          }).catch(function () { failed.push(s.label); });
+        });
+      });
+      return chain.then(function () {
+        if (failed.length) {
+          submitBtn.innerHTML = originalText;
+          submitBtn.disabled = false;
+          alert('PTO created, but these uploads failed: ' + failed.join(', ')
+            + '. Please open the PTO and re-attach them before approval.');
+          window.location.href = '/ptos/' + ptoId;
+        } else {
+          window.location.href = '/ptos/' + ptoId;
+        }
+      });
+    }
+  })();
+</script>
+<script>
+  if (typeof navigator !== 'undefined' && navigator.serviceWorker) {
+    navigator.serviceWorker.register('/sw.js')
+      .then(function () { console.log('SW registered'); })
+      .catch(function (err) { console.error('SW registration failed:', err); });
+  }
 </script>
 </body>
 </html>

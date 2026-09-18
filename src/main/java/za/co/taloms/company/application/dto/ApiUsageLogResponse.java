@@ -1,0 +1,41 @@
+package za.co.taloms.company.application.dto;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+
+import lombok.*;
+import za.co.taloms.common.MaskedLongSerializer;
+import za.co.taloms.company.domain.entity.ApiFailureReason;
+import za.co.taloms.company.domain.entity.ApiOutcome;
+
+import java.time.LocalDateTime;
+
+/**
+ * Admin view of one API usage record. Contains no personal information — only the
+ * SHA-256 correlation hash of any queried ID number.
+ */
+@Data
+@Builder
+@NoArgsConstructor
+@AllArgsConstructor
+public class ApiUsageLogResponse {
+
+    @JsonSerialize(using = MaskedLongSerializer.class)
+    private Long id;
+    @JsonSerialize(using = MaskedLongSerializer.class)
+    private Long companyId;
+    private String companyName;
+    @JsonSerialize(using = MaskedLongSerializer.class)
+    private Long apiKeyId;
+    private String apiKeyPrefix;
+    private String endpoint;
+    private String httpMethod;
+    private String requiredScope;
+    private ApiOutcome outcome;
+    private Integer responseStatus;
+    private ApiFailureReason failureReason;
+    private String failureReasonDisplay;
+    private String idNumberHash;
+    private String clientIp;
+    private String userAgent;
+    private Integer durationMs;
+    private LocalDateTime requestedAt;
+}

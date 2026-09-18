@@ -38,6 +38,20 @@ public class AdminUserInitializer {
                             .description("Headsman handling day-to-day operations")
                             .build()));
 
+            Role userRole = roleRepo.findByName("ROLE_USER")
+                    .orElseGet(() -> roleRepo.save(Role.builder()
+                            .name("ROLE_USER")
+                            .description("Registered citizen/resident with self-service access to proofs of residence")
+                            .build()));
+
+            // External companies authenticate with an API key, never with a
+            // password. The role carries no administrative authority.
+            roleRepo.findByName("ROLE_COMPANY")
+                    .orElseGet(() -> roleRepo.save(Role.builder()
+                            .name("ROLE_COMPANY")
+                            .description("External company authorised to use the TALOMS partner API")
+                            .build()));
+
             // Create admin user if it doesn't exist
             if (userRepo.findByUsername("admin").isEmpty()) {
                 User admin = User.builder()

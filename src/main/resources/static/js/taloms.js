@@ -15,9 +15,11 @@
   // ── Configuration ───────────────────────────────────────────────────
   const CONFIG = {
     PING_INTERVAL_MS: 30000,
-    PING_URL: '/api/ping',
+    PING_URL: '/api/parcels/ping',
     SYNC_URL: '/api/parcels/sync/delta',
     PUSH_URL: '/api/parcels/sync/push',
+    PTO_SYNC_URL: '/api/ptos/sync/delta',
+    PTO_PUSH_URL: '/api/ptos/sync/push',
     MAX_RETRIES: 8,
     BASE_RETRY_DELAY_MS: 1000,
     MAX_RETRY_DELAY_MS: 60000,
@@ -45,12 +47,30 @@
     return !!(conn && (conn.effectiveType === '2g' || conn.effectiveType === 'slow-2g' || conn.saveData));
   }
 
+  /**
+   * Mask a South African ID number for display only. Preserves the first 6 and
+   * last 3 characters and replaces the middle with '*', e.g.
+   * "9001011234087" -> "900101****087". The full value is never modified.
+   * Mirrors za.co.taloms.common.IdMasker#maskIdNumber on the server so the
+   * masking rule lives in exactly one place per language.
+   */
+  function maskIdNumber(idNumber) {
+    if (idNumber === null || idNumber === undefined) return null;
+    const value = String(idNumber).trim();
+    if (value.length === 0) return null;
+    if (value.length < 10) return '*'.repeat(value.length);
+    return value.slice(0, 6) + '*'.repeat(value.length - 9) + value.slice(value.length - 3);
+  }
+
   // ── Network Monitor ─────────────────────────────────────────────────
   const Network = {
     isOnline: navigator.onLine,
     isSlow: isSlowConnection(),
 
-    init() {
+    async init() {
+      // Join the browser's connectivity events as a fast-path hint, but they
+      // are NOT the source of truth (navigator.onLine is unreliable / often
+      // undefined). The poll() loop below uses a real network probe instead.
       window.addEventListener('online', () => {
         this.isOnline = true;
         this.updateBanner();
@@ -64,27 +84,100 @@
         this.isSlow = isSlowConnection();
         this.updateBanner();
       });
+      // Sync when page becomes visible again (handles sleep/wake, tab switching)
+      document.addEventListener('visibilitychange', () => {
+        if (!document.hidden) {
+          this.poll();
+        }
+      });
+      // Base connectivity on a real probe so we never rely on navigator.onLine.
+      this.isOnline = await this.checkOnline();
       this.updateBanner();
+
+      // If we opened a page already online (e.g. the parcels list right after
+      // an offline save), flush any queued items immediately.
+      if (this.isOnline) {
+        this.flushOutbox();
+      }
+
+      // Poll connectivity + flush every 10s. This reliably detects the
+      // offline->online transition even in browsers where navigator.onLine is
+      // broken or never fires events.
+      if (this._pollTimer) clearInterval(this._pollTimer);
+      this._pollTimer = setInterval(() => this.poll(), 10000);
+    },
+
+    // Real, reliable connectivity check: reach /api/ping with a short timeout.
+    // Returns true only when the server actually answers. Uses a timeout race
+    // so it works even in browsers without the newer AbortController API.
+    async checkOnline() {
+      try {
+        const timeout = new Promise((resolve) => setTimeout(() => resolve(false), 4000));
+        // Append a cache-busting timestamp so the service worker never serves a
+        // stale cached 200 — we need a REAL network round-trip to know.
+        const probeUrl = CONFIG.PING_URL + '?t=' + Date.now();
+        const probe = OriginalFetch(probeUrl, {
+          credentials: 'same-origin',
+          cache: 'no-store'
+        }).then((res) => res.ok).catch(() => false);
+        return await Promise.race([probe, timeout]);
+      } catch (e) {
+        return false;
+      }
+    },
+
+    // One poll cycle: refresh connectivity and, if we are online, flush any
+    // queued offline mutations so they are uploaded automatically.
+    async poll() {
+      const online = await this.checkOnline();
+      if (online !== this.isOnline) {
+        this.isOnline = online;
+        this.updateBanner();
+      }
+      if (online) {
+        await this.flushOutbox();
+      }
+      return online;
     },
 
     updateBanner() {
-      const banner = document.getElementById('offline-banner');
-      const outboxCount = document.getElementById('outbox-count');
-      if (!banner) return;
+      let indicator = document.getElementById('connection-indicator');
+      if (!indicator) {
+        indicator = document.createElement('div');
+        indicator.id = 'connection-indicator';
+        document.body.appendChild(indicator);
+      }
 
       if (!this.isOnline) {
-        banner.style.display = 'block';
-        banner.className = 'alert alert-warning py-2 mb-0 text-center';
-        banner.innerHTML = '<i class="bi bi-wifi-off me-2"></i>You are offline. Changes will sync when connectivity returns.';
-        if (outboxCount) outboxCount.style.display = 'none';
+        indicator.className = 'connection-indicator offline';
+        indicator.innerHTML = '<span class="indicator-dot"></span><span class="indicator-text">Offline</span>';
+        indicator.title = 'You are offline. Changes will sync when connectivity returns.';
+        indicator.onclick = () => {
+          indicator.classList.add('minimized');
+          indicator.innerHTML = '<span class="indicator-dot"></span>';
+          indicator.title = 'Offline — click to expand';
+        };
       } else if (this.isSlow) {
-        banner.style.display = 'block';
-        banner.className = 'alert alert-info py-2 mb-0 text-center';
-        banner.innerHTML = '<i class="bi bi-speedometer2 me-2"></i>Low-bandwidth connection detected. App is optimizing data usage.';
-        if (outboxCount) outboxCount.style.display = 'none';
+        indicator.className = 'connection-indicator slow';
+        indicator.innerHTML = '<span class="indicator-dot"></span><span class="indicator-text">Slow</span>';
+        indicator.title = 'Low-bandwidth connection. Optimizing data usage.';
+        indicator.onclick = () => {
+          indicator.classList.add('minimized');
+          indicator.innerHTML = '<span class="indicator-dot"></span>';
+          indicator.title = 'Slow connection — click to expand';
+        };
       } else {
-        banner.style.display = 'none';
-        if (outboxCount) outboxCount.style.display = 'none';
+        indicator.className = 'connection-indicator online';
+        indicator.innerHTML = '<span class="indicator-dot"></span><span class="indicator-text">Online</span>';
+        indicator.title = 'Connected';
+        indicator.onclick = null;
+        // Auto-hide after 3 seconds
+        setTimeout(() => {
+          if (indicator && indicator.classList.contains('online')) {
+            indicator.classList.add('minimized');
+            indicator.innerHTML = '<span class="indicator-dot"></span>';
+          }
+        }, 3000);
       }
     },
 
@@ -93,7 +186,7 @@
       if (!outboxCount) return;
       try {
         const items = await TalomsDB.getAllOutbox();
-        const pending = items.filter(i => i.status === Taloms.Outbox.PENDING || i.status === Taloms.Outbox.FAILED).length;
+        const pending = items.filter(i => i.status === CONFIG.OUTBOX_STATUS.PENDING || i.status === CONFIG.OUTBOX_STATUS.FAILED).length;
         if (pending > 0) {
           outboxCount.textContent = pending + ' queued';
           outboxCount.style.display = 'inline-block';
@@ -255,7 +348,9 @@
       await TalomsDB.enqueue(item);
 
       try {
-        const response = await fetch(item.url, {
+        // Use the ORIGINAL fetch directly (not the overridden window.fetch) so
+        // the interceptor doesn't re-enqueue this item while we are replaying it.
+        const response = await OriginalFetch(item.url, {
           method: item.method,
           headers: Object.assign({ 'Content-Type': 'application/json' }, item.headers),
           body: item.body,
@@ -308,6 +403,7 @@
 
     async init() {
       this.lastSyncAt = await TalomsDB.getMetadata('lastSyncAt');
+      this.lastPtoSyncAt = await TalomsDB.getMetadata('lastPtoSyncAt');
       if (window.TalomsDB) {
         TalomsDB.checkQuota().then(function(result) {
           if (result.percentUsed > 80) {
@@ -318,6 +414,12 @@
     },
 
     async pullDelta() {
+      if (!navigator.onLine) return;
+      await this.pullParcelDelta();
+      await this.pullPtoDelta();
+    },
+
+    async pullParcelDelta() {
       if (!navigator.onLine) return;
       const url = CONFIG.SYNC_URL + '?lastSyncAt=' + encodeURIComponent(this.lastSyncAt || '');
       try {
@@ -340,11 +442,45 @@
           }
         }
       } catch (e) {
-        console.warn('Delta sync failed:', e);
+        console.warn('Parcel delta sync failed:', e);
+      }
+    },
+
+    async pullPtoDelta() {
+      if (!navigator.onLine) return;
+      const url = CONFIG.PTO_SYNC_URL + '?lastSyncAt=' + encodeURIComponent(this.lastPtoSyncAt || '');
+      try {
+        const response = await fetch(url, { credentials: 'same-origin' });
+        if (!response.ok) return;
+        const data = await response.json();
+        if (data && data.data) {
+          for (const pto of data.data) {
+            if (pto.deleted) {
+              await TalomsDB.deletePto(pto.id);
+            } else {
+              await TalomsDB.putPto(pto);
+            }
+          }
+          if (data.serverTime) {
+            this.lastPtoSyncAt = data.serverTime;
+            await TalomsDB.putMetadata('lastPtoSyncAt', this.lastPtoSyncAt);
+          }
+          if (window.TalomsDB) {
+            TalomsDB.checkQuota();
+          }
+        }
+      } catch (e) {
+        console.warn('PTO delta sync failed:', e);
       }
     },
 
     async pushLocalChanges() {
+      if (!navigator.onLine) return;
+      await this.pushLocalParcelChanges();
+      await this.pushLocalPtoChanges();
+    },
+
+    async pushLocalParcelChanges() {
       if (!navigator.onLine) return;
       const parcels = await TalomsDB.getAllParcels();
       const unsynced = parcels.filter(p => p._dirty);
@@ -395,6 +531,63 @@
       }
     },
 
+    async pushLocalPtoChanges() {
+      if (!navigator.onLine) return;
+      const ptos = await TalomsDB.getAllPtos();
+      const unsynced = ptos.filter(p => p._dirty && !p.deleted);
+      if (unsynced.length === 0) return;
+      const payload = unsynced.map(p => ({
+        id: p.id,
+        ptoNumber: p.ptoNumber,
+        ptoHolderName: p.ptoHolderName,
+        idNumber: p.idNumber,
+        contactPhone: p.contactPhone,
+        contactEmail: p.contactEmail,
+        purpose: p.purpose,
+        status: p.status,
+        issueDate: p.issueDate,
+        expiryDate: p.expiryDate,
+        notes: p.notes,
+        villageId: p.villageId,
+        traditionalAuthorityId: p.traditionalAuthorityId,
+        parcelId: p.parcelId,
+        approvedBy: p.approvedBy,
+        approvedAt: p.approvedAt,
+        approvalNotes: p.approvalNotes,
+        revokedBy: p.revokedBy,
+        revokedAt: p.revokedAt,
+        revokeReason: p.revokeReason,
+        allocatedBy: p.allocatedBy,
+        allocationDate: p.allocationDate,
+        standArea: p.standArea,
+        surveyReference: p.surveyReference,
+        boundaryDescription: p.boundaryDescription,
+        allocationFeeReceipt: p.allocationFeeReceipt,
+        taRecommendationRef: p.taRecommendationRef,
+        communityResolutionRequired: p.communityResolutionRequired,
+        createdBy: p.createdBy,
+        createdAt: p.createdAt,
+        updatedAt: p.updatedAt
+      }));
+
+      try {
+        const response = await fetch(CONFIG.PTO_PUSH_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ changes: payload }),
+          credentials: 'same-origin'
+        });
+        if (response.ok) {
+          for (const p of unsynced) {
+            p._dirty = false;
+            await TalomsDB.putPto(p);
+          }
+        }
+      } catch (e) {
+        console.warn('PTO push sync failed:', e);
+      }
+    },
+
     async fullSync() {
       await this.pullDelta();
       await this.pushLocalChanges();
@@ -408,20 +601,74 @@
     const method = (opts.method || 'GET').toUpperCase();
     const isMutation = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method);
 
+    // If navigator.onLine is false (WiFi off / airplane mode), we know we're
+    // offline immediately — no need to wait for the async probe. This matches
+    // the original working behavior. When navigator.onLine is true but the
+    // async probe later reveals no internet (macOS Ethernet quirk), the online
+    // path's 5s timeout will catch it and fall back to the outbox.
     if (!isMutation || !navigator.onLine) {
+      // Offline mutation: let normal GETs / non-mutations pass through, but
+      // queue PTO + parcel + document writes so later sync can replay them.
+      if (isMutation && navigator && !navigator.onLine) {
+        var offUrl = typeof resource === 'string' ? resource : resource.url;
+        var offBody = typeof opts.body === 'string' ? opts.body : JSON.stringify(opts.body);
+        // Multipart FormData (PTO create/edit + file inputs) cannot be
+        // serialised as JSON — stash the files so .catch() below can surface
+        // a clear message instead of silently dropping them.
+        var offIsForm = (typeof FormData !== 'undefined' && opts.body instanceof FormData)
+          || (opts.headers && String(opts.headers['Content-Type'] || '').indexOf('multipart') !== -1);
+        if (offUrl && (offUrl.indexOf('/api/ptos') !== -1
+            || offUrl.indexOf('/api/parcels') !== -1
+            || offUrl.indexOf('/api/documents') !== -1)) {
+          if (offIsForm) {
+            try {
+              var names = [];
+              opts.body.forEach(function (v, k) { if (v instanceof File) names.push(k + ':' + v.name); });
+              offBody = JSON.stringify({ _multipart: true, _files: names, _note: 'files must be re-attached after sync' });
+            } catch (fe) { offBody = JSON.stringify({ _multipart: true }); }
+          }
+          return Taloms.Outbox.enqueue(method, offUrl, offBody, opts.headers)
+            .then(function () {
+              return Promise.resolve(new Response(JSON.stringify({ success: false, queued: true }), {
+                status: 202,
+                headers: { 'Content-Type': 'application/json' }
+              }));
+            });
+        }
+      }
       return OriginalFetch(resource, opts);
     }
 
     const url = typeof resource === 'string' ? resource : resource.url;
     const body = typeof opts.body === 'string' ? opts.body : JSON.stringify(opts.body);
 
-    return OriginalFetch(resource, opts).catch((err) => {
-      if (err && (err.name === 'TypeError' || err.message.includes('fetch'))) {
-        return Taloms.Outbox.enqueue(method, url, body, opts.headers)
-          .then(() => Promise.resolve(new Response(JSON.stringify({ success: false, queued: true }), {
-            status: 202,
-            headers: { 'Content-Type': 'application/json' }
-          })));
+    // Online path: try the network with a 5-second timeout, fall back to the
+    // outbox on failure. The timeout prevents indefinite hangs on macOS when
+    // the physical link is up but there is no internet.
+    return new Promise((resolve, reject) => {
+      var timer = setTimeout(function () {
+        reject(new Error('Network timeout'));
+      }, 5000);
+      OriginalFetch(resource, opts)
+        .then(function (resp) {
+          clearTimeout(timer);
+          resolve(resp);
+        })
+        .catch(function (err) {
+          clearTimeout(timer);
+          reject(err);
+        });
+    }).catch(function (err) {
+      if (err && (err.name === 'TypeError' || err.message.includes('fetch') || err.message === 'Network timeout')) {
+        var qUrl = typeof resource === 'string' ? resource : resource.url;
+        var qBody = typeof opts.body === 'string' ? opts.body : JSON.stringify(opts.body);
+        return Taloms.Outbox.enqueue(method, qUrl, qBody, opts.headers)
+          .then(function () {
+            return Promise.resolve(new Response(JSON.stringify({ success: false, queued: true }), {
+              status: 202,
+              headers: { 'Content-Type': 'application/json' }
+            }));
+          });
       }
       return Promise.reject(err);
     });
@@ -434,5 +681,26 @@
   window.Taloms.Sync = Sync;
   window.Taloms.Conflict = Conflict;
   window.Taloms.CONFIG = CONFIG;
+  // Single source of truth for ID-number display masking in the browser.
+  window.Taloms.Mask = { maskIdNumber: maskIdNumber };
+
+  // ── Cache Warming (post-login) ──────────────────────────────────────
+  window.Taloms.warmCache = function (onProgress) {
+    if (!('serviceWorker' in navigator)) return Promise.resolve(false);
+    return navigator.serviceWorker.ready.then(function (reg) {
+      if (!reg.active) return false;
+      return new Promise(function (resolve) {
+        var channel = new MessageChannel();
+        channel.port1.onmessage = function (event) {
+          if (event.data && event.data.type === 'CACHE_WARMED') {
+            resolve(event.data.payload);
+          }
+        };
+        reg.active.postMessage({ type: 'WARM_CACHE' }, [channel.port2]);
+        // Timeout after 30 seconds
+        setTimeout(function () { resolve(null); }, 30000);
+      });
+    });
+  };
 
 })();

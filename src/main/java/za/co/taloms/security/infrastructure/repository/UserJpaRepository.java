@@ -14,9 +14,13 @@ public interface UserJpaRepository extends JpaRepository<User, Long> {
 
     Optional<User> findByEmail(String email);
 
+    Optional<User> findByIdNumber(String idNumber);
+
     boolean existsByUsername(String username);
 
     boolean existsByEmail(String email);
+
+    boolean existsByIdNumber(String idNumber);
 
     @Query("SELECT u FROM User u JOIN u.roles r WHERE r.name = :roleName")
     List<User> findByRoleName(@Param("roleName") String roleName);
@@ -30,7 +34,9 @@ public interface UserJpaRepository extends JpaRepository<User, Long> {
 
         @Query("SELECT u FROM User u WHERE " +
            "LOWER(u.fullName) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
-           "LOWER(u.email) LIKE LOWER(CONCAT('%', :query, '%')) " +
+           "LOWER(u.email) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           "LOWER(u.username) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           "u.idNumber LIKE CONCAT('%', :query, '%') " +
            "ORDER BY u.fullName")
     List<User> searchByNameOrEmail(@Param("query") String query);
 

@@ -14,11 +14,12 @@
  * Message: accept cache management commands from the page.
  */
 
-const CACHE_NAME = 'taloms-shell-v3';
+const CACHE_NAME = 'taloms-shell-v5'; // v5: handleTileRequest accepts opaque tile responses (fixes map 503s)
 const TILE_CACHE = 'taloms-tiles-v1';
 const API_CACHE = 'taloms-api-v1';
 const OFFLINE_PAGE = '/offline.html';
 
+// Only precache static assets that don't require auth
 const PRECACHE_URLS = [
   '/',
   '/login',
@@ -37,6 +38,25 @@ const PRECACHE_URLS = [
   '/favicon.ico',
   '/manifest.webmanifest',
   '/icons/icon.svg',
+];
+
+// Pages to cache after login (require authentication)
+const WARM_CACHE_URLS = [
+  '/dashboard',
+  '/parcels',
+  '/parcels/create',
+  '/ptos',
+  '/ptos/create',
+  '/gis',
+  '/documents',
+  '/documents/upload',
+  '/authorities',
+  '/authorities/create',
+  '/villages',
+  '/users',
+  '/users/create',
+  '/users/change-password',
+  '/audit'
 ];
 
 self.addEventListener('install', (event) => {
@@ -62,7 +82,19 @@ self.addEventListener('install', (event) => {
         }
 
         allUrls.push(...PRECACHE_URLS);
-        return cache.addAll(allUrls);
+        // Fetch with credentials (cookies) so authenticated pages work
+        // Only cache successful responses, skip failures silently
+        return Promise.all(
+          allUrls.map(url => {
+            return fetch(url, { credentials: 'same-origin' })
+              .then(response => {
+                if (response.ok) {
+                  return cache.put(url, response);
+                }
+              })
+              .catch(() => { /* skip failed URLs */ });
+          })
+        );
       })
       .then(() => self.skipWaiting())
   );
@@ -126,7 +158,7 @@ async function handleApiRequest(request) {
     });
 
     const timeoutPromise = new Promise((resolve) => {
-      setTimeout(() => resolve(null), 20000);
+      setTimeout(() => resolve(null), 10000);
     });
 
     const response = await Promise.race([networkPromise, timeoutPromise]);
@@ -157,12 +189,23 @@ async function handleTileRequest(request) {
       setTimeout(() => resolve(null), 15000);
     });
     const response = await Promise.race([networkPromise, timeoutPromise]);
-    if (response && response.ok) {
-      cache.put(request, response.clone());
+    // NOTE: map tiles are loaded by the browser as images (no-cors), so a
+    // successful fetch comes back as an *opaque* response whose `ok` is
+    // always false (status 0). Accept opaque responses as hits — otherwise
+    // every tile is wrongly discarded and the map fails with a 503.
+    if (response && (response.ok || response.type === 'opaque' || response.status === 0)) {
+      try {
+        await cache.put(request, response.clone());
+      } catch (cacheErr) {
+        console.warn('Tile cache put failed:', cacheErr);
+      }
       return response;
     }
     const cached = await cache.match(request);
     if (cached) return cached;
+    // Surface the real upstream response (e.g. tile-server 4xx/5xx) instead
+    // of masking it with a synthetic 503, so DevTools shows the true cause.
+    if (response) return response;
     return new Response('', { status: 503 });
   } catch (err) {
     const cached = await cache.match(request);
@@ -179,11 +222,11 @@ async function handleAppShellRequest(request) {
         cache.put(request, response.clone());
       }
       return response;
-    });
+    }).catch(() => null);
     const cached = await cache.match(request);
     const response = await Promise.race([
       networkPromise,
-      new Promise((resolve) => setTimeout(() => resolve(null), 5000))
+      new Promise((resolve) => setTimeout(() => resolve(null), 3000))
     ]);
     if (response) return response;
     if (cached) return cached;
@@ -273,12 +316,46 @@ self.addEventListener('message', (event) => {
         })()
       );
       break;
+
+    case 'WARM_CACHE':
+      event.waitUntil(
+        (async function() {
+          const cache = await caches.open(CACHE_NAME);
+          const results = { cached: 0, failed: 0, skipped: [] };
+          for (const url of WARM_CACHE_URLS) {
+            try {
+              const response = await fetch(url, { credentials: 'same-origin' });
+              if (response.ok) {
+                // Cache under the original URL, even if redirected
+                // This ensures pages like /villages (which redirect to /authorities/4 for CHIEF)
+                // are available offline under the original URL
+                await cache.put(url, response);
+                results.cached++;
+              } else {
+                results.failed++;
+                results.skipped.push(url + ' (HTTP ' + response.status + ')');
+              }
+            } catch (e) {
+              results.failed++;
+              results.skipped.push(url + ' (error)');
+            }
+          }
+          // Reply on the MessageChannel port if provided, otherwise on event.source
+          var ports = event.ports;
+          if (ports && ports.length > 0) {
+            ports[0].postMessage({ type: 'CACHE_WARMED', payload: results });
+          } else if (event.source) {
+            event.source.postMessage({ type: 'CACHE_WARMED', payload: results });
+          }
+        })()
+      );
+      break;
   }
 });
 
 function openIndexedDB() {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open('taloms-offline', 1);
+    const request = indexedDB.open('taloms-offline', 2);
     request.onerror = () => reject(request.error);
     request.onsuccess = () => resolve(request.result);
   });

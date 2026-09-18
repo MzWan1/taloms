@@ -37,6 +37,11 @@ public class UserRepositoryAdapter implements UserRepositoryPort {
     }
 
     @Override
+    public Optional<User> findByIdNumber(String idNumber) {
+        return userJpaRepository.findByIdNumber(idNumber);
+    }
+
+    @Override
     public List<User> findAll() {
         return userJpaRepository.findAll();
     }
@@ -59,6 +64,11 @@ public class UserRepositoryAdapter implements UserRepositoryPort {
     @Override
     public boolean existsByEmail(String email) {
         return userJpaRepository.existsByEmail(email);
+    }
+
+    @Override
+    public boolean existsByIdNumber(String idNumber) {
+        return userJpaRepository.existsByIdNumber(idNumber);
     }
 
     @Override

@@ -89,10 +89,11 @@
                             No deleted PTO records found.
                         </td>
                     </tr>
-                    <tr th:each="pto : ${ptos}">
+                    <tr th:each="pto : ${ptos}"
+                        th:classappend="${pto.status.name() == 'PENDING'} ? 'pto-row-pending' : ''">
                         <td class="fw-semibold small" th:text="${pto.ptoNumber}">PTO-2026-00001</td>
                         <td th:text="${pto.ptoHolderName}">Holder Name</td>
-                        <td th:text="${pto.idNumber}">ID</td>
+                        <td th:text="${T(za.co.taloms.common.IdMasker).maskIdNumber(pto.idNumber)}">ID</td>
                         <td th:text="${pto.villageName}">Village</td>
                         <td>
                             <span th:class="${'badge ' + pto.statusBadgeClass}"

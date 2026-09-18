@@ -1,6 +1,8 @@
 package za.co.taloms.security.application.dto;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import lombok.*;
+import za.co.taloms.common.MaskedLongSerializer;
 
 /**
  * Lightweight DTO for user search results.
@@ -8,6 +10,7 @@ import lombok.*;
  */
 @Data @Builder @NoArgsConstructor @AllArgsConstructor
 public class UserSearchDto {
+    @JsonSerialize(using = MaskedLongSerializer.class)
     private Long    id;
     private String  fullName;
     private String  email;

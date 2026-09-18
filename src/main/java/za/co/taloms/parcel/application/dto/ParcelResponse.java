@@ -1,6 +1,8 @@
 package za.co.taloms.parcel.application.dto;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 
 import lombok.*;
+import za.co.taloms.common.MaskedLongSerializer;
 import za.co.taloms.parcel.domain.entity.CaptureMode;
 import za.co.taloms.parcel.domain.entity.ParcelStatus;
 import java.time.LocalDateTime;
@@ -12,6 +14,7 @@ import java.util.List;
 @AllArgsConstructor
 public class ParcelResponse {
 
+    @JsonSerialize(using = MaskedLongSerializer.class)
     private Long id;
     private String parcelNumber;
     private String standNumber;
@@ -23,9 +26,11 @@ public class ParcelResponse {
     private Double centroidLat;
     private Double centroidLng;
     private Double perimeterM;
+    @JsonSerialize(using = MaskedLongSerializer.class)
     private Long villageId;
     private String villageName;
     private String authorityName;
+    @JsonSerialize(using = MaskedLongSerializer.class)
     private Long ptoId;
     private String ptoNumber;
     private String ptoHolderName;
@@ -38,6 +43,6 @@ public class ParcelResponse {
     private CaptureMode captureMode;
     private String chiefName;
     private String headmanName;
-    private Long version;
+    private Long version; // not masked - used for optimistic locking
 }
 
