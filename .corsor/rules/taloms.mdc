@@ -1,0 +1,77 @@
+# TALOMS Development Rules
+
+## Core rule
+Preserve existing functionality and architecture unless the task explicitly requires a change.
+
+## Before changing code
+1. Inspect the relevant existing implementation first.
+2. Trace the complete flow before modifying it.
+3. Identify the actual root cause before proposing a fix.
+4. Check related services, controllers, repositories, security configuration,
+   database entities, migrations, and frontend callers when relevant.
+5. Do not assume missing requirements.
+
+## Changes
+1. Make the smallest change that correctly solves the problem.
+2. Do not refactor unrelated code.
+3. Do not rename existing classes, methods, endpoints, database columns,
+   or packages unless explicitly required.
+4. Do not replace an existing technology or architecture without justification.
+5. Do not introduce new dependencies unless necessary.
+6. Do not modify database schema or Flyway migrations unless the task requires it.
+7. Never remove working functionality just to simplify an implementation.
+
+## Security
+1. Never hardcode passwords, secrets, API keys, JWT secrets, tokens,
+   credentials, or environment-specific URLs.
+2. Never expose sensitive information in logs or API responses.
+3. Preserve existing authentication and authorization rules.
+4. Backend authorization must never rely solely on frontend restrictions.
+5. Treat user-controlled input as untrusted.
+
+## Debugging
+When fixing a bug:
+1. Reproduce or establish the failure condition.
+2. Trace the execution path.
+3. Identify the root cause.
+4. Explain the root cause briefly.
+5. Make a targeted fix.
+6. Run the relevant tests.
+7. Check for regressions.
+8. Review the final diff for unintended changes.
+
+Do not guess-and-rewrite.
+
+## Testing
+After modifying code:
+1. Run the most relevant existing tests.
+2. Add tests when the changed behavior is not adequately covered.
+3. Do not weaken or delete tests merely to make them pass.
+4. If tests cannot be run, state exactly why.
+
+## Database
+1. Preserve existing data.
+2. Do not change schema casually.
+3. Check existing Flyway migrations before creating a new migration.
+4. Never edit an already-applied migration without explicit instruction.
+5. Verify entity relationships and constraints before changing persistence logic.
+
+## Final review
+Before finishing:
+1. Review the git diff.
+2. Check for unrelated modifications.
+3. Check for hardcoded values or secrets.
+4. Check error handling.
+5. Check authorization/security implications.
+6. Check whether existing behavior was unintentionally changed.
+7. Report exactly what was changed and what was tested.
+
+## Communication
+Before a significant multi-file change:
+- Explain the proposed approach.
+- Identify the files likely to change.
+- State any assumptions.
+- Wait for approval when the change is potentially destructive or architectural.
+
+Do not claim tests passed unless they actually passed.
+Do not claim a bug is fixed unless the relevant behavior was verified.

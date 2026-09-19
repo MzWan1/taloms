@@ -113,12 +113,14 @@ public class DashboardServiceImpl implements DashboardService {
 
     private List<RecentActivityDto> getRecentActivity() {
         try {
-            var auditLogs = auditService.findAll();
+            // Bounded query: previously this materialised the ENTIRE audit table
+            // and then took the first 10 rows in memory. Now the database does
+            // the limiting (ORDER BY performed_at DESC LIMIT 10).
+            var auditLogs = auditService.findRecent(10);
             if (auditLogs == null || auditLogs.isEmpty()) {
                 return new ArrayList<>();
             }
             return auditLogs.stream()
-                    .limit(10)
                     .map(audit -> {
                         try {
                             return RecentActivityDto.builder()

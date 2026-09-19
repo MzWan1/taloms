@@ -38,7 +38,7 @@ public interface PTORepositoryPort {
     List<PTO> findDeleted();
 
     // Sync operations
-    List<PTO> findChangedSince(java.time.LocalDateTime since);
+    List<PTO> findChangedSince(java.time.LocalDateTime since, int limit);
     List<PTO> findByIds(Set<Long> ids);
 }
 

@@ -10,6 +10,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import za.co.taloms.common.ApiResponse;
+import za.co.taloms.common.PageResponse;
 import za.co.taloms.company.application.dto.*;
 import za.co.taloms.company.application.service.ApiUsageService;
 import za.co.taloms.company.application.service.CompanyApiKeyService;
@@ -105,8 +106,11 @@ public class CompanyAdminRestController {
     }
 
     @GetMapping("/{id}/usage")
-    public ResponseEntity<ApiResponse<List<ApiUsageLogResponse>>> getUsage(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<PageResponse<ApiUsageLogResponse>>> getUsage(
+            @PathVariable Long id,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer pageSize) {
         return ResponseEntity.ok(ApiResponse.success(
-                usageService.findByCompany(id), "API usage retrieved successfully"));
+                usageService.findByCompany(id, page, pageSize), "API usage retrieved successfully"));
     }
 }

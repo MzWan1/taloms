@@ -128,14 +128,15 @@ public class PTOPageController {
             Set<Long> scopedVillageIds = scopedUser ? scopeService.scopedVillageIds() : null;
 
             // Authorities are needed for the PTO form's authority field.
-            // For chiefs/headsmen, only their linked authority is shown.
-            Long linkedAuthorityId = scopeService.getCurrentUserAuthorityId();
+            // For chiefs/headsmen, only authorities they belong to are shown.
+            java.util.Set<Long> allowedAuthorityIds =
+                    scopedUser ? scopeService.getCurrentUserAuthorityIds() : null;
             var authorities = scopedUser
-                    ? (linkedAuthorityId != null
-                        ? authorityService.findAllActive().stream()
-                            .filter(a -> linkedAuthorityId.equals(a.getId()))
-                            .toList()
-                        : Collections.emptyList())
+                    ? (allowedAuthorityIds == null || allowedAuthorityIds.isEmpty()
+                        ? Collections.emptyList()
+                        : authorityService.findAllActive().stream()
+                            .filter(a -> allowedAuthorityIds.contains(a.getId()))
+                            .toList())
                     : authorityService.findAllActive();
             log.info("Loaded {} active authorities for PTO create form", authorities.size());
 
@@ -530,16 +531,18 @@ public class PTOPageController {
 
                         List<TraditionalAuthorityResponse> authorities;
             if (scopeService.isCurrentUserChiefOrHeadsman()) {
-                // Prefer the user's linked authority; otherwise fall back to the
-                // PTO's village authority so a village-scoped headsman can edit.
-                Long linkedAuthorityId = scopeService.getCurrentUserAuthorityId();
-                Long relevantAuthorityId = linkedAuthorityId != null
-                        ? linkedAuthorityId : pto.getTraditionalAuthorityId();
-                authorities = relevantAuthorityId != null
-                        ? authorityService.findAllActive().stream()
-                            .filter(a -> relevantAuthorityId.equals(a.getId()))
-                            .toList()
-                        : Collections.emptyList();
+                // Every authority the user belongs to; fall back to the PTO's
+                // own authority so a village-scoped headsman can still edit.
+                java.util.Set<Long> allowed = new java.util.HashSet<>(
+                        scopeService.getCurrentUserAuthorityIds());
+                if (allowed.isEmpty() && pto.getTraditionalAuthorityId() != null) {
+                    allowed.add(pto.getTraditionalAuthorityId());
+                }
+                authorities = allowed.isEmpty()
+                        ? Collections.emptyList()
+                        : authorityService.findAllActive().stream()
+                            .filter(a -> allowed.contains(a.getId()))
+                            .toList();
             } else {
                 authorities = authorityService.findAllActive();
             }

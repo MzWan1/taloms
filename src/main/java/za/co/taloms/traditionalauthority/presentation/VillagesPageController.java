@@ -23,16 +23,20 @@ public class VillagesPageController {
     @GetMapping
     @PreAuthorize("hasAnyRole('CHIEF','HEADSMAN')")
     public String list(Model model) {
-        // A chief is scoped to exactly one authority — send them straight to
-        // its detail page, which is where the villages block and the "Add
-        // Village" flow (the same template used when viewing the authority)
-        // live. This keeps village management in the authority context.
-        Long linkedAuthorityId = scopeService.getCurrentUserAuthorityId();
-        if (linkedAuthorityId != null && scopeService.isCurrentUserChiefOrHeadsman()) {
-            return "redirect:/authorities/" + linkedAuthorityId;
+        java.util.Set<Long> linkedAuthorityIds = scopeService.getCurrentUserAuthorityIds();
+
+        // A chief scoped to exactly one authority goes straight to its detail
+        // page (where the villages block and "Add Village" flow live). A chief
+        // with several authorities goes to "My Authorities" to choose context.
+        if (scopeService.isCurrentUserChief()) {
+            if (linkedAuthorityIds.size() == 1) {
+                return "redirect:/authorities/" + linkedAuthorityIds.iterator().next();
+            }
+            return "redirect:/authorities";
         }
 
-        // Fallback (e.g. headsman without an authority-level link): list view
+        // Fallback (headsman without an authority-level link): list view
+        Long linkedAuthorityId = linkedAuthorityIds.stream().findFirst().orElse(null);
         if (linkedAuthorityId != null) {
             var authority = authorityService.findById(linkedAuthorityId);
             model.addAttribute("authority", authority);

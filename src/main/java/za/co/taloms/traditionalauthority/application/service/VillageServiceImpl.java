@@ -2,6 +2,8 @@ package za.co.taloms.traditionalauthority.application.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import za.co.taloms.common.BusinessValidationException;
@@ -28,6 +30,7 @@ public class VillageServiceImpl implements VillageService {
     private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
     @Override
+    @CacheEvict(value = {"villages", "villagesByAuthority", "villagesByHeadman"}, allEntries = true)
     public VillageResponse create(VillageRequest request) {
 
         var authority = authorityRepository
@@ -82,6 +85,7 @@ public class VillageServiceImpl implements VillageService {
     }
 
     @Override
+    @CacheEvict(value = {"villages", "villagesByAuthority", "villagesByHeadman"}, allEntries = true)
     public VillageResponse update(Long id, VillageRequest request) {
 
         var village = villageRepository.findById(id)
@@ -143,6 +147,7 @@ public class VillageServiceImpl implements VillageService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable("villages")
     public VillageResponse findById(Long id) {
         return villageRepository.findById(id)
                 .map(this::toResponse)
@@ -152,6 +157,7 @@ public class VillageServiceImpl implements VillageService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable("villages")
     public List<VillageResponse> findAll() {
         return villageRepository.findAll()
                 .stream()
@@ -161,6 +167,7 @@ public class VillageServiceImpl implements VillageService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = "villagesByAuthority", key = "#authorityId")
     public List<VillageResponse> findByAuthority(Long authorityId) {
         return villageRepository
                 .findByTraditionalAuthorityId(authorityId)
@@ -171,6 +178,7 @@ public class VillageServiceImpl implements VillageService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = "villagesByHeadman", key = "#headmanId")
     public List<VillageResponse> findByHeadmanId(Long headmanId) {
         if (headmanId == null) {
             return java.util.Collections.emptyList();
@@ -183,6 +191,7 @@ public class VillageServiceImpl implements VillageService {
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = "villages", key = "'search:' + (#name == null ? '' : #name.trim().toLowerCase())")
     public List<VillageResponse> searchByName(String name) {
         if (name == null || name.trim().isEmpty()) {
             return findAll();
@@ -281,8 +290,8 @@ public class VillageServiceImpl implements VillageService {
         userRepository.findById(headmanId).ifPresent(headman -> {
             boolean stillHeadsVillage =
                     !villageRepository.findByHeadmanId(headmanId).isEmpty();
-            boolean isAuthorityHeadman = authorityRepository.findAll().stream()
-                    .anyMatch(a -> headmanId.equals(a.getHeadmanId()));
+            // Exists check instead of loading every authority into memory.
+            boolean isAuthorityHeadman = authorityRepository.existsByHeadmanId(headmanId);
             if (!stillHeadsVillage && !isAuthorityHeadman
                     && headman.getTraditionalAuthorityId() != null) {
                 headman.setTraditionalAuthorityId(null);

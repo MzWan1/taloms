@@ -10,6 +10,8 @@ import za.co.taloms.security.application.dto.*;
 import za.co.taloms.security.domain.entity.*;
 import za.co.taloms.security.domain.repository.*;
 import za.co.taloms.security.infrastructure.repository.RoleJpaRepository;
+import za.co.taloms.traditionalauthority.domain.entity.TraditionalAuthority;
+import za.co.taloms.traditionalauthority.domain.repository.TraditionalAuthorityRepositoryPort;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -25,6 +27,7 @@ public class UserServiceImpl implements UserService {
     private final PasswordResetTokenRepositoryPort tokenRepository;
     private final RoleJpaRepository               roleRepository;
     private final PasswordEncoder                 passwordEncoder;
+    private final TraditionalAuthorityRepositoryPort authorityRepository;
 
     private final EmailService emailService;
 
@@ -61,9 +64,11 @@ public class UserServiceImpl implements UserService {
                 .roles(new HashSet<>(Set.of(role)))
                 .build();
 
+        applyChiefAuthorities(user, role.getName(), request.getAuthorityIds(), true);
+
         var saved = userRepository.save(user);
         log.info("Created user: {}", saved.getUsername());
-        return toResponse(saved);
+        return toResponseWithAuthorities(saved);
     }
 
     @Override
@@ -90,7 +95,44 @@ public class UserServiceImpl implements UserService {
         user.setIdNumber(request.getIdNumber());
         user.setRoles(new HashSet<>(Set.of(role)));
 
-        return toResponse(userRepository.save(user));
+        applyChiefAuthorities(user, role.getName(), request.getAuthorityIds(),
+                request.getAuthorityIds() != null);
+
+        return toResponseWithAuthorities(userRepository.save(user));
+    }
+
+    /**
+     * Applies the chief ↔ authority many-to-many links for the given user.
+     *
+     * Only ROLE_CHIEF carries multiple authorities; headsmen (and other roles)
+     * keep their single users.traditional_authority_id link.
+     *
+     * @param replace when true the user's existing authority links are replaced
+     *                by the given list; when false the given authorities are added.
+     */
+    private void applyChiefAuthorities(User user, String roleName,
+                                       java.util.List<Long> authorityIds,
+                                       boolean replace) {
+        if (!"ROLE_CHIEF".equals(roleName) || authorityIds == null) {
+            return;
+        }
+        Set<TraditionalAuthority> resolved = new HashSet<>();
+        for (Long authorityId : authorityIds) {
+            if (authorityId == null) {
+                continue;
+            }
+            authorityRepository.findById(authorityId).ifPresent(resolved::add);
+        }
+        if (replace) {
+            user.getAuthorities().clear();
+        }
+        user.getAuthorities().addAll(resolved);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Set<Long> getUserAuthorityIds(Long userId) {
+        return new HashSet<>(userRepository.findAuthorityIdsByUserId(userId));
     }
 
     /**
@@ -137,7 +179,7 @@ public class UserServiceImpl implements UserService {
     @Transactional(readOnly = true)
     public UserResponse findById(Long id) {
         return userRepository.findById(id)
-                .map(this::toResponse)
+                .map(this::toResponseWithAuthorities)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("User", id));
     }
@@ -322,6 +364,18 @@ public class UserServiceImpl implements UserService {
     }
 
     private UserResponse toResponse(User user) {
+        return toResponse(user, null);
+    }
+
+    /** Response including the chief's many-to-many authority links. */
+    private UserResponse toResponseWithAuthorities(User user) {
+        Set<Long> authorityIds = user.getId() == null
+                ? Set.of()
+                : new HashSet<>(userRepository.findAuthorityIdsByUserId(user.getId()));
+        return toResponse(user, authorityIds);
+    }
+
+    private UserResponse toResponse(User user, Set<Long> authorityIds) {
         var roles = user.getRoles().stream()
                 .map(Role::getName)
                 .collect(Collectors.toSet());
@@ -337,6 +391,7 @@ public class UserServiceImpl implements UserService {
                 .lastLoginAt(user.getLastLoginAt())
                 .createdAt(user.getCreatedAt())
                 .traditionalAuthorityId(user.getTraditionalAuthorityId())
+                .authorityIds(authorityIds)
                 .idNumber(user.getIdNumber())
                 .roles(roles)
                 .build();

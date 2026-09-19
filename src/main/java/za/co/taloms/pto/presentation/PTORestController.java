@@ -120,13 +120,15 @@ public class PTORestController {
 
     @PostMapping("/search")
     public ResponseEntity<ApiResponse<List<PTOResponse>>> search(@RequestBody PTOSearchCriteria criteria) {
-        // Chiefs/headsmen are pinned to their own authority
+        // Chiefs/headsmen are pinned to their own authorities
         if (scopeService.isCurrentUserChiefOrHeadsman()) {
-            Long linkedAuthorityId = scopeService.getCurrentUserAuthorityId();
-            if (linkedAuthorityId == null) {
+            java.util.Set<Long> allowed = scopeService.getCurrentUserAuthorityIds();
+            if (allowed.isEmpty()) {
                 return ResponseEntity.ok(ApiResponse.success(List.of(), "Search completed"));
             }
-            criteria.setAuthorityId(linkedAuthorityId);
+            // Only pin the criteria when the user has exactly one authority;
+            // for many, search across them and rely on village scoping below.
+            criteria.setAuthorityId(allowed.size() == 1 ? allowed.iterator().next() : null);
         }
         List<PTOResponse> results = ptoService.search(criteria);
         return ResponseEntity.ok(ApiResponse.success(

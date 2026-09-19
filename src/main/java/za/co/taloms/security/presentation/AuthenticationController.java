@@ -8,7 +8,6 @@ import za.co.taloms.common.ApiResponse;
 import za.co.taloms.security.application.dto.LoginRequest;
 import za.co.taloms.security.application.dto.LoginResponse;
 import za.co.taloms.security.application.service.AuthenticationService;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -25,12 +24,6 @@ public class AuthenticationController {
 
         return ResponseEntity.ok(
                 ApiResponse.success(response, "Login successful"));
-    }
-
-    @GetMapping("/hash")
-    public ResponseEntity<String> generateHash() {
-        var encoder = new BCryptPasswordEncoder(12);
-        return ResponseEntity.ok(encoder.encode("Admin@1234"));
     }
 }
 

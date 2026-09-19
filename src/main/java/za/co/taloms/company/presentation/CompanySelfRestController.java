@@ -10,6 +10,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 import za.co.taloms.common.ApiResponse;
+import za.co.taloms.common.PageResponse;
 import za.co.taloms.company.application.dto.*;
 import za.co.taloms.company.application.service.ApiUsageService;
 import za.co.taloms.company.application.service.CompanyApiKeyService;
@@ -72,10 +73,12 @@ public class CompanySelfRestController {
     }
 
     @GetMapping("/usage")
-    public ResponseEntity<ApiResponse<List<ApiUsageLogResponse>>> getMyUsage(
-            @AuthenticationPrincipal UserDetails userDetails) {
+    public ResponseEntity<ApiResponse<PageResponse<ApiUsageLogResponse>>> getMyUsage(
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer pageSize) {
         Long companyId = companyService.findByUsername(userDetails.getUsername()).getId();
-        List<ApiUsageLogResponse> usage = usageService.findByCompany(companyId);
+        PageResponse<ApiUsageLogResponse> usage = usageService.findByCompany(companyId, page, pageSize);
         return ResponseEntity.ok(ApiResponse.success(usage, "Usage records retrieved"));
     }
 }

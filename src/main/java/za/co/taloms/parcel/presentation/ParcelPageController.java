@@ -272,25 +272,25 @@ public class ParcelPageController {
 
             List<TraditionalAuthorityResponse> authorities;
             if (scopeService.isCurrentUserChiefOrHeadsman()) {
-                // Determine the authorities the user may see/edit against.
-                // Prefer the user's linked authority; but if the user is only
-                // linked to a village (not an authority), fall back to the
-                // parcel's own village authority so the form can still load.
+                // Every authority the user may see/edit against; fall back to
+                // the parcel's village authority for a village-scoped headsman.
                 var parcelVillageAuth = parcelVillage != null
                         ? parcelVillage.getTraditionalAuthorityId() : null;
 
-                Long linkedAuthorityId = scopeService.getCurrentUserAuthorityId();
-                Long relevantAuthorityId = linkedAuthorityId != null
-                        ? linkedAuthorityId : parcelVillageAuth;
+                java.util.Set<Long> allowed = new java.util.HashSet<>(
+                        scopeService.getCurrentUserAuthorityIds());
+                if (allowed.isEmpty() && parcelVillageAuth != null) {
+                    allowed.add(parcelVillageAuth);
+                }
 
                 // Only allow editing if the parcel's village is within the user's scope.
                 if (scopeService.isCurrentUserAdmin()
                         || scopeService.canAccessVillage(parcel.getVillageId())) {
-                    authorities = relevantAuthorityId != null
-                            ? authorityService.findAllActive().stream()
-                                .filter(a -> relevantAuthorityId.equals(a.getId()))
-                                .toList()
-                            : Collections.emptyList();
+                    authorities = allowed.isEmpty()
+                            ? Collections.emptyList()
+                            : authorityService.findAllActive().stream()
+                                .filter(a -> allowed.contains(a.getId()))
+                                .toList();
                 } else {
                     authorities = Collections.emptyList();
                 }

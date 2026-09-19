@@ -770,9 +770,11 @@ public class PTOServiceImpl implements PTOService {
     public void saveAll(List<PTOSyncDto> dtos, String savedBy) {
         for (PTOSyncDto dto : dtos) {
             if (Boolean.TRUE.equals(dto.getDeleted())) {
-                if (dto.getId() != null && ptoRepository.findById(dto.getId()).isPresent()
-                        && !ptoRepository.findById(dto.getId()).get().isDeleted()) {
-                    ptoRepository.softDeleteById(dto.getId(), savedBy);
+                // One fetch instead of two (exists + get) per deleted item.
+                if (dto.getId() != null) {
+                    ptoRepository.findById(dto.getId())
+                            .filter(existing -> !existing.isDeleted())
+                            .ifPresent(p -> ptoRepository.softDeleteById(dto.getId(), savedBy));
                 }
                 continue;
             }
@@ -789,10 +791,10 @@ public class PTOServiceImpl implements PTOService {
         if (since != null) {
             sinceDateTime = LocalDateTime.ofInstant(since, java.time.ZoneId.systemDefault());
         }
-        List<PTO> ptos = ptoRepository.findChangedSince(sinceDateTime);
-        if (pageSize > 0 && ptos.size() > pageSize) {
-            ptos = ptos.subList(0, pageSize);
-        }
+        // The LIMIT is enforced in the database query (findChangedSince), so the
+        // application never materialises more rows than the caller may receive.
+        int limit = pageSize > 0 && pageSize <= 100 ? pageSize : 100;
+        List<PTO> ptos = ptoRepository.findChangedSince(sinceDateTime, limit);
         return ptos.stream().map(this::toSyncDto).collect(Collectors.toList());
     }
 

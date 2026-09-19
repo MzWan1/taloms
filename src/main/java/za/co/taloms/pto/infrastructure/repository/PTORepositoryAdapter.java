@@ -158,8 +158,9 @@ public class PTORepositoryAdapter implements PTORepositoryPort {
     }
 
     @Override
-    public List<PTO> findChangedSince(java.time.LocalDateTime since) {
-        return jpaRepository.findChangedSince(since);
+    public List<PTO> findChangedSince(java.time.LocalDateTime since, int limit) {
+        int safeLimit = Math.max(1, Math.min(limit, 10000));
+        return jpaRepository.findChangedSince(since, safeLimit);
     }
 
     @Override

@@ -27,7 +27,17 @@ public class UserCreateRequest {
     @NotBlank(message = "Role is required")
     private String roleName;
 
+    /**
+     * Legacy single-authority link (headsman). Retained for backward
+     * compatibility; chiefs should use {@link #authorityIds}.
+     */
     private Long traditionalAuthorityId;
+
+    /**
+     * Authorities a CHIEF user belongs to (many-to-many). When the role is
+     * ROLE_CHIEF the user is linked to every authority in this list.
+     */
+    private java.util.List<Long> authorityIds;
 
     @Pattern(regexp = "\\d{13}", message = "ID number must be 13 digits (for proof-of-residence ownership)")
     private String idNumber;

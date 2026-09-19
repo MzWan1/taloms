@@ -67,6 +67,9 @@ public class UserPageController {
                 .email(user.getEmail())
                 .roleName(user.getRoles().iterator().next())
                 .traditionalAuthorityId(user.getTraditionalAuthorityId())
+                .authorityIds(user.getAuthorityIds() == null
+                        ? new java.util.ArrayList<>()
+                        : new java.util.ArrayList<>(user.getAuthorityIds()))
                 .idNumber(user.getIdNumber())
                 .build();
         model.addAttribute("userForm",  req);

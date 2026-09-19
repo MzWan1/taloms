@@ -22,6 +22,18 @@ public interface UserJpaRepository extends JpaRepository<User, Long> {
 
     boolean existsByIdNumber(String idNumber);
 
+    /**
+     * IDs of the authorities a user belongs to through the chief_authorities
+     * join table. Kept as a projection query so authorization never triggers a
+     * lazy collection (no N+1 on the user entity).
+     */
+    @Query("SELECT a.id FROM User u JOIN u.authorities a WHERE u.id = :userId")
+    List<Long> findAuthorityIdsByUserId(@Param("userId") Long userId);
+
+    /** Users (chiefs) linked to the given authority through the join table. */
+    @Query("SELECT u FROM User u JOIN u.authorities a WHERE a.id = :authorityId ORDER BY u.fullName")
+    List<User> findByAuthorityId(@Param("authorityId") Long authorityId);
+
     @Query("SELECT u FROM User u JOIN u.roles r WHERE r.name = :roleName")
     List<User> findByRoleName(@Param("roleName") String roleName);
 

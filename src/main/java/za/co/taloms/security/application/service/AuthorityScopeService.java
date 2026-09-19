@@ -7,28 +7,26 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import za.co.taloms.security.domain.entity.User;
 import za.co.taloms.security.domain.repository.UserRepositoryPort;
-import za.co.taloms.traditionalauthority.application.dto.TraditionalAuthorityResponse;
-import za.co.taloms.traditionalauthority.application.service.TraditionalAuthorityService;
 import za.co.taloms.traditionalauthority.application.service.VillageService;
+import za.co.taloms.traditionalauthority.domain.repository.TraditionalAuthorityRepositoryPort;
 
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Resolves which Traditional Authority the currently authenticated user
- * belongs to, and enforces data-scoping rules:
+ * Resolves which Traditional Authorities the currently authenticated user may
+ * access, and enforces data-scoping rules:
  *
- *  - ADMIN      : unrestricted access to all authorities.
- *  - CHIEF      : scoped to their linked authority (either side of the link).
- *  - HEADSMAN   : scoped to their linked authority (either side of the link).
- *  - Unlinked   : chief/headman with no authority gets access to nothing.
+ *  - ADMIN     : unrestricted access to all authorities.
+ *  - CHIEF     : scoped to every authority linked via the chief_authorities
+ *                join table (a chief may belong to many authorities).
+ *  - HEADSMAN  : scoped to their single linked authority (user.traditionalAuthorityId
+ *                or authority.headmanId) — a headsman may only serve one authority.
+ *  - Unlinked  : chief/headman with no authority gets access to nothing.
  *
- * The user ↔ authority link is honoured in BOTH directions:
- *   - user.traditionalAuthorityId == authorityId, OR
- *   - authority.chiefId == current user's id, OR
- *   - authority.headmanId == current user's id
- * so a stale/missing user-side link cannot lock a chief or headsman out.
+ * All authorization checks are derived here so that a client-supplied
+ * authorityId/chiefId/villageId can never widen a chief's scope.
  */
 @Slf4j
 @Service
@@ -40,9 +38,9 @@ public class AuthorityScopeService {
     public static final String ROLE_HEADSMAN = "ROLE_HEADSMAN";
     public static final String ROLE_USER     = "ROLE_USER";
 
-    private final UserRepositoryPort          userRepository;
-    private final TraditionalAuthorityService authorityService;
-    private final VillageService              villageService;
+    private final UserRepositoryPort                  userRepository;
+    private final TraditionalAuthorityRepositoryPort authorityRepository;
+    private final VillageService                      villageService;
 
     /** Returns the currently authenticated User entity, or null if unauthenticated. */
     @Transactional(readOnly = true)
@@ -67,42 +65,77 @@ public class AuthorityScopeService {
     /** True if the current user holds CHIEF or HEADSMAN role. */
     public boolean isCurrentUserChiefOrHeadsman() {
         User user = getCurrentUser();
-        return user != null && user.getRoles().stream()
-                .anyMatch(r -> ROLE_CHIEF.equals(r.getName())
-                            || ROLE_HEADSMAN.equals(r.getName()));
+        return hasRole(user, ROLE_CHIEF) || hasRole(user, ROLE_HEADSMAN);
     }
 
     /** True if the current user holds the ROLE_USER (resident) role. */
     public boolean isCurrentUserUser() {
-        User user = getCurrentUser();
+        return hasRole(getCurrentUser(), ROLE_USER);
+    }
+
+    /** True if the current user holds the ROLE_CHIEF role. */
+    public boolean isCurrentUserChief() {
+        return hasRole(getCurrentUser(), ROLE_CHIEF);
+    }
+
+    private boolean hasRole(User user, String roleName) {
         return user != null && user.getRoles().stream()
-                .anyMatch(r -> ROLE_USER.equals(r.getName()));
+                .anyMatch(r -> roleName.equals(r.getName()));
     }
 
     /**
-     * Resolves the Traditional Authority ID the current chief/headman is
-     * linked to. Returns null for ADMINs, unauthenticated users, or
-     * chief/headman with no authority link in either direction.
+     * Resolves ALL Traditional Authority IDs the current user is linked to.
+     * Administrators and unauthenticated users return an empty set.
+     *
+     * Sources (a user's scope is the union):
+     *  - chief_authorities join-table rows (many-to-many chiefs);
+     *  - for non-chiefs, the legacy single users.traditional_authority_id link
+     *    (headsmen and any other legacy links);
+     *  - for non-chiefs, the authority-side chiefId/headmanId link.
+     */
+    @Transactional(readOnly = true)
+    public Set<Long> getCurrentUserAuthorityIds() {
+        User user = getCurrentUser();
+        if (user == null || isAdmin(user) || user.getId() == null) {
+            return Set.of();
+        }
+
+        Set<Long> ids = new HashSet<>();
+        java.util.List<Long> joined =
+                userRepository.findAuthorityIdsByUserId(user.getId());
+        if (joined != null) {
+            ids.addAll(joined);
+        }
+
+        boolean isChief = hasRole(user, ROLE_CHIEF);
+        boolean isHeadsman = hasRole(user, ROLE_HEADSMAN);
+
+        // Legacy single-authority link (user.traditionalAuthorityId) — only for
+        // headsmen and other non-chief roles; chiefs now use the join table.
+        if (!isChief || isHeadsman) {
+            if (user.getTraditionalAuthorityId() != null) {
+                ids.add(user.getTraditionalAuthorityId());
+            }
+        }
+        // Authority-side link (chief_id / headman_id on the authority row).
+        // Always consulted so legacy chiefs (before join-table migration) and
+        // headsmen remain correctly scoped.
+        java.util.List<Long> authoritySide =
+                authorityRepository.findIdsByChiefIdOrHeadmanId(user.getId());
+        if (authoritySide != null) {
+            ids.addAll(authoritySide);
+        }
+        return ids;
+    }
+
+    /**
+     * Primary authority of the current chief/headsman (the first/most relevant
+     * one), or null. Retained for callers that genuinely need a single context
+     * (e.g. a redirect); authorization must use {@link #getCurrentUserAuthorityIds()}.
      */
     @Transactional(readOnly = true)
     public Long getCurrentUserAuthorityId() {
-        User user = getCurrentUser();
-        if (user == null || isAdmin(user)) {
-            return null;
-        }
-
-        // Direct user-side link
-        if (user.getTraditionalAuthorityId() != null) {
-            return user.getTraditionalAuthorityId();
-        }
-
-        // Fallback: authority whose chiefId or headmanId is this user
-        return authorityService.findAll().stream()
-                .filter(a -> user.getId().equals(a.getChiefId())
-                          || user.getId().equals(a.getHeadmanId()))
-                .map(TraditionalAuthorityResponse::getId)
-                .findFirst()
-                .orElse(null);
+        return getCurrentUserAuthorityIds().stream().findFirst().orElse(null);
     }
 
     /**
@@ -122,8 +155,7 @@ public class AuthorityScopeService {
         if (isAdmin(user)) {
             return true;
         }
-        Long linked = getCurrentUserAuthorityId();
-        return linked != null && linked.equals(authorityId);
+        return getCurrentUserAuthorityIds().contains(authorityId);
     }
 
     /** Throws SecurityException if the current user may not access the authority. */
@@ -153,9 +185,8 @@ public class AuthorityScopeService {
         }
         Set<Long> ids = new HashSet<>();
 
-        Long linkedAuthorityId = getCurrentUserAuthorityId();
-        if (linkedAuthorityId != null) {
-            ids.addAll(villageService.findByAuthority(linkedAuthorityId).stream()
+        for (Long authorityId : getCurrentUserAuthorityIds()) {
+            ids.addAll(villageService.findByAuthority(authorityId).stream()
                     .map(v -> v.getId())
                     .collect(Collectors.toSet()));
         }

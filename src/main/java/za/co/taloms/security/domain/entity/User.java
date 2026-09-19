@@ -3,6 +3,7 @@ package za.co.taloms.security.domain.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import za.co.taloms.company.domain.entity.Company;
+import za.co.taloms.traditionalauthority.domain.entity.TraditionalAuthority;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -56,6 +57,22 @@ public class User {
 
     @Column(name = "traditional_authority_id")
     private Long traditionalAuthorityId;
+
+    /**
+     * Authorities a CHIEF user belongs to (many-to-many). A chief may belong to
+     * several authorities; an authority may have several chiefs. This is the
+     * authoritative link used for chief authorization — see
+     * {@code AuthorityScopeService}. The legacy single
+     * {@link #traditionalAuthorityId} column is retained for HEADSMAN scoping.
+     */
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "chief_authorities",
+            joinColumns        = @JoinColumn(name = "chief_id"),
+            inverseJoinColumns = @JoinColumn(name = "authority_id")
+    )
+    @Builder.Default
+    private Set<TraditionalAuthority> authorities = new HashSet<>();
 
     @Column(name = "id_number", length = 13, unique = true)
     private String idNumber;

@@ -1,0 +1,780 @@
+[
+  {
+    "id": "UC-01",
+    "name": "Log In",
+    "actors": [
+      "Unauthenticated visitor"
+    ],
+    "goal": "Establish a browser session or obtain a JWT.",
+    "pre": "Enabled, unlocked account.",
+    "flow": [
+      "Visitor submits credentials through the form or authentication API.",
+      "System verifies password and account state.",
+      "Successful browser login records success and redirects by role; API login returns authentication data."
+    ],
+    "alt": "Invalid credentials reject login; repeated failures can lock the account.",
+    "rules": "Session/JWT login is separate from company API-key authentication.",
+    "post": "Session or token exists.",
+    "source": "security/presentation/AuthenticationController.java; security/presentation/LoginSuccessHandler.java; security/presentation/LoginFailureHandler.java",
+    "related": "None"
+  },
+  {
+    "id": "UC-02",
+    "name": "Log Out",
+    "actors": [
+      "Admin",
+      "Chief",
+      "Headsman",
+      "Resident user (ROLE_USER)",
+      "Company user (browser)"
+    ],
+    "goal": "End the current browser session.",
+    "pre": "Authenticated browser session.",
+    "flow": [
+      "User selects logout.",
+      "Spring Security invalidates the session and clears authentication.",
+      "Browser returns to login."
+    ],
+    "alt": "An unauthenticated browser has no session to end.",
+    "rules": "Browser logout does not revoke JWTs or API keys.",
+    "post": "Current browser session ends.",
+    "source": "security/configuration/SecurityConfig.java",
+    "related": "None"
+  },
+  {
+    "id": "UC-03",
+    "name": "Change Own Password",
+    "actors": [
+      "Admin",
+      "Chief",
+      "Headsman",
+      "Resident user (ROLE_USER)",
+      "Company user (browser)"
+    ],
+    "goal": "Replace the signed-in account password.",
+    "pre": "Authenticated account.",
+    "flow": [
+      "User submits current and replacement passwords.",
+      "System checks current password and confirmation.",
+      "System encodes and saves the replacement."
+    ],
+    "alt": "Incorrect password or mismatching confirmation prevents change.",
+    "rules": "All authenticated roles can reach /users/change-password.",
+    "post": "New password hash is stored.",
+    "source": "security/presentation/UserPageController.java; security/application/service/UserServiceImpl.java",
+    "related": "None"
+  },
+  {
+    "id": "UC-04",
+    "name": "Reset Forgotten Password",
+    "actors": [
+      "Unauthenticated visitor"
+    ],
+    "goal": "Recover access using a reset token.",
+    "pre": "Registered email; email delivery configured.",
+    "flow": [
+      "Visitor requests reset.",
+      "System creates a time-limited token and sends a link.",
+      "Visitor submits token and new password.",
+      "System validates token, saves encoded password and consumes token."
+    ],
+    "alt": "Unknown email does not change an account; expired/used tokens cannot reset it.",
+    "rules": "Reset request alone does not change credentials.",
+    "post": "Password changes after valid confirmation.",
+    "source": "security/presentation/AuthPageController.java; security/application/service/AuthenticationServiceImpl.java",
+    "related": "None"
+  },
+  {
+    "id": "UC-05",
+    "name": "Manage Users",
+    "actors": [
+      "Admin"
+    ],
+    "goal": "Administer accounts and roles.",
+    "pre": "Admin authentication.",
+    "flow": [
+      "Admin lists users and submits account/role changes.",
+      "System checks uniqueness and authority/company associations.",
+      "System encodes passwords when applicable and saves the user.",
+      "System displays the result."
+    ],
+    "alt": "Activate/deactivate and lock/unlock are alternative operations; duplicate username/email/ID rejects save.",
+    "rules": "Delete deactivates the account. Chiefs use an authority set; company users can link to a company.",
+    "post": "Account and associations are persisted.",
+    "source": "security/presentation/UserController.java; security/application/service/UserServiceImpl.java",
+    "related": "UC-07"
+  },
+  {
+    "id": "UC-06",
+    "name": "Manage Traditional Authorities",
+    "actors": [
+      "Admin",
+      "Chief"
+    ],
+    "goal": "Maintain authority records and leadership.",
+    "pre": "Admin writes; Admin or scoped Chief reads.",
+    "flow": [
+      "Actor opens authority list/detail.",
+      "Admin submits details, leadership and optional boundary.",
+      "System validates name, leadership and spatial data.",
+      "System saves authority and user links."
+    ],
+    "alt": "Chief reads linked authorities and uses UC-14; this does not grant Chief Admin CRUD. Duplicate names or invalid assignments reject save.",
+    "rules": "Headsman assignment is limited to one authority by service checks; chief_id remains alongside chief_authorities.",
+    "post": "Authority and leadership links are stored.",
+    "source": "traditionalauthority/presentation/TraditionalAuthorityPageController.java; traditionalauthority/application/service/TraditionalAuthorityServiceImpl.java",
+    "related": "UC-07; UC-14"
+  },
+  {
+    "id": "UC-07",
+    "name": "Link Chief to Traditional Authority",
+    "actors": [
+      "Admin"
+    ],
+    "goal": "Link a Chief to authorities.",
+    "pre": "Admin; existing Chief and authorities.",
+    "flow": [
+      "Admin selects Chief authority assignments.",
+      "System resolves records and updates the authority set.",
+      "System persists chief_authorities links.",
+      "Scope resolution uses those links."
+    ],
+    "alt": "Existing links are not duplicated; legacy fields remain.",
+    "rules": "Chief–Authority is many-to-many.",
+    "post": "Chief scope reflects the linked set.",
+    "source": "security/domain/entity/User.java; security/application/service/UserServiceImpl.java",
+    "related": "UC-05; UC-06"
+  },
+  {
+    "id": "UC-08",
+    "name": "View Audit Trail",
+    "actors": [
+      "Admin"
+    ],
+    "goal": "Inspect recorded activity.",
+    "pre": "Admin authentication.",
+    "flow": [
+      "Admin opens audit trail and selects filters.",
+      "System retrieves matching audit entries.",
+      "System displays event details."
+    ],
+    "alt": "No matches produces an empty result.",
+    "rules": "Audit and company API usage are separate; not all operations emit audit events.",
+    "post": "Business records unchanged.",
+    "source": "audit/presentation/AuditPageController.java",
+    "related": "None"
+  },
+  {
+    "id": "UC-09",
+    "name": "Manage Companies",
+    "actors": [
+      "Admin"
+    ],
+    "goal": "Register and activate/deactivate companies.",
+    "pre": "Admin; existing selected company/key for existing-record operations.",
+    "flow": [
+      "Admin submits company details.",
+      "System checks unique name/registration and saves ACTIVE company.",
+      "Admin may disable with reason or reactivate."
+    ],
+    "alt": "Duplicate company or missing existing record rejects change.",
+    "rules": "API usage is separate from audit_logs. Company: ACTIVE/DISABLED; key: ACTIVE/REVOKED.",
+    "post": "Company status persists.",
+    "source": "company/presentation/CompanyAdminRestController.java; company/application/service/CompanyServiceImpl.java; company/application/service/CompanyApiKeyServiceImpl.java",
+    "related": "UC-29; UC-30; UC-31"
+  },
+  {
+    "id": "UC-10",
+    "name": "Generate Company API Key",
+    "actors": [
+      "Admin"
+    ],
+    "goal": "Issue a company API credential.",
+    "pre": "Admin; existing selected company/key for existing-record operations.",
+    "flow": [
+      "Admin selects company, label and scopes.",
+      "System requires active company and generates and hashes random key.",
+      "System saves digest, prefix, scopes and ACTIVE status.",
+      "System returns raw key once."
+    ],
+    "alt": "Disabled company cannot receive new key.",
+    "rules": "API usage is separate from audit_logs. Company: ACTIVE/DISABLED; key: ACTIVE/REVOKED.",
+    "post": "Only digest and summary persist.",
+    "source": "company/presentation/CompanyAdminRestController.java; company/application/service/CompanyServiceImpl.java; company/application/service/CompanyApiKeyServiceImpl.java",
+    "related": "UC-29; UC-30; UC-31"
+  },
+  {
+    "id": "UC-11",
+    "name": "Revoke Company API Key",
+    "actors": [
+      "Admin"
+    ],
+    "goal": "Invalidate an API credential.",
+    "pre": "Admin; existing selected company/key for existing-record operations.",
+    "flow": [
+      "Admin selects company key and reason.",
+      "System checks company/key association.",
+      "System marks REVOKED with actor and time."
+    ],
+    "alt": "Wrong-company key is rejected.",
+    "rules": "API usage is separate from audit_logs. Company: ACTIVE/DISABLED; key: ACTIVE/REVOKED.",
+    "post": "Key no longer authenticates.",
+    "source": "company/presentation/CompanyAdminRestController.java; company/application/service/CompanyServiceImpl.java; company/application/service/CompanyApiKeyServiceImpl.java",
+    "related": "UC-29; UC-30; UC-31"
+  },
+  {
+    "id": "UC-12",
+    "name": "View Company API Usage",
+    "actors": [
+      "Admin"
+    ],
+    "goal": "Review partner API activity.",
+    "pre": "Admin; existing selected company/key for existing-record operations.",
+    "flow": [
+      "Admin opens company usage.",
+      "System retrieves usage records and summaries.",
+      "System displays status, reason and time."
+    ],
+    "alt": "No records yields empty list.",
+    "rules": "API usage is separate from audit_logs. Company: ACTIVE/DISABLED; key: ACTIVE/REVOKED.",
+    "post": "Read-only result displayed.",
+    "source": "company/presentation/CompanyAdminRestController.java; company/application/service/CompanyServiceImpl.java; company/application/service/CompanyApiKeyServiceImpl.java",
+    "related": "UC-29; UC-30; UC-31"
+  },
+  {
+    "id": "UC-13",
+    "name": "View Dashboard",
+    "actors": [
+      "Admin",
+      "Chief",
+      "Headsman",
+      "Resident user (ROLE_USER)",
+      "Company user (browser)"
+    ],
+    "goal": "View dashboard summaries.",
+    "pre": "Authenticated account.",
+    "flow": [
+      "User opens dashboard.",
+      "System resolves role and applicable authority scope.",
+      "System calculates summaries and renders dashboard."
+    ],
+    "alt": "No data produces empty/zero summaries.",
+    "rules": "Dashboard route permits every authenticated role.",
+    "post": "Read-only summaries displayed.",
+    "source": "dashboard/presentation/DashboardController.java",
+    "related": "None"
+  },
+  {
+    "id": "UC-14",
+    "name": "Manage Villages",
+    "actors": [
+      "Chief"
+    ],
+    "goal": "Maintain villages in linked authorities.",
+    "pre": "Chief; linked authority.",
+    "flow": [
+      "Chief selects authority and enters village details, headsman and boundary.",
+      "System checks scope, name and headsman assignment.",
+      "System saves village and relevant links.",
+      "System displays village."
+    ],
+    "alt": "Duplicate village name within authority or out-of-scope selection rejects operation; editing/deactivation use existing records.",
+    "rules": "Village routes are CHIEF-only, including reads. Authority has many villages.",
+    "post": "Village belongs to one authority.",
+    "source": "traditionalauthority/presentation/VillagesPageController.java; traditionalauthority/application/service/VillageServiceImpl.java",
+    "related": "UC-06; UC-15"
+  },
+  {
+    "id": "UC-15",
+    "name": "Manage Parcels",
+    "actors": [
+      "Admin",
+      "Chief",
+      "Headsman"
+    ],
+    "goal": "Maintain parcels and boundaries.",
+    "pre": "Staff; accessible village for scoped staff.",
+    "flow": [
+      "Staff selects village and submits parcel/stand details and coordinates.",
+      "System validates village, boundary and applicable overlap rules.",
+      "System generates parcel number and saves parcel/boundary.",
+      "System displays detail or batch result."
+    ],
+    "alt": "Admin/Chief change status; staff allocate via allocation endpoint; only Admin deletes. Invalid geometry, duplicate stand or overlap rejects where checked.",
+    "rules": "Scope checks vary by route; sync is separate. Parcel uses version token.",
+    "post": "Parcel and boundary persist.",
+    "source": "parcel/presentation/ParcelRestController.java; parcel/application/service/ParcelServiceImpl.java",
+    "related": "UC-47; UC-16"
+  },
+  {
+    "id": "UC-16",
+    "name": "Manage PTOs",
+    "actors": [
+      "Admin",
+      "Chief",
+      "Headsman"
+    ],
+    "goal": "Create, find and edit PTOs.",
+    "pre": "Staff; accessible parcel for scoped staff.",
+    "flow": [
+      "Staff selects AVAILABLE parcel and submits holder, stand, purpose and dates.",
+      "System derives village/authority and requires stand match.",
+      "System rejects ACTIVE/SUSPENDED PTO conflicts.",
+      "System saves PENDING PTO and publishes creation event.",
+      "Staff views or edits through available routes."
+    ],
+    "alt": "Missing parcel/village/authority or unavailable parcel rejects creation. Upload supporting documents separately.",
+    "rules": "Creation does not allocate parcel. Community-resolution flag requires submitted flag and AGRICULTURAL/BUSINESS purpose.",
+    "post": "PENDING record and creation event.",
+    "source": "pto/presentation/PTOPageController.java; pto/application/service/PTOServiceImpl.java",
+    "related": "UC-17; UC-24"
+  },
+  {
+    "id": "UC-17",
+    "name": "Approve PTO",
+    "actors": [
+      "Chief"
+    ],
+    "goal": "Approve PTO and allocate parcel.",
+    "pre": "Chief; PENDING/SUSPENDED PTO; scope and creator rules satisfied.",
+    "flow": [
+      "Chief submits notes and optional signature.",
+      "System validates status and creator rights.",
+      "System requires ID_COPY, TA_ALLOCATION_LETTER and SITE_SKETCH types and no competing ACTIVE PTO.",
+      "System sets ACTIVE and approval metadata; stores optional signature.",
+      "System sets parcel ALLOCATED and PTO pointer and publishes event."
+    ],
+    "alt": "Missing documents, wrong Chief/status or competing PTO rejects approval.",
+    "rules": "Chief-created PTO requires same creator; other/legacy creators require Chief. Document presence, not content, is checked.",
+    "post": "PTO ACTIVE; parcel allocated; optional signature stored.",
+    "source": "pto/application/service/PTOServiceImpl.java; document/application/service/DocumentServiceImpl.java",
+    "related": "UC-16; UC-37"
+  },
+  {
+    "id": "UC-18",
+    "name": "Suspend PTO",
+    "actors": [
+      "Admin",
+      "Chief",
+      "Headsman"
+    ],
+    "goal": "Suspend occupancy.",
+    "pre": "Staff; chosen route scope; PTO ACTIVE.",
+    "flow": [
+      "Actor selects PTO and enters reason/notes.",
+      "System validates transition.",
+      "System saves SUSPENDED, reason and time.",
+      "System publishes suspension event; parcel status unchanged."
+    ],
+    "alt": "Missing record, invalid transition or conflict rejects operation.",
+    "rules": "Route/service checks govern access, not approval rules. REST Admin/Chief; page handlers use staff-level route access and scope checks without equivalent method role guards.",
+    "post": "PTO SUSPENDED; parcel retained.",
+    "source": "pto/presentation/PTOPageController.java; pto/presentation/PTORestController.java; pto/application/service/PTOServiceImpl.java",
+    "related": "UC-16; UC-17"
+  },
+  {
+    "id": "UC-19",
+    "name": "Reactivate PTO",
+    "actors": [
+      "Admin",
+      "Chief",
+      "Headsman"
+    ],
+    "goal": "Reactivate suspended PTO.",
+    "pre": "Staff; chosen route scope; PTO SUSPENDED.",
+    "flow": [
+      "Actor selects PTO and enters reason/notes.",
+      "System validates transition.",
+      "System rejects competing ACTIVE PTO.",
+      "System reactivates and publishes status-change event."
+    ],
+    "alt": "Missing record, invalid transition or conflict rejects operation.",
+    "rules": "Route/service checks govern access, not approval rules. REST Admin/Chief; page handlers use staff-level route access and scope checks without equivalent method role guards.",
+    "post": "PTO ACTIVE; no parcel reallocation here.",
+    "source": "pto/presentation/PTOPageController.java; pto/presentation/PTORestController.java; pto/application/service/PTOServiceImpl.java",
+    "related": "UC-16; UC-17"
+  },
+  {
+    "id": "UC-20",
+    "name": "Revoke PTO",
+    "actors": [
+      "Admin",
+      "Chief",
+      "Headsman"
+    ],
+    "goal": "Revoke occupancy.",
+    "pre": "Staff; chosen route scope; PTO ACTIVE/SUSPENDED.",
+    "flow": [
+      "Actor selects PTO and enters reason/notes.",
+      "System validates transition.",
+      "System saves REVOKED, reason, actor and time.",
+      "System sets parcel AVAILABLE, clears pointer and publishes event."
+    ],
+    "alt": "Missing record, invalid transition or conflict rejects operation.",
+    "rules": "Route/service checks govern access, not approval rules. REST Admin/Chief; page handlers use staff-level route access and scope checks without equivalent method role guards.",
+    "post": "PTO REVOKED; parcel released.",
+    "source": "pto/presentation/PTOPageController.java; pto/presentation/PTORestController.java; pto/application/service/PTOServiceImpl.java",
+    "related": "UC-16; UC-17"
+  },
+  {
+    "id": "UC-21",
+    "name": "Reinstate PTO",
+    "actors": [
+      "Admin",
+      "Chief",
+      "Headsman"
+    ],
+    "goal": "Reinstate revoked PTO.",
+    "pre": "Staff; chosen route scope; PTO REVOKED.",
+    "flow": [
+      "Actor selects PTO and enters reason/notes.",
+      "System validates transition.",
+      "System rejects competing ACTIVE PTO.",
+      "System reinstates PTO and updates parcel allocation.",
+      "System publishes reinstatement event."
+    ],
+    "alt": "Missing record, invalid transition or conflict rejects operation.",
+    "rules": "Route/service checks govern access, not approval rules. REST Admin/Chief; page handlers use staff-level route access and scope checks without equivalent method role guards.",
+    "post": "PTO and parcel reinstated.",
+    "source": "pto/presentation/PTOPageController.java; pto/presentation/PTORestController.java; pto/application/service/PTOServiceImpl.java",
+    "related": "UC-16; UC-17"
+  },
+  {
+    "id": "UC-22",
+    "name": "Delete PTO",
+    "actors": [
+      "Admin",
+      "Chief",
+      "Headsman"
+    ],
+    "goal": "Soft-delete PTO.",
+    "pre": "Staff through page route; Admin/Chief through REST; existing nondeleted PTO.",
+    "flow": [
+      "Actor requests deletion.",
+      "System rejects already-deleted PTO.",
+      "System sets deletion metadata and REVOKED with deletion reason.",
+      "System saves and publishes PTODeletedEvent."
+    ],
+    "alt": "Missing record rejects deletion.",
+    "rules": "No ACTIVE/SUSPENDED prohibition in delete service. Parcel pointer/status is not changed. Row remains in database.",
+    "post": "Soft-delete recorded.",
+    "source": "pto/application/service/PTOServiceImpl.java",
+    "related": "None"
+  },
+  {
+    "id": "UC-23",
+    "name": "Download PTO Certificate",
+    "actors": [
+      "Admin",
+      "Chief",
+      "Headsman"
+    ],
+    "goal": "Download PTO certificate.",
+    "pre": "Staff; accessible PTO.",
+    "flow": [
+      "Actor requests certificate.",
+      "Controller checks access and loads PTO.",
+      "Generator draws holder, tenure and authority details.",
+      "System streams PDF."
+    ],
+    "alt": "Missing PTO rejects; rendering failure returns error.",
+    "rules": "Certificate prints full holder ID.",
+    "post": "PDF returned.",
+    "source": "pto/application/service/PTOCertificatePdfGenerator.java; pto/presentation/PTOPageController.java",
+    "related": "UC-27"
+  },
+  {
+    "id": "UC-24",
+    "name": "Manage Documents",
+    "actors": [
+      "Admin",
+      "Chief",
+      "Headsman"
+    ],
+    "goal": "Store/retrieve supporting files.",
+    "pre": "Staff; target entity reference.",
+    "flow": [
+      "Actor selects entity/type and file.",
+      "System checks file size, MIME type and nonempty content.",
+      "System stores content/metadata and access log.",
+      "Actor lists, downloads or deletes via available routes."
+    ],
+    "alt": "Unsupported MIME, oversized/empty file or missing document rejects operation. Deactivation and permanent deletion are Admin/Chief on REST; staff upload/view/update.",
+    "rules": "Required PTO types: ID_COPY, TA_ALLOCATION_LETTER, SITE_SKETCH. Polymorphic entity reference is not FK.",
+    "post": "Document operation completed.",
+    "source": "document/presentation/DocumentPageController.java; document/application/service/DocumentServiceImpl.java",
+    "related": "UC-16; UC-17"
+  },
+  {
+    "id": "UC-25",
+    "name": "View GIS Map",
+    "actors": [
+      "Admin",
+      "Chief",
+      "Headsman"
+    ],
+    "goal": "Inspect parcel geometry.",
+    "pre": "Staff authentication.",
+    "flow": [
+      "Actor opens GIS map.",
+      "System retrieves parcels under applicable scope.",
+      "Map displays geometry and details."
+    ],
+    "alt": "No geometry gives no corresponding feature.",
+    "rules": "gis_layers does not imply layer-management UI.",
+    "post": "Map displayed.",
+    "source": "gis/presentation/GisPageController.java",
+    "related": "None"
+  },
+  {
+    "id": "UC-26",
+    "name": "View My PTOs and Proof Access",
+    "actors": [
+      "Resident user (ROLE_USER)",
+      "Admin"
+    ],
+    "goal": "View owned/shared PTOs.",
+    "pre": "Resident user or Admin account.",
+    "flow": [
+      "User opens portal.",
+      "System finds nondeleted PTOs by user/holder ID match.",
+      "System unions explicit access links for nondeleted PTOs.",
+      "Portal displays accessible and owned lists."
+    ],
+    "alt": "No matching ID/links yields empty portal.",
+    "rules": "Ownership is ID equality, not household membership; no ACTIVE-only filter here.",
+    "post": "List displayed.",
+    "source": "useraccess/presentation/UserPortalController.java; useraccess/application/service/UserAccessServiceImpl.java",
+    "related": "UC-27; UC-28"
+  },
+  {
+    "id": "UC-27",
+    "name": "Download Proof of Residence",
+    "actors": [
+      "Resident user (ROLE_USER)",
+      "Admin"
+    ],
+    "goal": "Download password-confirmed proof.",
+    "pre": "Portal user owns or has explicit access.",
+    "flow": [
+      "User opens proof form.",
+      "System checks access.",
+      "User supplies own password.",
+      "System verifies password and generates proof with requester name/ID.",
+      "System streams PDF."
+    ],
+    "alt": "Wrong password redirects without download; no access rejects.",
+    "rules": "No ACTIVE/unexpired eligibility check here; password gates download, not PDF encryption.",
+    "post": "PDF returned.",
+    "source": "useraccess/presentation/UserPortalController.java; pto/application/service/PTOCertificatePdfGenerator.java",
+    "related": "UC-26; UC-31"
+  },
+  {
+    "id": "UC-28",
+    "name": "Manage Proof of Residence Access",
+    "actors": [
+      "Resident user (ROLE_USER)",
+      "Admin"
+    ],
+    "goal": "Grant/remove shared access.",
+    "pre": "Portal actor owns nondeleted PTO by ID match.",
+    "flow": [
+      "Owner selects PTO and searches users.",
+      "System filters candidates.",
+      "Owner submits add/remove and password confirmation.",
+      "System checks owner, target and duplicate restrictions.",
+      "System inserts/deletes access link."
+    ],
+    "alt": "Nonowner cannot manage; owner cannot be removed; duplicate links reject add.",
+    "rules": "Candidates include enabled USER/ADMIN accounts; sharing does not transfer ownership.",
+    "post": "Access updated.",
+    "source": "useraccess/presentation/UserPortalController.java; useraccess/application/service/UserAccessServiceImpl.java",
+    "related": "UC-26; UC-27"
+  },
+  {
+    "id": "UC-29",
+    "name": "Manage Own API Keys",
+    "actors": [
+      "Company user (browser)"
+    ],
+    "goal": "Manage own API credentials.",
+    "pre": "Company browser account linked to company.",
+    "flow": [
+      "User opens keys.",
+      "System resolves company from username.",
+      "User requests generation/revocation.",
+      "System applies company/key rules; raw generated key shown once."
+    ],
+    "alt": "Missing link rejects; disabled company cannot generate; foreign key cannot be revoked.",
+    "rules": "No caller-selected company.",
+    "post": "Key operation completed.",
+    "source": "company/presentation/CompanySelfRestController.java; company/application/service/CompanyApiKeyServiceImpl.java",
+    "related": "UC-10; UC-11"
+  },
+  {
+    "id": "UC-30",
+    "name": "View Own Company Profile and API Usage",
+    "actors": [
+      "Company user (browser)"
+    ],
+    "goal": "Review own profile and usage.",
+    "pre": "Company browser account linked to company.",
+    "flow": [
+      "User opens own company page.",
+      "System derives company from username.",
+      "System retrieves profile, keys and usage.",
+      "System displays summaries."
+    ],
+    "alt": "Missing association rejects; no logs gives empty list.",
+    "rules": "Browser role differs from API scopes.",
+    "post": "Read-only information.",
+    "source": "company/presentation/CompanySelfPageController.java; company/presentation/CompanySelfRestController.java",
+    "related": "UC-29; UC-32"
+  },
+  {
+    "id": "UC-31",
+    "name": "Verify Proof of Residence (API)",
+    "actors": [
+      "External company system (API key)"
+    ],
+    "goal": "Verify residence through API.",
+    "pre": "Active company/key with POR_READ; within rate limits.",
+    "flow": [
+      "Company submits X-API-Key and 13-digit ID to POST /api/external/por/verify.",
+      "Filter authenticates digest/key/company and per-key rate limit.",
+      "Endpoint checks scope/input and repeated-ID limit.",
+      "Service finds first nondeleted ACTIVE PTO not past expiry.",
+      "If found, name comes from resident or holder; response contains masked-ID proof fields.",
+      "Filter attempts usage recording with ID hash."
+    ],
+    "alt": "401 authentication; 403 scope; 429 throttling; invalid input rejected. No valid PTO and unknown person both return verified=false, NOT_FOUND.",
+    "rules": "No PDF. Resident lookup follows PTO lookup. Usage writes are best-effort, separate transaction.",
+    "post": "Result returned; usage recording attempted.",
+    "source": "company/presentation/CompanyApiController.java; company/presentation/CompanyApiKeyAuthenticationFilter.java; company/application/service/ProofOfResidenceServiceImpl.java",
+    "related": "UC-10; UC-12"
+  },
+  {
+    "id": "UC-32",
+    "name": "Read Own Company Information (API)",
+    "actors": [
+      "External company system (API key)"
+    ],
+    "goal": "Read own company API information.",
+    "pre": "Active API key/company; COMPANY_SELF_READ.",
+    "flow": [
+      "Company calls /api/external/self/company, /keys or /usage.",
+      "Filter authenticates and rate-limits.",
+      "Endpoint checks scope and derives company from principal.",
+      "System returns own summary and attempts usage logging."
+    ],
+    "alt": "401/403/429 reject request; no raw key returned.",
+    "rules": "Read-only external endpoints, not key management.",
+    "post": "Own data returned.",
+    "source": "company/presentation/CompanyApiController.java",
+    "related": "UC-31"
+  },
+  {
+    "id": "UC-33",
+    "name": "Expire Overdue PTOs",
+    "actors": [
+      "Time (daily schedule)"
+    ],
+    "goal": "Expire overdue active PTOs.",
+    "pre": "Scheduler enabled; ACTIVE records.",
+    "flow": [
+      "Daily 01:00 job loads ACTIVE PTOs.",
+      "For each with nonnull expiry before today, system sets EXPIRED and saves.",
+      "System publishes expiry event; listeners record supported activity."
+    ],
+    "alt": "Null, today or future expiry dates remain unchanged; other statuses not selected.",
+    "rules": "Parcel is not released by expiry job. Notification recipient is literal system.",
+    "post": "Eligible records EXPIRED.",
+    "source": "pto/application/service/PTOExpiryScheduler.java; pto/domain/listener/PTONotificationListener.java",
+    "related": "UC-16"
+  },
+  {
+    "id": "UC-37",
+    "name": "Capture Electronic Signature",
+    "actors": [
+      "Chief"
+    ],
+    "goal": "Record optional approval signature.",
+    "pre": "Valid Chief approval; signature supplied in API request.",
+    "flow": [
+      "Chief supplies signatureData or signatureImagePath with approval.",
+      "After approval validations, system saves signature with PTO ID and signer metadata.",
+      "Approval completes."
+    ],
+    "alt": "Absent signature skips storage without blocking approval.",
+    "rules": "Extends UC-17 when either signature field is supplied; not cryptographic signing.",
+    "post": "Signature row saved.",
+    "source": "pto/application/service/PTOServiceImpl.java; pto/domain/entity/PTOApprovalSignature.java",
+    "related": "UC-17"
+  },
+  {
+    "id": "UC-45",
+    "name": "Register Resident Account",
+    "actors": [
+      "Unauthenticated visitor"
+    ],
+    "goal": "Create a resident login.",
+    "pre": "Unauthenticated visitor; unique account identifiers.",
+    "flow": [
+      "Visitor submits registration details and password.",
+      "Service checks username, email and supplied ID uniqueness.",
+      "System hashes password and creates enabled, unlocked ROLE_USER account.",
+      "Visitor is redirected to sign in."
+    ],
+    "alt": "Duplicate identifiers reject registration.",
+    "rules": "No staff or company role selected through registration.",
+    "post": "Resident account stored.",
+    "source": "security/presentation/RegisterController.java; security/application/service/UserServiceImpl.java",
+    "related": "UC-01; UC-26"
+  },
+  {
+    "id": "UC-46",
+    "name": "Search TALOMS Records",
+    "actors": [
+      "Admin",
+      "Chief",
+      "Headsman",
+      "Resident user (ROLE_USER)",
+      "Company user (browser)"
+    ],
+    "goal": "Search across TALOMS records.",
+    "pre": "Authenticated account.",
+    "flow": [
+      "User submits query to global search.",
+      "System searches authorities, villages, parcels and PTOs.",
+      "System combines results and total.",
+      "UI displays matches."
+    ],
+    "alt": "Blank query yields empty results; exceptions in each category produce an empty category.",
+    "rules": "No scope service is invoked by GlobalSearchController; do not infer uniform authority filtering from navigation.",
+    "post": "Read-only combined result.",
+    "source": "common/presentation/GlobalSearchController.java",
+    "related": "UC-13"
+  },
+  {
+    "id": "UC-47",
+    "name": "Synchronize Parcel and PTO Changes",
+    "actors": [
+      "Admin",
+      "Chief",
+      "Headsman"
+    ],
+    "goal": "Exchange parcel and PTO changes.",
+    "pre": "Staff; sync client with records/timestamps.",
+    "flow": [
+      "Client requests delta since timestamp.",
+      "System returns changed records and server time.",
+      "Client pushes changed records.",
+      "Service saves batch and returns processed counts."
+    ],
+    "alt": "Invalid delta timestamp is ignored; parcel business validation conflict returns 409.",
+    "rules": "Sync routes have distinct checks from interactive forms; no universal offline conflict-resolution guarantee.",
+    "post": "Accepted changes stored; client receives delta/acknowledgement.",
+    "source": "parcel/presentation/ParcelRestController.java; pto/presentation/PTORestController.java",
+    "related": "UC-15; UC-16"
+  }
+]

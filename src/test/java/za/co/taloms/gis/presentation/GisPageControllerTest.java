@@ -33,9 +33,10 @@ class GisPageControllerTest {
     void chiefShouldOnlySeeOwnAuthorityAndVillages() {
         when(scopeService.isCurrentUserChiefOrHeadsman()).thenReturn(true);
         when(scopeService.isCurrentUserAdmin()).thenReturn(false);
-        when(scopeService.getCurrentUserAuthorityId()).thenReturn(10L);
-        when(authorityService.findById(10L)).thenReturn(TraditionalAuthorityResponse.builder()
-                .id(10L).authorityName("Authority A").build());
+        when(scopeService.getCurrentUserAuthorityIds()).thenReturn(java.util.Set.of(10L));
+        when(authorityService.findAllActive()).thenReturn(List.of(
+                TraditionalAuthorityResponse.builder().id(10L).authorityName("Authority A").build(),
+                TraditionalAuthorityResponse.builder().id(11L).authorityName("Authority B").build()));
         when(villageService.findByAuthority(10L)).thenReturn(List.of(
                 VillageResponse.builder().id(1L).villageName("Village A").build()));
 
@@ -46,16 +47,16 @@ class GisPageControllerTest {
         assertEquals(1, ((List<?>) model.getAttribute("authorities")).size());
         assertEquals(1, ((List<?>) model.getAttribute("villages")).size());
         assertEquals(10L, model.getAttribute("scopedAuthorityId"));
-        verify(authorityService).findById(10L);
+        verify(authorityService).findAllActive();
         verify(villageService).findByAuthority(10L);
-        verify(authorityService, never()).findAllActive();
+        verify(villageService, never()).findAll();
     }
 
     @Test
     void adminShouldSeeAllAuthoritiesAndVillages() {
         when(scopeService.isCurrentUserChiefOrHeadsman()).thenReturn(false);
         when(scopeService.isCurrentUserAdmin()).thenReturn(true);
-        when(scopeService.getCurrentUserAuthorityId()).thenReturn(null);
+        when(scopeService.getCurrentUserAuthorityIds()).thenReturn(java.util.Set.of());
         when(authorityService.findAllActive()).thenReturn(List.of(
                 TraditionalAuthorityResponse.builder().id(10L).authorityName("Authority A").build(),
                 TraditionalAuthorityResponse.builder().id(11L).authorityName("Authority B").build()));
@@ -71,6 +72,7 @@ class GisPageControllerTest {
         assertEquals(2, ((List<?>) model.getAttribute("authorities")).size());
         assertEquals(2, ((List<?>) model.getAttribute("villages")).size());
         assertNull(model.getAttribute("scopedAuthorityId"));
+        assertEquals(5L, model.getAttribute("totalParcels"));
         verify(authorityService).findAllActive();
         verify(villageService).findAll();
     }

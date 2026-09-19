@@ -116,8 +116,9 @@ public interface PTOJpaRepository extends JpaRepository<PTO, Long> {
             LEFT JOIN FETCH v.traditionalAuthority ta
             WHERE (:since IS NULL OR p.updatedAt >= :since)
             ORDER BY p.updatedAt ASC
+            LIMIT :limit
             """)
-    List<PTO> findChangedSince(@Param("since") LocalDateTime since);
+    List<PTO> findChangedSince(@Param("since") LocalDateTime since, @Param("limit") int limit);
 
     @Query("""
             SELECT p FROM PTO p
@@ -127,4 +128,5 @@ public interface PTOJpaRepository extends JpaRepository<PTO, Long> {
             """)
     List<PTO> findByIds(@Param("ids") Set<Long> ids);
 }
+
 

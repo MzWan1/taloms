@@ -8,7 +8,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import za.co.taloms.company.application.dto.ApiUsageLogResponse;
 import za.co.taloms.company.application.dto.CompanyApiKeyCreateRequest;
 import za.co.taloms.company.application.dto.CompanyApiKeyResponse;
 import za.co.taloms.company.application.dto.CompanyCreateRequest;
@@ -64,9 +63,10 @@ public class CompanyAdminPageController {
     public String detail(@PathVariable Long id, Model model) {
         model.addAttribute("company", companyService.findById(id));
         model.addAttribute("keys", apiKeyService.findByCompany(id));
-        List<ApiUsageLogResponse> usage = usageService.findByCompany(id);
-        model.addAttribute("usage", usage);
-        model.addAttribute("usageCount", usage.size());
+        // Recent usage for the detail view — bounded page, newest first.
+        var usage = usageService.findByCompany(id, 1, 10);
+        model.addAttribute("usage", usage.getContent());
+        model.addAttribute("usageCount", usage.getTotalElements());
         model.addAttribute("scopes", ApiScope.values());
         model.addAttribute("pageTitle", "Company Detail");
         model.addAttribute("currentPage", "companies");

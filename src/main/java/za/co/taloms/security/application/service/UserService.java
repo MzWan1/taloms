@@ -31,5 +31,11 @@ public interface UserService {
 
     // Roles
     List<Role> findAllRoles();
+
+    /**
+     * IDs of the authorities a user belongs to (many-to-many chief ↔ authority).
+     * Used by the admin user form and API responses.
+     */
+    java.util.Set<Long> getUserAuthorityIds(Long userId);
 }
 

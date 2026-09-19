@@ -14,6 +14,7 @@ public interface AuditService {
     List<AuditLogResponse> findByPerformedBy(String performedBy);
     List<AuditLogResponse> findByAction(AuditAction action);
     List<AuditLogResponse> search(AuditSearchCriteria criteria);
+    List<AuditLogResponse> findRecent(int limit);
     long countByEntity(String entityType, Long entityId);
     long countByPerformedBy(String performedBy);
     long countAll();

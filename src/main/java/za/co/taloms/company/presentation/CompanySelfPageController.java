@@ -39,12 +39,13 @@ public class CompanySelfPageController {
     public String dashboard(Model model, @AuthenticationPrincipal UserDetails userDetails) {
         CompanyResponse company = companyService.findByUsername(userDetails.getUsername());
         List<CompanyApiKeySummaryResponse> keys = apiKeyService.findByCompany(company.getId());
-        List<ApiUsageLogResponse> usage = usageService.findByCompany(company.getId());
+        // Recent usage for the dashboard view — bounded page, newest first.
+        var usage = usageService.findByCompany(company.getId(), 1, 10);
 
         model.addAttribute("company", company);
         model.addAttribute("keys", keys);
-        model.addAttribute("usage", usage);
-        model.addAttribute("usageCount", usage.size());
+        model.addAttribute("usage", usage.getContent());
+        model.addAttribute("usageCount", usage.getTotalElements());
         model.addAttribute("scopes", ApiScope.values());
         model.addAttribute("apiKeyForm", new CompanyApiKeyCreateRequest());
         model.addAttribute("pageTitle", "Company Dashboard");

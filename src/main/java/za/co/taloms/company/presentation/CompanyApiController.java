@@ -11,6 +11,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import za.co.taloms.common.ApiResponse;
+import za.co.taloms.common.PageResponse;
 import za.co.taloms.company.application.dto.*;
 import za.co.taloms.company.application.service.*;
 import za.co.taloms.company.domain.security.CompanyApiPrincipal;
@@ -93,10 +94,12 @@ public class CompanyApiController {
     /** The calling company's own usage records — never another company's. */
     @GetMapping("/self/usage")
     @PreAuthorize("hasRole('COMPANY') and hasAuthority('SCOPE_COMPANY_SELF_READ')")
-    public ResponseEntity<ApiResponse<List<ApiUsageLogResponse>>> myUsage(
-            @AuthenticationPrincipal CompanyApiPrincipal principal) {
+    public ResponseEntity<ApiResponse<PageResponse<ApiUsageLogResponse>>> myUsage(
+            @AuthenticationPrincipal CompanyApiPrincipal principal,
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer pageSize) {
         return ResponseEntity.ok(ApiResponse.success(
-                usageService.findByCompany(principal.companyId()),
+                usageService.findByCompany(principal.companyId(), page, pageSize),
                 "API usage retrieved successfully"));
     }
 }

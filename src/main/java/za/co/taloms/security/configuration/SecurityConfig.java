@@ -38,6 +38,11 @@ public class SecurityConfig {
     private final TalomsAuthenticationEntryPoint entryPoint;
     private final TalomsAccessDeniedHandler      accessDeniedHandler;
     private final CompanyApiKeyAuthenticationFilter companyApiKeyFilter;
+    private final za.co.taloms.common.resiliency.ApiProtectionFilter apiProtectionFilter;
+
+    @org.springframework.beans.factory.annotation.Value("${taloms.remember-me.key}")
+    private String rememberMeKey;
+
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http)
@@ -58,6 +63,7 @@ public class SecurityConfig {
                                 "/ptos/villages/**",
                                 "/parcels/villages/**",
                                 "/actuator/health",
+                                "/health",
                                 "/swagger-ui/**",
                                 "/v3/api-docs/**",
                                 "/css/**",
@@ -139,7 +145,7 @@ public class SecurityConfig {
                         .permitAll()
                 )
                 .rememberMe(remember -> remember
-                        .key("TalomsRememberMeSecretKey2026")
+                        .key(rememberMeKey)
                         .tokenValiditySeconds(604800)
                         .userDetailsService(userDetailsService)
                         .rememberMeParameter("remember-me")
@@ -147,6 +153,10 @@ public class SecurityConfig {
                 .authenticationProvider(authenticationProvider())
                 .addFilterAfter(
                         companyApiKeyFilter,
+                        SecurityContextHolderFilter.class
+                )
+                .addFilterAfter(
+                        apiProtectionFilter,
                         SecurityContextHolderFilter.class
                 )
                 .addFilterBefore(

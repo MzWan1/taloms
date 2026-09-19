@@ -22,18 +22,52 @@ public class TraditionalAuthorityRestController {
     private final TraditionalAuthorityService authorityService;
     private final AuthorityScopeService       scopeService;
 
-    /** Chiefs/headsmen only see their own authority; admins see all. */
+    /** Chiefs/headsmen only see their own authorities; admins see all. */
     private List<TraditionalAuthorityResponse> scoped(List<TraditionalAuthorityResponse> all) {
         if (!scopeService.isCurrentUserChiefOrHeadsman()) {
             return all;
         }
-        Long linkedAuthorityId = scopeService.getCurrentUserAuthorityId();
-        if (linkedAuthorityId == null) {
+        java.util.Set<Long> allowed = scopeService.getCurrentUserAuthorityIds();
+        if (allowed == null || allowed.isEmpty()) {
             return List.of();
         }
         return all.stream()
-                .filter(a -> linkedAuthorityId.equals(a.getId()))
+                .filter(a -> allowed.contains(a.getId()))
                 .toList();
+    }
+
+    /** Chiefs linked to the given authority (ADMIN view of the relationship). */
+    @GetMapping("/{id}/chiefs")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<List<TraditionalAuthorityChiefDto>>> getChiefs(
+            @PathVariable Long id) {
+        return ResponseEntity.ok(ApiResponse.success(
+                authorityService.findChiefs(id),
+                "Chiefs retrieved successfully"));
+    }
+
+    /** Link a chief to the authority. ADMIN only. */
+    @PostMapping("/{id}/chiefs/{chiefId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<List<TraditionalAuthorityChiefDto>>> addChief(
+            @PathVariable Long id,
+            @PathVariable Long chiefId) {
+        authorityService.addChiefToAuthority(id, chiefId);
+        return ResponseEntity.ok(ApiResponse.success(
+                authorityService.findChiefs(id),
+                "Chief linked to authority successfully"));
+    }
+
+    /** Unlink a chief from the authority. ADMIN only. */
+    @DeleteMapping("/{id}/chiefs/{chiefId}")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<ApiResponse<List<TraditionalAuthorityChiefDto>>> removeChief(
+            @PathVariable Long id,
+            @PathVariable Long chiefId) {
+        authorityService.removeChiefFromAuthority(id, chiefId);
+        return ResponseEntity.ok(ApiResponse.success(
+                authorityService.findChiefs(id),
+                "Chief removed from authority successfully"));
     }
 
     @PostMapping
