@@ -55,7 +55,7 @@ const WARM_CACHE_URLS = [
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(async function(cache) {
+      .then(async function (cache) {
         const allUrls = [];
 
         // Try to load Vite manifest for hashed assets
@@ -63,7 +63,7 @@ self.addEventListener('install', (event) => {
           const response = await fetch('/.vite/manifest.json');
           const manifest = await response.json();
           // Collect all hashed file URLs from the manifest
-          const hashedUrls = Object.values(manifest).flatMap(function(chunk) {
+          const hashedUrls = Object.values(manifest).flatMap(function (chunk) {
             const urls = [chunk.file];
             if (chunk.css) urls.push(...chunk.css);
             if (chunk.assets) urls.push(...chunk.assets);
@@ -263,8 +263,14 @@ async function flushOutbox() {
         if (response.ok) {
           store.delete(item.id);
         } else {
-          item.status = 'FAILED';
-          item.retryCount = (item.retryCount || 0) + 1;
+          if (response.status >= 400 && response.status < 500 && response.status !== 408 && response.status !== 429) {
+            // Permanent business/validation error (e.g. 422 Overlap)
+            item.status = 'CONFLICT';
+          } else {
+            // Transient error (5xx) or timeout
+            item.status = 'FAILED';
+            item.retryCount = (item.retryCount || 0) + 1;
+          }
           store.put(item);
         }
       } catch (err) {
@@ -295,7 +301,7 @@ self.addEventListener('message', (event) => {
 
     case 'GET_CACHE_USAGE':
       event.waitUntil(
-        (async function() {
+        (async function () {
           const cacheNames = await caches.keys();
           let totalEntries = 0;
           for (const name of cacheNames) {
@@ -312,7 +318,7 @@ self.addEventListener('message', (event) => {
 
     case 'WARM_CACHE':
       event.waitUntil(
-        (async function() {
+        (async function () {
           const cache = await caches.open(CACHE_NAME);
           const results = { cached: 0, failed: 0, skipped: [] };
           for (const url of WARM_CACHE_URLS) {

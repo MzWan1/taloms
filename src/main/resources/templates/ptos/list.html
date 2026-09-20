@@ -162,6 +162,7 @@
                     </thead>
                     <tbody id="pendingPtoTableBody"></tbody>
                 </table>
+                        <div th:replace="~{fragments/pagination :: pagination(page=${page}, baseUrl='/ptos', queryParams=${queryParams})}"></div>
             </div>
         </div>
     </div>
@@ -193,7 +194,7 @@
                             <small>Click "New PTO" to create the first record</small>
                         </td>
                     </tr>
-                    <tr th:each="pto : ${ptos}"
+                    <tr th:each="pto : ${page.content}"
                         th:classappend="${pto.status.name() == 'PENDING'} ? 'pto-row-pending' : ''">
                         <td class="px-4">
                             <a th:href="@{/ptos/{id}(id=${pto.id})}"
@@ -250,6 +251,7 @@
                     </tr>
                     </tbody>
                 </table>
+                        <div th:replace="~{fragments/pagination :: pagination(page=${page}, baseUrl='/ptos', queryParams=${queryParams})}"></div>
             </div>
         </div>
     </div>

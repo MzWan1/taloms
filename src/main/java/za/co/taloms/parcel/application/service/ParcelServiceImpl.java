@@ -123,6 +123,9 @@ public class ParcelServiceImpl implements ParcelService {
         // Reject parcels plotted outside the village's mapped boundary
         validateParcelWithinVillage(closedBoundary, village);
 
+        // Reject parcels that overlap existing active parcels
+        validateNoOverlap(closedBoundary, null);
+
         // Calculate area, centroid, and perimeter using the closed boundary
         Double areaM2 = areaCalculator.calculateAreaM2(closedBoundary);
 
@@ -142,7 +145,8 @@ public class ParcelServiceImpl implements ParcelService {
 
         // Create parcel entity
         var chiefName = village.getTraditionalAuthority() != null
-                ? village.getTraditionalAuthority().getChiefName() : null;
+                ? village.getTraditionalAuthority().getChiefName()
+                : null;
         var headmanName = village.getHeadmanName();
 
         var parcel = Parcel.builder()
@@ -202,7 +206,7 @@ public class ParcelServiceImpl implements ParcelService {
      * records) are skipped so existing capture flows keep working.
      */
     private void validateParcelWithinVillage(List<BoundaryPointDto> closedBoundary,
-                                             za.co.taloms.traditionalauthority.domain.entity.Village village) {
+            za.co.taloms.traditionalauthority.domain.entity.Village village) {
         if (village.getBoundaryJson() == null || village.getBoundaryJson().isBlank()) {
             log.warn("Village {} has no mapped boundary — parcel containment check skipped",
                     village.getVillageName());
@@ -210,7 +214,7 @@ public class ParcelServiceImpl implements ParcelService {
         }
 
         List<double[]> parcelPoints = closedBoundary.stream()
-                .map(p -> new double[]{p.getLatitude(), p.getLongitude()})
+                .map(p -> new double[] { p.getLatitude(), p.getLongitude() })
                 .toList();
         var parcelPolygon = za.co.taloms.common.spatial.GeoBoundarySupport.toPolygon(parcelPoints);
         var villagePolygon = za.co.taloms.common.spatial.GeoBoundarySupport.toPolygon(
@@ -225,8 +229,6 @@ public class ParcelServiceImpl implements ParcelService {
                             + "'. Parcels must be demarcated inside their village.");
         }
 
-        // The parcel must not overlap any OTHER village (it belongs to exactly
-        // one village — the way a village belongs to exactly one authority).
         for (var other : villageRepository.findAllActive()) {
             if (other.getId() != null && other.getId().equals(village.getId())) {
                 continue;
@@ -242,6 +244,33 @@ public class ParcelServiceImpl implements ParcelService {
                                 + other.getVillageName()
                                 + "'. A parcel may only fall inside a single village.");
             }
+        }
+    }
+
+    /**
+     * Checks if the newly captured boundary overlaps any existing active parcel's
+     * area.
+     */
+    private void validateNoOverlap(List<BoundaryPointDto> closedBoundary, Long excludeId) {
+        if (closedBoundary == null || closedBoundary.size() < 3) {
+            return;
+        }
+
+        List<double[]> parcelPoints = closedBoundary.stream()
+                .map(p -> new double[] { p.getLatitude(), p.getLongitude() })
+                .toList();
+
+        var polygon = za.co.taloms.common.spatial.GeoBoundarySupport.toPolygon(parcelPoints);
+        if (polygon == null) {
+            return;
+        }
+
+        String wkt = polygon.toText();
+        String overlappingParcelNum = parcelRepository.findOverlappingActiveParcelNumber(wkt, excludeId);
+
+        if (overlappingParcelNum != null) {
+            throw new BusinessValidationException(
+                    "This parcel overlaps existing parcel " + overlappingParcelNum + " and cannot be created.");
         }
     }
 
@@ -297,12 +326,12 @@ public class ParcelServiceImpl implements ParcelService {
 
         double distance = BoundarySimplifier.haversineDistanceM(
                 first.getLatitude(), first.getLongitude(),
-                last.getLatitude(), last.getLongitude()
-        );
+                last.getLatitude(), last.getLongitude());
 
         log.info("Distance between first and last point: {}m", distance);
 
-        // If the last point is not the same as the first (within 1m), add the first point at the end
+        // If the last point is not the same as the first (within 1m), add the first
+        // point at the end
         if (distance > 1.0) {
             log.info("Boundary not closed. Adding closure point.");
 
@@ -372,6 +401,9 @@ public class ParcelServiceImpl implements ParcelService {
         List<BoundaryPointDto> closedBoundary = ensureBoundaryIsClosed(uniqueSimplified);
 
         boundaryValidationService.validateCoordinatesInSouthAfrica(closedBoundary);
+
+        validateParcelWithinVillage(closedBoundary, village);
+        validateNoOverlap(closedBoundary, parcel.getId());
 
         Double areaM2 = areaCalculator.calculateAreaM2(closedBoundary);
 
@@ -469,9 +501,10 @@ public class ParcelServiceImpl implements ParcelService {
                 .filter(p -> (p.getParcelNumber() != null && p.getParcelNumber().toLowerCase().contains(q))
                         || (p.getStandNumber() != null && p.getStandNumber().toLowerCase().contains(q))
                         || (p.getVillage() != null && p.getVillage().getVillageName() != null
-                            && p.getVillage().getVillageName().toLowerCase().contains(q))
+                                && p.getVillage().getVillageName().toLowerCase().contains(q))
                         || (p.getVillage() != null && p.getVillage().getTraditionalAuthority() != null
-                            && p.getVillage().getTraditionalAuthority().getAuthorityName().toLowerCase().contains(q)))
+                                && p.getVillage().getTraditionalAuthority().getAuthorityName().toLowerCase()
+                                        .contains(q)))
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
@@ -484,7 +517,8 @@ public class ParcelServiceImpl implements ParcelService {
         return availableParcels.stream()
                 .filter(parcel -> {
                     boolean hasActivePto = ptoRepository.existsByParcelIdAndStatus(parcel.getId(), PTOStatus.ACTIVE);
-                    boolean hasSuspendedPto = ptoRepository.existsByParcelIdAndStatus(parcel.getId(), PTOStatus.SUSPENDED);
+                    boolean hasSuspendedPto = ptoRepository.existsByParcelIdAndStatus(parcel.getId(),
+                            PTOStatus.SUSPENDED);
                     return !hasActivePto && !hasSuspendedPto;
                 })
                 .map(this::toResponse)
@@ -499,7 +533,8 @@ public class ParcelServiceImpl implements ParcelService {
         return availableParcels.stream()
                 .filter(parcel -> {
                     boolean hasActivePto = ptoRepository.existsByParcelIdAndStatus(parcel.getId(), PTOStatus.ACTIVE);
-                    boolean hasSuspendedPto = ptoRepository.existsByParcelIdAndStatus(parcel.getId(), PTOStatus.SUSPENDED);
+                    boolean hasSuspendedPto = ptoRepository.existsByParcelIdAndStatus(parcel.getId(),
+                            PTOStatus.SUSPENDED);
                     return !hasActivePto && !hasSuspendedPto;
                 })
                 .map(this::toResponse)
@@ -652,8 +687,9 @@ public class ParcelServiceImpl implements ParcelService {
                 .perimeterM(parcel.getPerimeterM())
                 .villageId(parcel.getVillage() != null ? parcel.getVillage().getId() : null)
                 .villageName(parcel.getVillage() != null ? parcel.getVillage().getVillageName() : null)
-                .authorityName(parcel.getVillage() != null && parcel.getVillage().getTraditionalAuthority() != null ?
-                        parcel.getVillage().getTraditionalAuthority().getAuthorityName() : null)
+                .authorityName(parcel.getVillage() != null && parcel.getVillage().getTraditionalAuthority() != null
+                        ? parcel.getVillage().getTraditionalAuthority().getAuthorityName()
+                        : null)
                 .ptoId(parcel.getPto() != null ? parcel.getPto().getId() : null)
                 .ptoNumber(parcel.getPto() != null ? parcel.getPto().getPtoNumber() : null)
                 .ptoHolderName(parcel.getPto() != null ? parcel.getPto().getPtoHolderName() : null)
@@ -731,7 +767,8 @@ public class ParcelServiceImpl implements ParcelService {
             Double perimeterM = areaCalculator.calculatePerimeterM(closedBoundary);
 
             var chiefName = village.getTraditionalAuthority() != null
-                    ? village.getTraditionalAuthority().getChiefName() : null;
+                    ? village.getTraditionalAuthority().getChiefName()
+                    : null;
             var headmanName = village.getHeadmanName();
 
             if (parcel.getId() == null) {

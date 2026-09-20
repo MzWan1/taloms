@@ -107,7 +107,8 @@ public class ParcelRepositoryAdapter implements ParcelRepositoryPort {
     }
 
     @Override
-    public List<Parcel> findOverlappingParcels(Long parcelId, Double minLat, Double minLng, Double maxLat, Double maxLng) {
+    public List<Parcel> findOverlappingParcels(Long parcelId, Double minLat, Double minLng, Double maxLat,
+            Double maxLng) {
         return jpaRepository.findOverlappingParcels(parcelId, minLat, minLng, maxLat, maxLng);
     }
 
@@ -119,6 +120,11 @@ public class ParcelRepositoryAdapter implements ParcelRepositoryPort {
     @Override
     public boolean hasSelfIntersection(Long parcelId) {
         return jpaRepository.hasSelfIntersection(parcelId);
+    }
+
+    @Override
+    public String findOverlappingActiveParcelNumber(String wkt, Long excludeId) {
+        return jpaRepository.findOverlappingActiveParcelNumber(wkt, excludeId);
     }
 
     @Override
@@ -152,4 +158,3 @@ public class ParcelRepositoryAdapter implements ParcelRepositoryPort {
         jpaRepository.deleteAllByIdInBatch(ids);
     }
 }
-

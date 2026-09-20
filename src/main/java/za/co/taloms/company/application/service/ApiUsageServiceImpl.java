@@ -51,6 +51,8 @@ public class ApiUsageServiceImpl implements ApiUsageService {
                     .outcome(record.getOutcome())
                     .responseStatus(record.getResponseStatus() == null ? 500 : record.getResponseStatus())
                     .failureReason(record.getFailureReason())
+                    .searchType(truncate(record.getSearchType(), 50))
+                    .maskedSearchValue(truncate(record.getMaskedSearchValue(), 255))
                     .idNumberHash(truncate(record.getIdNumberHash(), 64))
                     .clientIp(truncate(record.getClientIp(), 45))
                     .userAgent(truncate(record.getUserAgent(), MAX_FIELD_LENGTH))
@@ -91,8 +93,8 @@ public class ApiUsageServiceImpl implements ApiUsageService {
     }
 
     private ApiUsageLogResponse toResponse(ApiUsageLog entry,
-                                           Map<Long, String> companyNames,
-                                           Map<Long, String> keyPrefixes) {
+            Map<Long, String> companyNames,
+            Map<Long, String> keyPrefixes) {
         String companyName = null;
         if (entry.getCompanyId() != null) {
             companyName = companyNames.computeIfAbsent(entry.getCompanyId(),
@@ -118,6 +120,8 @@ public class ApiUsageServiceImpl implements ApiUsageService {
                 .failureReasonDisplay(entry.getFailureReason() == null
                         ? null
                         : entry.getFailureReason().name().replace('_', ' '))
+                .searchType(entry.getSearchType())
+                .maskedSearchValue(entry.getMaskedSearchValue())
                 .idNumberHash(entry.getIdNumberHash())
                 .clientIp(entry.getClientIp())
                 .userAgent(entry.getUserAgent())

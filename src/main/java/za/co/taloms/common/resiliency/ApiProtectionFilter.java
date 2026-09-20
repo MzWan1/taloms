@@ -28,9 +28,9 @@ import java.util.concurrent.atomic.AtomicLong;
  * which is keyed per company rather than per IP.
  *
  * Responsibilities, in order:
- *   1. attach/propagate an X-Request-Id (correlation ID for log diagnosis);
- *   2. enforce a request-body size cap for upload endpoints;
- *   3. enforce tiered per-IP rate limits with 429 + Retry-After.
+ * 1. attach/propagate an X-Request-Id (correlation ID for log diagnosis);
+ * 2. enforce a request-body size cap for upload endpoints;
+ * 3. enforce tiered per-IP rate limits with 429 + Retry-After.
  *
  * Tiers (see {@link RateLimitProperties}): ADMIN, AUTHENTICATED, ANONYMOUS,
  * UPLOAD. When several limits apply (e.g. an admin uploading), ALL of them are
@@ -62,8 +62,8 @@ public class ApiProtectionFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request,
-                                    @NonNull HttpServletResponse response,
-                                    @NonNull FilterChain filterChain)
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain filterChain)
             throws ServletException, IOException {
 
         String requestId = resolveRequestId(request);
@@ -79,7 +79,7 @@ public class ApiProtectionFilter extends OncePerRequestFilter {
             return;
         }
 
-        if (path.startsWith("/error") || path.startsWith("/actuator") || path.startsWith("/health")) {
+        if (!path.startsWith("/api/")) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -90,12 +90,6 @@ public class ApiProtectionFilter extends OncePerRequestFilter {
         }
 
         String clientIp = clientIp(request);
-        boolean authenticated = isAuthenticated(request);
-        AuthenticationTier primaryTier = chooseTierForRequest(authenticated, path);
-        if (primaryTier == null) {
-            filterChain.doFilter(request, response);
-            return;
-        }
 
         if (isUploadPath(path)
                 && request.getContentLengthLong() > properties.getUploadLimits().getMaxBytes()) {
@@ -106,12 +100,12 @@ public class ApiProtectionFilter extends OncePerRequestFilter {
             return;
         }
 
-        RateLimitDecision decision = evaluateTiers(requestId, path, method, clientIp, authenticated,
-                primaryTier);
+        RateLimitDecision decision = checkRateLimits(request, path, clientIp);
 
         if (!decision.allowed()) {
-            writeRateLimitedResponse(request, response, requestId, decision.retryAfterSeconds(),
-                    primaryTier.code());
+            writeError(request, response, requestId, HttpStatus.TOO_MANY_REQUESTS,
+                    "Too many requests. Please retry later.",
+                    decision.retryAfterSeconds());
             return;
         }
 
@@ -129,15 +123,24 @@ public class ApiProtectionFilter extends OncePerRequestFilter {
     RateLimitDecision checkRateLimits(HttpServletRequest request, String path, String clientIp) {
         AtomicLong minRetryAfter = new AtomicLong(-1);
 
+        org.springframework.security.core.Authentication auth = org.springframework.security.core.context.SecurityContextHolder
+                .getContext().getAuthentication();
+        boolean isAdmin = auth != null
+                && auth.getAuthorities().stream().anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        boolean isAuth = auth != null && auth.isAuthenticated()
+                && !(auth instanceof org.springframework.security.authentication.AnonymousAuthenticationToken);
+
+        String identity = isAuth ? auth.getName() : clientIp;
+
         if (isUploadPath(path)) {
-            applyTier("upload", properties.getUploadLimits().getRate(), clientIp, minRetryAfter);
+            applyTier("upload", properties.getUploadLimits().getRate(), "upload:" + identity, minRetryAfter);
         }
-        if (request.isUserInRole("ADMIN")) {
-            applyTier("admin", properties.getAdmin(), clientIp, minRetryAfter);
-        } else if (isAuthenticated(request)) {
-            applyTier("auth", properties.getAuthenticated(), clientIp, minRetryAfter);
+        if (isAdmin) {
+            applyTier("admin", properties.getAdmin(), "admin:" + identity, minRetryAfter);
+        } else if (isAuth) {
+            applyTier("auth", properties.getAuthenticated(), "auth:" + identity, minRetryAfter);
         } else {
-            applyTier("anon", properties.getAnonymous(), clientIp, minRetryAfter);
+            applyTier("anon", properties.getAnonymous(), "anon:" + clientIp, minRetryAfter);
         }
 
         if (minRetryAfter.get() >= 0) {
@@ -146,20 +149,16 @@ public class ApiProtectionFilter extends OncePerRequestFilter {
         return RateLimitDecision.allow();
     }
 
-    private boolean isAuthenticated(HttpServletRequest request) {
-        return request.getRemoteUser() != null;
-    }
-
-    private void applyTier(String tier, Tier tierConfig, String clientIp,
-                           AtomicLong minRetryAfter) {
+    private void applyTier(String tier, Tier tierConfig, String bucketKey,
+            AtomicLong minRetryAfter) {
         if (tierConfig == null || !tierConfig.isEnabled()) {
             return;
         }
-        var decision = rateLimitService.tryConsume(tier, clientIp, tierConfig.getRequestsPerMinute());
+        var decision = rateLimitService.tryConsume(tier, bucketKey, tierConfig.getRequestsPerMinute(), 60L);
         if (!decision.allowed()) {
             minRetryAfter.accumulateAndGet(decision.retryAfterSeconds(),
                     (current, candidate) -> current < 0 ? candidate : Math.min(current, candidate));
-            log.warn("Rate limit denial [tier={}, client={}]", tier, clientIp);
+            log.warn("Rate limit denial [tier={}, client={}]", tier, bucketKey);
         }
     }
 
@@ -191,8 +190,8 @@ public class ApiProtectionFilter extends OncePerRequestFilter {
     }
 
     private void writeError(HttpServletRequest request, HttpServletResponse response,
-                            String requestId, HttpStatus status, String message,
-                            long retryAfterSeconds) throws IOException {
+            String requestId, HttpStatus status, String message,
+            long retryAfterSeconds) throws IOException {
         if (response.isCommitted()) {
             return;
         }
@@ -219,4 +218,3 @@ public class ApiProtectionFilter extends OncePerRequestFilter {
         }
     }
 }
-

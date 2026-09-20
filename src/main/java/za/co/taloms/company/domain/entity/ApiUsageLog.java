@@ -56,6 +56,12 @@ public class ApiUsageLog {
     @Column(name = "failure_reason", length = 40)
     private ApiFailureReason failureReason;
 
+    @Column(name = "search_type", length = 50)
+    private String searchType;
+
+    @Column(name = "masked_search_value", length = 255)
+    private String maskedSearchValue;
+
     /** SHA-256 of the queried ID number — never the ID number itself. */
     @Column(name = "id_number_hash", length = 64)
     private String idNumberHash;
@@ -74,7 +80,8 @@ public class ApiUsageLog {
 
     @PrePersist
     protected void onCreate() {
-        if (requestedAt == null) requestedAt = LocalDateTime.now();
+        if (requestedAt == null)
+            requestedAt = LocalDateTime.now();
     }
 
     public boolean isSuccess() {

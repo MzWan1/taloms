@@ -26,6 +26,10 @@ public class DashboardSummaryDto {
     // Document KPIs - this is a count, not masked
     private Long totalDocuments;
 
+    // Additional KPIs
+    private Long totalVillages;
+    private Long totalCompanies;
+
     // User KPIs (Admin only) - these are counts, not masked
     private Long totalUsers;
     private Long activeUsers;

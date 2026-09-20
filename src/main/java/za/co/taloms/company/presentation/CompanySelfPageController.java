@@ -36,27 +36,39 @@ public class CompanySelfPageController {
     private final ApiUsageService usageService;
 
     @GetMapping
-    public String dashboard(Model model, @AuthenticationPrincipal UserDetails userDetails) {
-        CompanyResponse company = companyService.findByUsername(userDetails.getUsername());
-        List<CompanyApiKeySummaryResponse> keys = apiKeyService.findByCompany(company.getId());
-        // Recent usage for the dashboard view — bounded page, newest first.
-        var usage = usageService.findByCompany(company.getId(), 1, 10);
-
-        model.addAttribute("company", company);
-        model.addAttribute("keys", keys);
-        model.addAttribute("usage", usage.getContent());
-        model.addAttribute("usageCount", usage.getTotalElements());
-        model.addAttribute("scopes", ApiScope.values());
-        model.addAttribute("apiKeyForm", new CompanyApiKeyCreateRequest());
+    public String dashboard(Model model,
+            @AuthenticationPrincipal UserDetails userDetails,
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "10") Integer size) {
         model.addAttribute("pageTitle", "Company Dashboard");
         model.addAttribute("currentPage", "company");
+
+        try {
+            CompanyResponse company = companyService.findByUsername(userDetails.getUsername());
+            List<CompanyApiKeySummaryResponse> keys = apiKeyService.findByCompany(company.getId());
+            var usage = usageService.findByCompany(company.getId(), page, size);
+
+            model.addAttribute("company", company);
+            model.addAttribute("keys", keys);
+            model.addAttribute("usage", usage.getContent());
+            model.addAttribute("usagePage", usage);
+            model.addAttribute("usageCount", usage.getTotalElements());
+            model.addAttribute("scopes", ApiScope.values());
+            model.addAttribute("apiKeyForm", new CompanyApiKeyCreateRequest());
+
+        } catch (za.co.taloms.common.ResourceNotFoundException e) {
+            model.addAttribute("noCompanyLinked", true);
+            model.addAttribute("errorMessage",
+                    "Your account is not linked to any registered Company. Please contact a system administrator.");
+        }
+
         return "company/dashboard";
     }
 
     @PostMapping("/keys")
     public String generateKey(@ModelAttribute("apiKeyForm") CompanyApiKeyCreateRequest form,
-                              @AuthenticationPrincipal UserDetails userDetails,
-                              RedirectAttributes ra) {
+            @AuthenticationPrincipal UserDetails userDetails,
+            RedirectAttributes ra) {
         try {
             CompanyResponse company = companyService.findByUsername(userDetails.getUsername());
             CompanyApiKeyResponse generated = apiKeyService.generateKey(
@@ -73,9 +85,9 @@ public class CompanySelfPageController {
 
     @PostMapping("/keys/{keyId}/revoke")
     public String revokeKey(@PathVariable Long keyId,
-                            @RequestParam(required = false) String reason,
-                            @AuthenticationPrincipal UserDetails userDetails,
-                            RedirectAttributes ra) {
+            @RequestParam(required = false) String reason,
+            @AuthenticationPrincipal UserDetails userDetails,
+            RedirectAttributes ra) {
         try {
             CompanyResponse company = companyService.findByUsername(userDetails.getUsername());
             apiKeyService.revokeKey(company.getId(), keyId, reason, userDetails.getUsername());

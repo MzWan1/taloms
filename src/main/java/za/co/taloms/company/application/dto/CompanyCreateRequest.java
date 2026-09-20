@@ -2,6 +2,7 @@ package za.co.taloms.company.application.dto;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.*;
@@ -28,7 +29,7 @@ public class CompanyCreateRequest {
     @Pattern(regexp = "^[0-9+\\\\- ()]{0,20}$", message = "Contact phone must be a valid phone number")
     private String contactPhone;
 
-    /** Username of the company owner. The user must exist and have ROLE_COMPANY. */
-    @NotBlank(message = "Company owner username is required")
-    private String ownerUsername;
+    /** ID of the company owner. The user must exist and have ROLE_COMPANY. */
+    @NotNull(message = "Company owner is required")
+    private Long ownerUserId;
 }
