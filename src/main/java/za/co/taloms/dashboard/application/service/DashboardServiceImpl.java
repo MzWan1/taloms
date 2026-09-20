@@ -143,7 +143,6 @@ public class DashboardServiceImpl implements DashboardService {
 
     private List<RecentActivityDto> getRecentActivity() {
         try {
-            var auditLogs = auditService.findRecent(10);
             var auditLogs = auditService.findRecent(5);
             if (auditLogs == null || auditLogs.isEmpty()) return new ArrayList<>();
             return auditLogs.stream().map(audit -> RecentActivityDto.builder()
