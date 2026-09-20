@@ -1,0 +1,1 @@
+{"success":true,"message":"Login successful","data":{"accessToken":"eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJhZG1pbiIsImlhdCI6MTc4OTgzMDM4MywiZXhwIjoxNzg5ODU5MTgzfQ._ZWIZPatrLFS_tJfYnaGuku5-EGwc_5ydTRoIc4UOLZl77KCsWjvACjUXmh4nwWp","tokenType":"Bearer","expiresIn":28800000,"username":"admin","fullName":"System Administrator","roles":["ROLE_ADMIN"]},"timestamp":"2026-09-19T17:06:23.566687"}

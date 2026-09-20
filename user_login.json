@@ -1,0 +1,1 @@
+{"success":true,"message":"Login successful","data":{"accessToken":"eyJhbGciOiJIUzM4NCJ9.eyJzdWIiOiJ0ZXN0dXNlciIsImlhdCI6MTc4OTgzMDM4NCwiZXhwIjoxNzg5ODU5MTg0fQ.lqTO0DMgviwHZwXDoX7svFbD5tApkhR2VHKUzvQLwvbxaKHVphSScTFK342HPZzs","tokenType":"Bearer","expiresIn":28800000,"username":"testuser","fullName":"Test User","roles":["ROLE_USER"]},"timestamp":"2026-09-19T17:06:24.008902"}
