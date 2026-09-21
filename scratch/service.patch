@@ -1,0 +1,9 @@
+@@ -21,7 +21,7 @@
+      *
+      * @return A list of all traditional authorities, sorted newest first.
+      */
+-    za.co.taloms.common.PageResponse<TraditionalAuthorityResponse> findAll(Integer page, Integer size);
++    za.co.taloms.common.PageResponse<TraditionalAuthorityResponse> findAll(Integer page, Integer size);
+     
++    List<TraditionalAuthorityResponse> findAll();
++

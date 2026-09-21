@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Company Dashboard | TALOMS</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link th:href="@{/css/taloms.css}" rel="stylesheet">
+    <style>
+        .company-avatar {
+            width: 48px;
+            height: 48px;
+            background: var(--light-blue, #D6E4F0);
+            color: var(--navy, #1B3A6B);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            font-weight: 700;
+            flex-shrink: 0;
+            letter-spacing: 0.05em;
+        }
+    </style>
+</head>
+
+<body class="bg-light">
+
+    <!-- Navbar -->
+    <nav th:replace="~{fragments/navbar :: navbar('company')}"></nav>
+
+    <div class="container-fluid px-4 py-4">
+
+        <!-- Flash Messages -->
+        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show border-0 shadow-sm mb-4">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            <span th:text="${successMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show border-0 shadow-sm mb-4">
+            <i class="bi bi-exclamation-circle-fill me-2"></i>
+            <span th:text="${errorMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+
+        <!-- No Company State -->
+        <div th:if="${noCompanyLinked}" class="text-center py-5">
+            <i class="bi bi-building-slash display-1 text-muted mb-3"></i>
+            <h3 class="fw-bold text-navy">No Company Linked</h3>
+            <p class="text-muted">Your account is not linked to any registered Company. Please contact a system
+                administrator.</p>
+        </div>
+
+        <div th:if="${company != null}">
+            <!-- Page Header -->
+            <div class="d-flex align-items-start justify-content-between mb-4 flex-wrap gap-3">
+                <div>
+                    <nav aria-label="breadcrumb">
+                        <ol class="breadcrumb mb-1 small">
+                            <li class="breadcrumb-item"><a th:href="@{/dashboard}"
+                                    class="text-muted text-decoration-none">Dashboard</a></li>
+                            <li class="breadcrumb-item active">Company Profile</li>
+                        </ol>
+                    </nav>
+                    <h4 class="fw-bold text-navy mb-0">
+                        <i class="bi bi-building me-2"></i> Company Dashboard
+                    </h4>
+                </div>
+                <div class="d-flex gap-2">
+                    <button class="btn btn-navy px-4 fw-semibold" data-bs-toggle="modal"
+                        data-bs-target="#createKeyModal">
+                        <i class="bi bi-key me-2"></i>Create API Key
+                    </button>
+                </div>
+            </div>
+
+            <!-- Company Overview Row -->
+            <div class="row g-4 mb-4">
+                <!-- Company Profile Card -->
+                <div class="col-12 col-lg-6">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-body p-4">
+                            <div class="d-flex align-items-center mb-4">
+                                <div class="company-avatar me-3"
+                                    th:text="${#strings.substring(company.name,0,2).toUpperCase()}">CO</div>
+                                <div>
+                                    <h5 class="fw-bold mb-1" th:text="${company.name}">Company Name</h5>
+                                    <div class="text-muted small">
+                                        <i class="bi bi-hash me-1"></i><span th:text="${company.registrationNumber}">Reg
+                                            No</span>
+                                    </div>
+                                </div>
+                                <div class="ms-auto">
+                                    <span
+                                        th:class="'badge ' + ${company.statusBadgeClass != null ? company.statusBadgeClass : 'bg-secondary'}"
+                                        th:text="${company.statusDisplay != null ? company.statusDisplay : company.status}">Status</span>
+                                </div>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-sm-6">
+                                    <label class="text-muted small mb-1">Contact Email</label>
+                                    <div class="fw-medium"><i class="bi bi-envelope me-2 text-muted"></i><span
+                                            th:text="${company.contactEmail}">email@example.com</span></div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="text-muted small mb-1">Contact Phone</label>
+                                    <div class="fw-medium"><i class="bi bi-telephone me-2 text-muted"></i><span
+                                            th:text="${company.contactPhone}">+0000000000</span></div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <label class="text-muted small mb-1">Joined</label>
+                                    <div class="fw-medium"><i class="bi bi-calendar3 me-2 text-muted"></i><span
+                                            th:text="${#temporals.format(company.createdAt, 'dd MMM yyyy')}">01 Jan
+                                            2023</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Card -->
+                <div class="col-12 col-lg-6">
+                    <div class="row g-3 h-100">
+                        <div class="col-6">
+                            <div class="card border-0 shadow-sm text-center py-4 h-100 justify-content-center">
+                                <div class="fw-bold display-6 text-success mb-2" th:text="${company.activeKeyCount}">0
+                                </div>
+                                <div class="small text-muted fw-semibold text-uppercase tracking-wider">Active API Keys
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="card border-0 shadow-sm text-center py-4 h-100 justify-content-center">
+                                <div class="fw-bold display-6 text-secondary mb-2"
+                                    th:text="${#lists.size(keys.?[status.name() == 'REVOKED'])}">0</div>
+                                <div class="small text-muted fw-semibold text-uppercase tracking-wider">Revoked Keys
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- API Keys Table -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div
+                    class="card-header bg-white border-bottom-0 pt-4 pb-2 px-4 d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold text-navy mb-0"><i class="bi bi-shield-lock me-2"></i>API Keys</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="px-4">Label</th>
+                                    <th>Prefix</th>
+                                    <th>Status</th>
+                                    <th>Created</th>
+                                    <th>Last Used</th>
+                                    <th>Requests</th>
+                                    <th class="text-end px-4">Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:if="${#lists.isEmpty(keys)}">
+                                    <td colspan="6" class="text-center py-5 text-muted">
+                                        <i class="bi bi-key display-5 d-block mb-3 opacity-25"></i>
+                                        <span class="fw-semibold">No API Keys found</span><br>
+                                        <small>Click "Create API Key" to generate one for accessing the TALOMS
+                                            API.</small>
+                                    </td>
+                                </tr>
+                                <tr th:each="key : ${keys}">
+                                    <td class="px-4">
+                                        <div class="fw-semibold text-navy" th:text="${key.label}">My API Key</div>
+                                        <div class="text-muted small">
+                                            <span th:each="scope, iterStat : ${key.scopes}"
+                                                th:text="!${iterStat.last} ? ${scope} + ', ' : ${scope}">SCOPE</span>
+                                        </div>
+                                    </td>
+                                    <td><code class="text-muted bg-light px-2 py-1 rounded"
+                                            th:text="${key.keyPrefix} + '...'">prefix...</code></td>
+                                    <td>
+                                        <span
+                                            th:class="'badge ' + ${key.statusBadgeClass != null ? key.statusBadgeClass : (key.status.name() == 'ACTIVE' ? 'bg-success' : 'bg-danger')}"
+                                            th:text="${key.statusDisplay != null ? key.statusDisplay : key.status}">ACTIVE</span>
+                                    </td>
+                                    <td class="text-muted small">
+                                        <div th:text="${#temporals.format(key.createdAt, 'dd MMM yyyy')}">Date</div>
+                                        <div th:text="${#temporals.format(key.createdAt, 'HH:mm')}">Time</div>
+                                    </td>
+                                    <td class="text-muted small">
+                                        <th:block th:if="${key.lastUsedAt != null}">
+                                            <div th:text="${#temporals.format(key.lastUsedAt, 'dd MMM yyyy')}">Date
+                                            </div>
+                                            <div th:text="${#temporals.format(key.lastUsedAt, 'HH:mm')}">Time</div>
+                                        </th:block>
+                                        <span th:if="${key.lastUsedAt == null}">Never</span>
+                                    </td>
+                                    <td th:text="${key.totalRequests != null ? key.totalRequests : 0}">0</td>
+                                    <td class="text-end px-4">
+                                        <form th:if="${key.status.name() == 'ACTIVE'}"
+                                            th:action="@{/company/keys/{id}/revoke(id=${key.id})}" method="post"
+                                            class="d-inline">
+                                            <button type="button" class="btn btn-sm btn-outline-danger"
+                                                th:data-label="${key.label}" onclick="confirmRevoke(this)">
+                                                <i class="bi bi-slash-circle me-1"></i>Revoke
+                                            </button>
+                                        </form>
+                                        <span th:if="${key.status.name() == 'REVOKED'}" class="text-muted small"
+                                            th:title="${key.revokeReason}">
+                                            Revoked on <span
+                                                th:text="${#temporals.format(key.revokedAt, 'dd MMM yyyy')}"></span>
+                                        </span>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- API Activity Card -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-white border-bottom py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold text-navy mb-0"><i class="bi bi-activity me-2"></i>API Activity</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th class="px-4">Date/Time</th>
+                                    <th>API Key Prefix</th>
+                                    <th>Endpoint</th>
+                                    <th>Search</th>
+                                    <th class="text-center">Status</th>
+                                    <th class="text-end px-4">Duration</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:if="${#lists.isEmpty(usage)}">
+                                    <td colspan="6" class="text-center py-5 text-muted">
+                                        <i class="bi bi-clock-history display-5 d-block mb-3 opacity-25"></i>
+                                        <span class="fw-semibold">No API activity recorded yet</span>
+                                    </td>
+                                </tr>
+                                <tr th:each="log : ${usage}">
+                                    <td class="px-4 text-muted small">
+                                        <div th:text="${#temporals.format(log.requestedAt, 'dd MMM yyyy')}">Date</div>
+                                        <div th:text="${#temporals.format(log.requestedAt, 'HH:mm:ss')}">Time</div>
+                                    </td>
+                                    <td><code class="text-muted bg-light px-2 py-1 rounded"
+                                            th:text="${log.apiKeyPrefix != null ? log.apiKeyPrefix + '...' : 'Unknown'}">Key</code>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary me-1" th:text="${log.httpMethod}">GET</span>
+                                        <span class="text-navy font-monospace small"
+                                            th:text="${log.endpoint}">/api/...</span>
+                                    </td>
+                                    <td>
+                                        <div th:if="${log.searchType != null}">
+                                            <strong class="text-dark small"
+                                                th:text="${log.searchType + ':'}">Type:</strong>
+                                            <span class="text-muted small"
+                                                th:text="${log.maskedSearchValue}">Value</span>
+                                        </div>
+                                        <span th:if="${log.searchType == null}" class="text-muted small">-</span>
+                                    </td>
+                                    <td class="text-center">
+                                        <span
+                                            th:class="'badge ' + (${log.responseStatus} >= 200 and ${log.responseStatus} < 300 ? 'bg-success' : 'bg-danger')"
+                                            th:text="${log.responseStatus}">200</span>
+                                    </td>
+                                    <td class="text-end px-4 text-muted small"
+                                        th:text="${log.durationMs != null ? log.durationMs + ' ms' : '-'}">ms</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                <div class="card-footer bg-white border-top py-3"
+                    th:if="${usagePage != null and usagePage.totalPages > 1}">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="text-muted small">
+                            Showing page <span th:text="${usagePage.pageNumber}">1</span> of <span
+                                th:text="${usagePage.totalPages}">10</span> (<span
+                                th:text="${usagePage.totalElements}">100</span> requests)
+                        </div>
+                        <ul class="pagination pagination-sm mb-0">
+                            <li class="page-item" th:classappend="${usagePage.pageNumber == 1 ? 'disabled' : ''}">
+                                <a class="page-link"
+                                    th:href="@{/company(page=${usagePage.pageNumber - 1})}">Previous</a>
+                            </li>
+                            <li class="page-item" th:each="i : ${#numbers.sequence(1, usagePage.totalPages)}"
+                                th:classappend="${usagePage.pageNumber == i ? 'active' : ''}">
+                                <a class="page-link" th:href="@{/company(page=${i})}" th:text="${i}">1</a>
+                            </li>
+                            <li class="page-item" th:classappend="${usagePage.last ? 'disabled' : ''}">
+                                <a class="page-link" th:href="@{/company(page=${usagePage.pageNumber + 1})}">Next</a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Create Key Modal -->
+    <div th:if="${company != null}" class="modal fade" id="createKeyModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <form th:action="@{/company/keys}" method="post" th:object="${apiKeyForm}">
+                    <div class="modal-header border-0 pb-0">
+                        <h5 class="modal-title fw-bold text-navy"><i class="bi bi-key me-2"></i>Create New API Key</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body pt-4">
+                        <div class="mb-3">
+                            <label for="label" class="form-label fw-semibold">Key Label</label>
+                            <input type="text" class="form-control" id="label" th:field="*{label}"
+                                placeholder="e.g., Production Integration" required maxlength="100">
+                            <div class="form-text">A friendly name to identify this key.</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Permissions (Scopes)</label>
+                            <div class="card border">
+                                <div class="card-body py-2">
+                                    <div class="form-check mb-2" th:each="scope : ${scopes}">
+                                        <input class="form-check-input" type="checkbox" th:field="*{scopes}"
+                                            th:value="${scope}" th:id="${'scope_' + scope}">
+                                        <label class="form-check-label" th:for="${'scope_' + scope}"
+                                            th:text="${scope}"></label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer border-0 bg-light rounded-bottom">
+                        <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-navy px-4 fw-semibold">Generate Key</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Revoke Modal -->
+    <div class="modal fade" id="confirmRevokeModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow">
+                <div class="modal-header border-0 pb-0">
+                    <h5 class="modal-title fw-bold text-danger"><i
+                            class="bi bi-exclamation-triangle-fill me-2"></i>Revoke API Key</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body pt-4">
+                    <p>Are you sure you want to revoke the API key <strong id="revokeKeyLabel"></strong>?</p>
+                    <p class="text-muted small mb-0">Any applications currently using this key will immediately lose
+                        access. This action cannot be undone.</p>
+                </div>
+                <div class="modal-footer border-0 bg-light rounded-bottom">
+                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" class="btn btn-danger px-4 fw-semibold" id="confirmRevokeBtn">Yes, Revoke
+                        Key</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Key Generated Modal -->
+    <div th:if="${generatedKey}" class="modal fade" id="newKeyModal" tabindex="-1" data-bs-backdrop="static"
+        data-bs-keyboard="false">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-success text-white border-0">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-check-circle-fill me-2"></i>API Key Generated
+                        Successfully</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4 text-center">
+                    <div class="mb-4">
+                        <i class="bi bi-shield-exclamation text-warning display-4"></i>
+                    </div>
+                    <h4 class="fw-bold mb-3">Please copy your API key now</h4>
+                    <p class="text-muted mb-4">For your security, this is the <strong>only time</strong> we will show
+                        you this key. We do not store it, so you won't be able to retrieve it later.</p>
+
+                    <div class="card bg-light border-0 mb-4">
+                        <div class="card-body p-4">
+                            <div class="input-group">
+                                <input type="text" class="form-control form-control-lg text-center font-monospace"
+                                    id="newApiKeyValue" th:value="${generatedKey}" readonly>
+                                <button class="btn btn-navy" type="button" id="copyKeyBtn" onclick="copyApiKey()">
+                                    <i class="bi bi-clipboard me-2"></i>Copy
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info small text-start mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Use this key in your application by providing it in the <code>X-API-Key</code> header of your
+                        requests.
+                    </div>
+                </div>
+                <div class="modal-footer border-0 bg-light">
+                    <button type="button" class="btn btn-navy px-4 fw-semibold" data-bs-dismiss="modal">I have copied my
+                        key</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Show new key modal if a key was just generated
+        document.addEventListener("DOMContentLoaded", function () {
+            const newKeyModalEl = document.getElementById('newKeyModal');
+            if (newKeyModalEl) {
+                const newKeyModal = new bootstrap.Modal(newKeyModalEl);
+                newKeyModal.show();
+            }
+        });
+
+        // Copy to clipboard function
+        function copyApiKey() {
+            const keyInput = document.getElementById('newApiKeyValue');
+            const copyBtn = document.getElementById('copyKeyBtn');
+
+            keyInput.select();
+            keyInput.setSelectionRange(0, 99999); // For mobile devices
+
+            navigator.clipboard.writeText(keyInput.value).then(() => {
+                const originalHtml = copyBtn.innerHTML;
+                copyBtn.innerHTML = '<i class="bi bi-check-lg me-2"></i>Copied!';
+                copyBtn.classList.replace('btn-navy', 'btn-success');
+
+                setTimeout(() => {
+                    copyBtn.innerHTML = originalHtml;
+                    copyBtn.classList.replace('btn-success', 'btn-navy');
+                }, 2000);
+            });
+        }
+
+        // Revoke key confirmation
+        let formToSubmit = null;
+
+        function confirmRevoke(btn) {
+            formToSubmit = btn.closest('form');
+            const label = btn.getAttribute('data-label');
+            document.getElementById('revokeKeyLabel').textContent = label;
+
+            const modal = new bootstrap.Modal(document.getElementById('confirmRevokeModal'));
+            modal.show();
+        }
+
+        document.getElementById('confirmRevokeBtn')?.addEventListener('click', function () {
+            if (formToSubmit) {
+                formToSubmit.submit();
+            }
+        });
+    </script>
+</body>
+
+</html>

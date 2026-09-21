@@ -1,0 +1,35 @@
+@@ -128,6 +128,34 @@
+ 
+     @Override
+     @Transactional(readOnly = true)
++    public za.co.taloms.common.PageResponse<VillageResponse> findAll(Integer page, Integer size) {
++        org.springframework.data.domain.Pageable pageable = za.co.taloms.common.pagination.PageRequestUtils.toPageable(page, size, za.co.taloms.common.ApplicationConstants.DEFAULT_PAGE_SIZE, org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt"));
++        org.springframework.data.domain.Page<Village> entityPage = villageRepository.findAll(pageable);
++        return za.co.taloms.common.PageResponse.<VillageResponse>builder()
++                .content(entityPage.getContent().stream().map(this::toResponse).toList())
++                .pageNumber(entityPage.getNumber() + 1)
++                .pageSize(entityPage.getSize())
++                .totalElements(entityPage.getTotalElements())
++                .totalPages(entityPage.getTotalPages())
++                .last(entityPage.isLast())
++                .build();
++    }
++
++    @Override
++    @Transactional(readOnly = true)
++    public za.co.taloms.common.PageResponse<VillageResponse> findByAuthority(Long authorityId, Integer page, Integer size) {
++        org.springframework.data.domain.Pageable pageable = za.co.taloms.common.pagination.PageRequestUtils.toPageable(page, size, za.co.taloms.common.ApplicationConstants.DEFAULT_PAGE_SIZE, org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt"));
++        org.springframework.data.domain.Page<Village> entityPage = villageRepository.findByTraditionalAuthorityId(authorityId, pageable);
++        return za.co.taloms.common.PageResponse.<VillageResponse>builder()
++                .content(entityPage.getContent().stream().map(this::toResponse).toList())
++                .pageNumber(entityPage.getNumber() + 1)
++                .pageSize(entityPage.getSize())
++                .totalElements(entityPage.getTotalElements())
++                .totalPages(entityPage.getTotalPages())
++                .last(entityPage.isLast())
++                .build();
++    }
++
+     public List<VillageResponse> findAll() {
+         return villageRepository.findAll().stream()
+                 .map(this::toResponse)

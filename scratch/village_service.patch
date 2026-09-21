@@ -1,0 +1,9 @@
+@@ -8,6 +8,8 @@
+     VillageResponse update(Long id, VillageRequest request);
+     VillageResponse findById(Long id);
+     List<VillageResponse> findAll();
++    za.co.taloms.common.PageResponse<VillageResponse> findAll(Integer page, Integer size);
++    za.co.taloms.common.PageResponse<VillageResponse> findByAuthority(Long authorityId, Integer page, Integer size);
+     List<VillageResponse> findByAuthority(Long authorityId);
+     List<VillageResponse> findByHeadmanId(Long headmanId);
+     List<VillageResponse> searchByName(String name);

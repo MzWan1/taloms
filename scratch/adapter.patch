@@ -1,0 +1,12 @@
+@@ -34,6 +34,11 @@
+     }
+ 
+     @Override
++    public List<TraditionalAuthority> findAll() {
++        return jpaRepository.findAll(org.springframework.data.domain.Sort.by(org.springframework.data.domain.Sort.Direction.DESC, "createdAt"));
++    }
++
++    @Override
+     public List<TraditionalAuthority> findAllActive() {
+         return jpaRepository.findByActiveTrueOrderByAuthorityNameAsc();
+     }
