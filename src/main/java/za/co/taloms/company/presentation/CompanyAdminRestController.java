@@ -34,6 +34,36 @@ public class CompanyAdminRestController {
     private final CompanyService companyService;
     private final CompanyApiKeyService apiKeyService;
     private final ApiUsageService usageService;
+    private final za.co.taloms.security.domain.repository.UserRepositoryPort userRepository;
+
+    @GetMapping("/owners/search")
+    public ResponseEntity<ApiResponse<List<CompanyOwnerSearchDto>>> searchOwners(@RequestParam String q) {
+        if (q == null || q.isBlank()) {
+            return ResponseEntity.ok(ApiResponse.success(List.of(), "Empty query"));
+        }
+        String query = q.trim();
+        List<za.co.taloms.security.domain.entity.User> users;
+        
+        if (query.matches("^[0-9]{13}$")) {
+            users = userRepository.searchAvailableCompanyOwnerByIdNumber(query);
+        } else if (query.length() >= 3) {
+            users = userRepository.searchAvailableCompanyOwnersByNameOrEmail(query);
+        } else {
+            return ResponseEntity.ok(ApiResponse.success(List.of(), "Query too short"));
+        }
+
+        List<CompanyOwnerSearchDto> results = users.stream().map(u -> CompanyOwnerSearchDto.builder()
+                .id(u.getId())
+                .username(u.getUsername())
+                .email(u.getEmail())
+                .fullName(u.getFullName())
+                .maskedIdNumber(za.co.taloms.common.IdMasker.maskIdNumber(u.getIdNumber()))
+                .roleName("ROLE_COMPANY")
+                .alreadyAssigned(u.getCompany() != null)
+                .build()).toList();
+
+        return ResponseEntity.ok(ApiResponse.success(results, "Search completed"));
+    }
 
     @PostMapping
     public ResponseEntity<ApiResponse<CompanyResponse>> create(

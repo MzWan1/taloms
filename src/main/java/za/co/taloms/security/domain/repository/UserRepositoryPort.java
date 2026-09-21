@@ -45,5 +45,9 @@ public interface UserRepositoryPort {
 
     /** Users linked to the given authority through the chief_authorities join table. */
     List<User> findByAuthorityId(Long authorityId);
+
+    List<User> searchAvailableCompanyOwnersByNameOrEmail(String query);
+
+    List<User> searchAvailableCompanyOwnerByIdNumber(String idNumber);
 }
 

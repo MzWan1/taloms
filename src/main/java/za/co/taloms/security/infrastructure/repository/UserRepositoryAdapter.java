@@ -110,5 +110,15 @@ public class UserRepositoryAdapter implements UserRepositoryPort {
     public List<User> findByAuthorityId(Long authorityId) {
         return userJpaRepository.findByAuthorityId(authorityId);
     }
+
+    @Override
+    public List<User> searchAvailableCompanyOwnersByNameOrEmail(String query) {
+        return userJpaRepository.searchAvailableCompanyOwnersByNameOrEmail(query);
+    }
+
+    @Override
+    public List<User> searchAvailableCompanyOwnerByIdNumber(String idNumber) {
+        return userJpaRepository.searchAvailableCompanyOwnerByIdNumber(idNumber);
+    }
 }
 

@@ -62,5 +62,17 @@ public interface UserJpaRepository extends JpaRepository<User, Long> {
     List<User> searchByNameOrEmailAndAuthorityScope(@Param("query") String query,
                                                      @Param("authorityId") Long authorityId,
                                                      @Param("roleName") String roleName);
+
+    @Query("SELECT u FROM User u JOIN u.roles r WHERE " +
+           "(LOWER(u.username) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           "LOWER(u.email) LIKE LOWER(CONCAT('%', :query, '%')) OR " +
+           "LOWER(u.fullName) LIKE LOWER(CONCAT('%', :query, '%'))) " +
+           "AND r.name = 'ROLE_COMPANY' " +
+           "ORDER BY u.username")
+    List<User> searchAvailableCompanyOwnersByNameOrEmail(@Param("query") String query);
+
+    @Query("SELECT u FROM User u JOIN u.roles r WHERE u.idNumber = :idNumber " +
+           "AND r.name = 'ROLE_COMPANY'")
+    List<User> searchAvailableCompanyOwnerByIdNumber(@Param("idNumber") String idNumber);
 }
 

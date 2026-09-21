@@ -15,4 +15,6 @@ public interface ApiUsageLogJpaRepository extends JpaRepository<ApiUsageLog, Lon
             Long companyId, LocalDateTime since, Pageable pageable);
 
     long countByCompanyId(Long companyId);
+
+    long countByApiKeyId(Long apiKeyId);
 }

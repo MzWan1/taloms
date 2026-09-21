@@ -13,5 +13,7 @@ public class PTOSearchCriteria {
     private PTOPurpose purpose;
     private Long       villageId;
     private Long       authorityId;
+    private Integer    page;
+    private Integer    size;
 }
 

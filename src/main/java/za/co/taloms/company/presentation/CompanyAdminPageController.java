@@ -19,6 +19,8 @@ import za.co.taloms.company.domain.entity.ApiScope;
 import java.util.List;
 import java.util.Set;
 
+import za.co.taloms.security.application.service.UserService;
+
 /**
  * Administrator pages for managing externally approved companies.
  *
@@ -35,6 +37,7 @@ public class CompanyAdminPageController {
     private final CompanyService companyService;
     private final CompanyApiKeyService apiKeyService;
     private final ApiUsageService usageService;
+    private final UserService userService;
 
     @GetMapping
     public String list(Model model) {

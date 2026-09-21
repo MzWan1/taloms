@@ -96,6 +96,18 @@
         .point-marker-closed {
             background: #28a745;
         }
+        .point-marker-overlap {
+            background: #dc3545 !important;
+            border-color: #fff !important;
+        }
+        @keyframes blink-warn {
+            0% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.5; transform: scale(1.2); }
+            100% { opacity: 1; transform: scale(1); }
+        }
+        .blink-warning {
+            animation: blink-warn 0.8s ease-in-out infinite;
+        }
         .coordinate-preview {
             font-family: monospace;
             font-size: 12px;
@@ -403,6 +415,9 @@
                             <button type="button" class="btn btn-sm btn-success" id="finishBtn" style="display:none;" onclick="finishCapture()">
                                 <i class="bi bi-check-circle me-1"></i>Finish
                             </button>
+                            <button type="button" class="btn btn-sm btn-outline-warning" id="unlockBtn" style="display:none;" onclick="unlockCapture()">
+                                <i class="bi bi-unlock me-1"></i>Edit Points
+                            </button>
                         </div>
                     </div>
                     <div class="card-body p-3">
@@ -559,6 +574,41 @@
     let polygonLayer = null;
     let markers = [];
     let villageBoundaryLayer = null; // outlines the selected village
+    let existingParcelsLayer = null; // existing parcels in the village
+
+    function loadExistingParcels(villageId) {
+        if (existingParcelsLayer) {
+            map.removeLayer(existingParcelsLayer);
+            existingParcelsLayer = null;
+        }
+
+        if (!villageId) return;
+
+        fetch('/api/gis/parcels/village/' + villageId)
+            .then(r => r.json())
+            .then(res => {
+                if (res.success && res.data) {
+                    existingParcelsLayer = L.geoJSON(res.data, {
+                        style: function (feature) {
+                            return {
+                                color: '#e74c3c',
+                                weight: 2,
+                                opacity: 0.8,
+                                fillColor: '#e74c3c',
+                                fillOpacity: 0.2
+                            };
+                        },
+                        onEachFeature: function (feature, layer) {
+                            if (feature.properties) {
+                                let tooltipContent = `<b>Parcel ${feature.properties.parcelNumber || 'Unknown'}</b><br>Occupied`;
+                                layer.bindTooltip(tooltipContent, { sticky: true });
+                            }
+                        }
+                    }).addTo(map);
+                }
+            })
+            .catch(err => console.error('Error loading existing parcels:', err));
+    }
 
     // ── Village boundaries ────────────────────────────────────────────────
     // window.VILLAGE_BOUNDARIES is populated in a small th:inline javascript
@@ -709,10 +759,15 @@
             document.getElementById('chiefName').value = chief === '—' ? '' : chief;
 
             drawVillageBoundary(this.value);
+            loadExistingParcels(this.value);
         } else {
             infoDiv.style.display = 'none';
             document.getElementById('headmanName').value = '';
             document.getElementById('chiefName').value = '';
+            if (existingParcelsLayer) {
+                map.removeLayer(existingParcelsLayer);
+                existingParcelsLayer = null;
+            }
         }
     });
 
@@ -1494,6 +1549,23 @@ accuracyClass = 'accuracy-poor';
             return;
         }
 
+        let hasOverlap = false;
+        let geoJson = typeof existingParcelsLayer !== 'undefined' && existingParcelsLayer ? existingParcelsLayer.toGeoJSON() : null;
+        if (geoJson) {
+            for (let p of validPoints) {
+                if (typeof isPointInPolygons === 'function' && isPointInPolygons(p.latitude, p.longitude, geoJson)) {
+                    hasOverlap = true;
+                    break;
+                }
+            }
+        }
+        
+        if (hasOverlap) {
+            if (!confirm('Warning: One or more points overlap with an existing parcel! The system may reject this submission. Do you still want to close the loop?')) {
+                return;
+            }
+        }
+
         const sortedPoints = [...validPoints].sort((a, b) => a.sequence - b.sequence);
         const first = sortedPoints[0];
         const last = sortedPoints[sortedPoints.length - 1];
@@ -1521,6 +1593,7 @@ accuracyClass = 'accuracy-poor';
         document.getElementById('loopStatus').textContent = 'Loop: Closed ✓';
         document.getElementById('loopStatus').className = 'text-success';
         document.getElementById('finishBtn').style.display = 'none';
+        document.getElementById('unlockBtn').style.display = 'inline-block';
         document.getElementById('addPointBtn').disabled = true;
         document.getElementById('submitBtn').disabled = false;
         document.getElementById('validationMessage').textContent = '✅ Loop closed! Ready to create parcel.';
@@ -1584,6 +1657,72 @@ accuracyClass = 'accuracy-poor';
         }
     }
 
+    // ── Validation Helpers ───────────────────────────────────────────────
+    function isPointInPolygons(lat, lng, geoJsonFeatureCollection) {
+        if (!geoJsonFeatureCollection || !geoJsonFeatureCollection.features) return false;
+        
+        function pointInPolygon(point, vs) {
+            var x = point[0], y = point[1]; // GeoJSON is [lng, lat]
+            var inside = false;
+            for (var i = 0, j = vs.length - 1; i < vs.length; j = i++) {
+                var xi = vs[i][0], yi = vs[i][1];
+                var xj = vs[j][0], yj = vs[j][1];
+                var intersect = ((yi > y) != (yj > y))
+                    && (x < (xj - xi) * (y - yi) / (yj - yi) + xi);
+                if (intersect) inside = !inside;
+            }
+            return inside;
+        }
+
+        const pt = [lng, lat];
+        
+        for (let feature of geoJsonFeatureCollection.features) {
+            const geom = feature.geometry;
+            if (!geom) continue;
+            
+            if (geom.type === 'Polygon') {
+                for (let ring of geom.coordinates) {
+                    if (pointInPolygon(pt, ring)) return true;
+                }
+            } else if (geom.type === 'MultiPolygon') {
+                for (let poly of geom.coordinates) {
+                    for (let ring of poly) {
+                        if (pointInPolygon(pt, ring)) return true;
+                    }
+                }
+            }
+        }
+        return false;
+    }
+
+    function unlockCapture() {
+        if (!loopClosed) return;
+        
+        loopClosed = false;
+        
+        // Remove closure point if any
+        const idx = gpsPoints.findIndex(p => p.isClosurePoint);
+        if (idx > -1) {
+            const seq = gpsPoints[idx].sequence;
+            gpsPoints.splice(idx, 1);
+            const card = document.getElementById('pointCard' + seq);
+            if (card) card.remove();
+        }
+        
+        document.getElementById('loopClosedBadge').style.display = 'none';
+        document.getElementById('loopStatus').textContent = 'Loop: Open';
+        document.getElementById('loopStatus').className = 'text-warning';
+        document.getElementById('finishBtn').style.display = 'inline-block';
+        document.getElementById('unlockBtn').style.display = 'none';
+        document.getElementById('addPointBtn').disabled = false;
+        document.getElementById('submitBtn').disabled = true;
+        
+        updateDisplay();
+        document.querySelectorAll('[id^="captureGpsBtn"]').forEach(btn => {
+            btn.disabled = false;
+        });
+    }
+
     // ── Update Map ──────────────────────────────────────────────────────
     function updateMap() {
         if (polygonLayer) {
@@ -1631,10 +1770,20 @@ accuracyClass = 'accuracy-poor';
             map.fitBounds(bounds, { padding: [20, 20] });
         }
 
+        let geoJson = existingParcelsLayer ? existingParcelsLayer.toGeoJSON() : null;
+
         sortedPoints.forEach((p, i) => {
             const isClosure = p.isClosurePoint;
+            
+            // Check for overlap
+            let overlaps = false;
+            if (geoJson) {
+                overlaps = isPointInPolygons(p.latitude, p.longitude, geoJson);
+            }
+            let extraClass = overlaps ? ' point-marker-overlap blink-warning' : '';
+
             const icon = L.divIcon({
-                className: 'point-marker' + (isClosure ? ' point-marker-closed' : ''),
+                className: 'point-marker' + (isClosure ? ' point-marker-closed' : '') + extraClass,
                 html: isClosure ? '✓' : (p.sequence || i + 1),
                 iconSize: [24, 24],
                 iconAnchor: [12, 12]
@@ -1645,7 +1794,8 @@ accuracyClass = 'accuracy-poor';
             }).addTo(map);
             const label = isClosure ? 'Closure Point' : `Point ${p.sequence || i + 1}`;
             const accText = p.accuracy ? `Accuracy: ±${Math.round(p.accuracy)}m` : 'Manual entry';
-            marker.bindPopup(`${label}<br>Lat: ${p.latitude.toFixed(8)}<br>Lng: ${p.longitude.toFixed(8)}<br>${accText}`);
+            const warningText = overlaps ? '<br><span class="text-danger mt-1 d-block"><i class="bi bi-exclamation-triangle"></i> Point overlaps existing parcel!</span>' : '';
+            marker.bindPopup(`${label}<br>Lat: ${p.latitude.toFixed(8)}<br>Lng: ${p.longitude.toFixed(8)}<br>${accText}${warningText}`);
             markers.push(marker);
         });
     }
@@ -1899,9 +2049,27 @@ accuracyClass = 'accuracy-poor';
               window.location.href = '/parcels/' + id;
             });
           }
-          return Promise.reject(new Error('Server error: ' + response.status));
+          // Read error body from server
+          return response.json().then(function(errData) {
+              var errMsg = errData.message || 'Server error ' + response.status;
+              throw new Error('BUSINESS_ERROR:' + errMsg);
+          }).catch(function(e) {
+              if (e.message && e.message.startsWith('BUSINESS_ERROR:')) {
+                  throw e;
+              }
+              throw new Error('BUSINESS_ERROR:Server error ' + response.status);
+          });
         })
         .catch(function (err) {
+          if (err.message && err.message.startsWith('BUSINESS_ERROR:')) {
+              // Server responded with a business validation error (e.g. 409 Overlap)
+              var actualMessage = err.message.substring(15);
+              alert(actualMessage);
+              submitBtn.innerHTML = originalText;
+              submitBtn.disabled = false;
+              if (typeof isSubmitting !== 'undefined') isSubmitting = false;
+              return;
+          }
           console.warn('Online save failed, queuing for sync:', err.message);
           // Queue the REST create in the outbox for later sync
           if (window.Taloms && Taloms.Outbox) {

@@ -1,0 +1,43 @@
+--- src/main/resources/templates/companies/list.html
++++ src/main/resources/templates/companies/list.html
+@@ -71,13 +71,31 @@
+                                 <label class="form-label small mb-1">Contact Phone</label>
+                                 <input type="text" class="form-control" th:field="*{contactPhone}" maxlength="20">
+                             </div>
+-                            <div class="col-12 col-md-4">
++                            <div class="col-12 col-md-12 mt-3" id="userSearchComponent">
+                                 <label class="form-label small mb-1">Company Account Owner <span
+                                         class="text-danger">*</span></label>
+-                                <select class="form-select" th:field="*{ownerUserId}" required>
+-                                    <option value="" disabled selected>Select an unassigned company user...</option>
+-                                    <option th:each="u : ${unassignedUsers}" th:value="${u.id}"
+-                                        th:text="${u.username} + ' (' + ${u.email} + ')'"></option>
+-                                </select>
+-                                <div class="form-text small text-muted">User must exist and have ROLE_COMPANY.</div>
++                                <input type="hidden" th:field="*{ownerUserId}" id="ownerUserId" required>
++                                
++                                <div id="searchBoxContainer" class="mb-2">
++                                    <div class="input-group">
++                                        <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
++                                        <input type="text" class="form-control" id="ownerSearchInput" placeholder="Search username, email or 13-digit ID number...">
++                                    </div>
++                                    <div class="form-text small text-muted">Search for a user with ROLE_COMPANY to link as the account owner.</div>
++                                </div>
++                                
++                                <div id="searchResults" class="d-none"></div>
++                                
++                                <div id="selectedUserContainer" class="d-none">
++                                    <div class="card border-primary">
++                                        <div class="card-body py-2 px-3 d-flex justify-content-between align-items-center">
++                                            <div>
++                                                <strong class="d-block text-primary mb-1" id="selectedUserFullName"></strong>
++                                                <div class="small text-muted mb-1">
++                                                    <span id="selectedUserUsername"></span> | <span id="selectedUserEmail"></span>
++                                                </div>
++                                            </div>
++                                            <button type="button" class="btn btn-sm btn-outline-primary" onclick="clearSelectedUser()">Change account</button>
++                                        </div>
++                                    </div>
++                                </div>
+                             </div>
+                         </div>

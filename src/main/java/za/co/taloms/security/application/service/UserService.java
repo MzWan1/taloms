@@ -12,6 +12,7 @@ public interface UserService {
     UserResponse updateUser(Long id, UserUpdateRequest request);
     UserResponse findById(Long id);
     List<UserResponse> findAll();
+    List<UserResponse> findUnassignedCompanyUsers();
     void deleteUser(Long id);
     void activateUser(Long id);
 

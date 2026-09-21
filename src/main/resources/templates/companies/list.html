@@ -1,6 +1,6 @@
 <!DOCTYPE html>
-<html lang="en"
-      xmlns:th="http://www.thymeleaf.org">
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,130 +9,293 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link th:href="@{/css/taloms.css}" rel="stylesheet">
 </head>
+
 <body class="bg-light">
 
-<nav th:replace="~{fragments/navbar :: navbar('companies')}"></nav>
+    <nav th:replace="~{fragments/navbar :: navbar('companies')}"></nav>
 
-<div class="container-fluid px-4 py-4">
+    <div class="container-fluid px-4 py-4">
 
-    <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show border-0 shadow-sm">
-        <i class="bi bi-check-circle-fill me-2"></i><span th:text="${successMessage}"></span>
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-    <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show border-0 shadow-sm">
-        <i class="bi bi-exclamation-circle-fill me-2"></i><span th:text="${errorMessage}"></span>
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-
-    <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
-        <div>
-            <nav aria-label="breadcrumb">
-                <ol class="breadcrumb mb-1 small">
-                    <li class="breadcrumb-item"><a th:href="@{/dashboard}" class="text-muted text-decoration-none">Dashboard</a></li>
-                    <li class="breadcrumb-item active">Companies</li>
-                </ol>
-            </nav>
-            <h4 class="fw-bold text-navy mb-0"><i class="bi bi-buildings me-2"></i>Companies</h4>
-            <p class="text-muted small mb-0">Register external organisations and manage their API access</p>
+        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show border-0 shadow-sm">
+            <i class="bi bi-check-circle-fill me-2"></i><span th:text="${successMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
         </div>
-        <button class="btn btn-navy px-4 py-2 fw-semibold" type="button"
-                data-bs-toggle="collapse" data-bs-target="#registerCompany">
-            <i class="bi bi-plus-lg me-2"></i>Register Company
-        </button>
-    </div>
+        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show border-0 shadow-sm">
+            <i class="bi bi-exclamation-circle-fill me-2"></i><span th:text="${errorMessage}"></span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
 
-    <!-- Register form -->
-    <div class="collapse mb-4" id="registerCompany">
+        <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+            <div>
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb mb-1 small">
+                        <li class="breadcrumb-item"><a th:href="@{/dashboard}"
+                                class="text-muted text-decoration-none">Dashboard</a></li>
+                        <li class="breadcrumb-item active">Companies</li>
+                    </ol>
+                </nav>
+                <h4 class="fw-bold text-navy mb-0"><i class="bi bi-buildings me-2"></i>Companies</h4>
+                <p class="text-muted small mb-0">Register external organisations and manage their API access</p>
+            </div>
+            <button class="btn btn-navy px-4 py-2 fw-semibold" type="button" data-bs-toggle="collapse"
+                data-bs-target="#registerCompany">
+                <i class="bi bi-plus-lg me-2"></i>Register Company
+            </button>
+        </div>
+
+        <!-- Register form -->
+        <div class="collapse mb-4" id="registerCompany">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom py-3">
+                    <span class="fw-semibold text-navy"><i class="bi bi-building-add me-2"></i>Register a Company</span>
+                </div>
+                <div class="card-body">
+                    <form th:action="@{/companies/create}" th:object="${companyForm}" method="post">
+                        <div class="row g-3">
+                            <div class="col-12 col-md-3">
+                                <label class="form-label small mb-1">Company Name <span
+                                        class="text-danger">*</span></label>
+                                <input type="text" class="form-control" th:field="*{name}" maxlength="150" required>
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label class="form-label small mb-1">Registration Number</label>
+                                <input type="text" class="form-control" th:field="*{registrationNumber}" maxlength="50">
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label class="form-label small mb-1">Contact Email <span
+                                        class="text-danger">*</span></label>
+                                <input type="email" class="form-control" th:field="*{contactEmail}" maxlength="150"
+                                    required>
+                            </div>
+                            <div class="col-12 col-md-3">
+                                <label class="form-label small mb-1">Contact Phone</label>
+                                <input type="text" class="form-control" th:field="*{contactPhone}" maxlength="20">
+                            </div>
+                            <div class="col-12 col-md-12 mt-3" id="userSearchComponent">
+                                <label class="form-label small mb-1">Company Account Owner <span
+                                        class="text-danger">*</span></label>
+                                <input type="hidden" th:field="*{ownerUserId}" id="ownerUserId" required>
+
+                                <div id="searchBoxContainer" class="mb-2">
+                                    <div class="input-group">
+                                        <span class="input-group-text bg-white"><i class="bi bi-search"></i></span>
+                                        <input type="text" class="form-control" id="ownerSearchInput"
+                                            placeholder="Search username, email or 13-digit ID number...">
+                                    </div>
+                                    <div class="form-text small text-muted">Search for a user with ROLE_COMPANY to link
+                                        as the account owner.</div>
+                                </div>
+
+                                <div id="searchResults" class="d-none list-group mb-3"></div>
+
+                                <div id="selectedUserContainer" class="d-none">
+                                    <div class="card border-primary">
+                                        <div
+                                            class="card-body py-2 px-3 d-flex justify-content-between align-items-center">
+                                            <div>
+                                                <strong class="d-block text-primary mb-1"
+                                                    id="selectedUserFullName"></strong>
+                                                <div class="small text-muted mb-1">
+                                                    <span id="selectedUserUsername"></span> | <span
+                                                        id="selectedUserEmail"></span>
+                                                </div>
+                                            </div>
+                                            <button type="button" class="btn btn-sm btn-outline-primary"
+                                                onclick="clearSelectedUser()">Change account</button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="d-flex justify-content-end mt-3">
+                            <button type="submit" class="btn btn-navy px-4 fw-semibold">
+                                <i class="bi bi-save me-1"></i>Register
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <!-- Companies table -->
         <div class="card border-0 shadow-sm">
-            <div class="card-header bg-white border-bottom py-3">
-                <span class="fw-semibold text-navy"><i class="bi bi-building-add me-2"></i>Register a Company</span>
-            </div>
-            <div class="card-body">
-                <form th:action="@{/companies/create}" th:object="${companyForm}" method="post">
-                    <div class="row g-3">
-                        <div class="col-12 col-md-4">
-                            <label class="form-label small mb-1">Company Name <span class="text-danger">*</span></label>
-                            <input type="text" class="form-control" th:field="*{name}" maxlength="150" required>
-                        </div>
-                        <div class="col-12 col-md-3">
-                            <label class="form-label small mb-1">Registration Number</label>
-                            <input type="text" class="form-control" th:field="*{registrationNumber}" maxlength="50">
-                        </div>
-                        <div class="col-12 col-md-3">
-                            <label class="form-label small mb-1">Contact Email <span class="text-danger">*</span></label>
-                            <input type="email" class="form-control" th:field="*{contactEmail}" maxlength="150" required>
-                        </div>
-                        <div class="col-12 col-md-2">
-                            <label class="form-label small mb-1">Contact Phone</label>
-                            <input type="text" class="form-control" th:field="*{contactPhone}" maxlength="20">
-                        </div>
-                    </div>
-                    <div class="d-flex justify-content-end mt-3">
-                        <button type="submit" class="btn btn-navy px-4 fw-semibold">
-                            <i class="bi bi-save me-1"></i>Register
-                        </button>
-                    </div>
-                </form>
-            </div>
-<!-- Companies table -->
-    <div class="card border-0 shadow-sm">
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light">
-                    <tr>
-                        <th class="ps-4">Company</th>
-                        <th>Registration</th>
-                        <th>Contact</th>
-                        <th class="text-center">Active Keys</th>
-                        <th>Status</th>
-                        <th class="text-end pe-4">Actions</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    <tr th:if="${companies == null or #lists.isEmpty(companies)}">
-                        <td colspan="6" class="text-center text-muted py-5">
-                            <i class="bi bi-building fs-2 d-block mb-2 opacity-50"></i>
-                            No companies registered yet.
-                        </td>
-                    </tr>
-                    <tr th:each="c : ${companies}">
-                        <td class="ps-4">
-                            <a th:href="@{/companies/{id}(id=${c.id})}"
-                               class="fw-semibold text-navy text-decoration-none"
-                               th:text="${c.name}">Acme</a>
-                            <div class="text-muted small" th:if="${c.disabledReason}"
-                                 th:text="'Disabled: ' + ${c.disabledReason}"></div>
-                        </td>
-                        <td th:text="${c.registrationNumber != null ? c.registrationNumber : '—'}">—</td>
-                        <td>
-                            <div th:text="${c.contactEmail}">a@b.com</div>
-                            <div class="text-muted small" th:if="${c.contactPhone}"
-                                 th:text="${c.contactPhone}"></div>
-                        </td>
-                        <td class="text-center">
-                            <span class="badge bg-secondary" th:text="${c.activeKeyCount}">0</span>
-                        </td>
-                        <td>
-                            <span class="badge" th:classappend="${c.statusBadgeClass}"
-                                  th:text="${c.statusDisplay}">Active</span>
-                        </td>
-                        <td class="text-end pe-4">
-                            <a th:href="@{/companies/{id}(id=${c.id})}"
-                               class="btn btn-sm btn-outline-secondary">
-                                <i class="bi bi-gear me-1"></i>Manage
-                            </a>
-                        </td>
-                    </tr>
-                    </tbody>
-                </table>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-4">Company</th>
+                                <th>Registration</th>
+                                <th>Contact</th>
+                                <th class="text-center">Active Keys</th>
+                                <th>Status</th>
+                                <th class="text-end pe-4">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:if="${companies == null or #lists.isEmpty(companies)}">
+                                <td colspan="6" class="text-center text-muted py-5">
+                                    <i class="bi bi-building fs-2 d-block mb-2 opacity-50"></i>
+                                    No companies registered yet.
+                                </td>
+                            </tr>
+                            <tr th:each="c : ${companies}">
+                                <td class="ps-4">
+                                    <a th:href="@{/companies/{id}(id=${c.id})}"
+                                        class="fw-semibold text-navy text-decoration-none" th:text="${c.name}">Acme</a>
+                                    <div class="text-muted small" th:if="${c.disabledReason}"
+                                        th:text="'Disabled: ' + ${c.disabledReason}"></div>
+                                </td>
+                                <td th:text="${c.registrationNumber != null ? c.registrationNumber : '—'}">—
+                                </td>
+                                <td>
+                                    <div th:text="${c.contactEmail}">a@b.com</div>
+                                    <div class="text-muted small" th:if="${c.contactPhone}" th:text="${c.contactPhone}">
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-secondary" th:text="${c.activeKeyCount}">0</span>
+                                </td>
+                                <td>
+                                    <span class="badge" th:classappend="${c.statusBadgeClass}"
+                                        th:text="${c.statusDisplay}">Active</span>
+                                </td>
+                                <td class="text-end pe-4">
+                                    <a th:href="@{/companies/{id}(id=${c.id})}"
+                                        class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-gear me-1"></i>Manage
+                                    </a>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchInput = document.getElementById('ownerSearchInput');
+            const resultsContainer = document.getElementById('searchResults');
+            const selectedContainer = document.getElementById('selectedUserContainer');
+            const searchBoxContainer = document.getElementById('searchBoxContainer');
+            const hiddenUserId = document.getElementById('ownerUserId');
+            
+            const nameLabel = document.getElementById('selectedUserFullName');
+            const usernameLabel = document.getElementById('selectedUserUsername');
+            const emailLabel = document.getElementById('selectedUserEmail');
+            
+            let debounceTimer = null;
+            let lastQuery = '';
+
+            searchInput.addEventListener('input', (e) => {
+                const query = e.target.value.trim();
+                if (query === lastQuery) return;
+                
+                clearTimeout(debounceTimer);
+                
+                if (query === '') {
+                    resultsContainer.classList.add('d-none');
+                    resultsContainer.innerHTML = '';
+                    lastQuery = '';
+                    return;
+                }
+
+                if (/^[0-9]+$/.test(query)) {
+                    if (query.length === 13) {
+                        lastQuery = query;
+                        fetchResults(query);
+                    } else {
+                        resultsContainer.classList.add('d-none');
+                    }
+                    return;
+                }
+                
+                if (query.length >= 3) {
+                    debounceTimer = setTimeout(() => {
+                        lastQuery = query;
+                        fetchResults(query);
+                    }, 400);
+                } else {
+                    resultsContainer.classList.add('d-none');
+                }
+            });
+
+            async function fetchResults(query) {
+                try {
+                    const res = await fetch(`/api/companies/owners/search?q=${encodeURIComponent(query)}`);
+                    if (!res.ok) throw new Error('Search failed');
+                    const data = await res.json();
+                    renderResults(data.data || []);
+                } catch (err) {
+                    console.error(err);
+                    resultsContainer.innerHTML = '<div class="list-group-item text-danger">Error fetching results.</div>';
+                    resultsContainer.classList.remove('d-none');
+                }
+            }
+
+            function renderResults(users) {
+                resultsContainer.innerHTML = '';
+                if (users.length === 0) {
+                    resultsContainer.innerHTML = '<div class="list-group-item text-muted">No eligible users found.</div>';
+                } else {
+                    users.forEach(u => {
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = 'list-group-item list-group-item-action py-2';
+                        
+                        if (u.alreadyAssigned) {
+                            btn.innerHTML = `
+                                <div class="d-flex w-100 justify-content-between align-items-center opacity-50">
+                                    <div>
+                                        <strong class="d-block">${u.fullName}</strong>
+                                        <small class="text-muted">Username: ${u.username} | Email: ${u.email}</small>
+                                        <div class="small text-danger"><i class="bi bi-x-circle me-1"></i>Already linked to a company</div>
+                                    </div>
+                                    <span class="btn btn-sm btn-secondary px-3 disabled">Unavailable</span>
+                                </div>
+                            `;
+                            btn.disabled = true;
+                        } else {
+                            btn.innerHTML = `
+                                <div class="d-flex w-100 justify-content-between align-items-center">
+                                    <div>
+                                        <strong class="d-block">${u.fullName}</strong>
+                                        <small class="text-muted">Username: ${u.username} | Email: ${u.email}</small>
+                                        <div class="small text-muted">ID: ${u.maskedIdNumber || 'N/A'}</div>
+                                    </div>
+                                    <span class="btn btn-sm btn-primary px-3">Select</span>
+                                </div>
+                            `;
+                            btn.onclick = () => selectUser(u);
+                        }
+                        
+                        resultsContainer.appendChild(btn);
+                    });
+                }
+                resultsContainer.classList.remove('d-none');
+            }
+
+            function selectUser(user) {
+                hiddenUserId.value = user.id;
+                nameLabel.textContent = user.fullName;
+                usernameLabel.textContent = user.username;
+                emailLabel.textContent = user.email;
+                
+                searchBoxContainer.classList.add('d-none');
+                resultsContainer.classList.add('d-none');
+                selectedContainer.classList.remove('d-none');
+                searchInput.value = '';
+            }
+
+            window.clearSelectedUser = function() {
+                hiddenUserId.value = '';
+                selectedContainer.classList.add('d-none');
+                searchBoxContainer.classList.remove('d-none');
+                searchInput.focus();
+            };
+        });
+    </script>
 </body>
 </html>
-        </div>
-    </div>

@@ -9,10 +9,6 @@ import za.co.taloms.company.domain.entity.ApiScope;
 import java.time.LocalDateTime;
 import java.util.Set;
 
-/**
- * Read-only view of a company API key. Intentionally contains NO raw key or key
- * hash — administrators can identify a key but can never retrieve its secret.
- */
 @Data
 @Builder
 @NoArgsConstructor
@@ -35,4 +31,5 @@ public class CompanyApiKeySummaryResponse {
     private LocalDateTime revokedAt;
     private String createdBy;
     private LocalDateTime createdAt;
+    private Long totalRequests;
 }

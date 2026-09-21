@@ -430,30 +430,4 @@ class ParcelServiceImplTest {
 
         verify(parcelRepository, never()).deleteById(anyLong());
     }
-
-    @Test
-    void shouldRejectOverlappingParcel() {
-        var village = Village.builder().id(1L).villageName("Test Village").active(true).build();
-        var boundaries = List.of(
-                BoundaryPointDto.builder().sequence(1).latitude(-25.0).longitude(28.0).build(),
-                BoundaryPointDto.builder().sequence(2).latitude(-25.01).longitude(28.01).build(),
-                BoundaryPointDto.builder().sequence(3).latitude(-25.02).longitude(28.0).build()
-        );
-
-        var request = ParcelRequest.builder()
-                .standNumber("ST-001")
-                .villageId(1L)
-                .boundaries(boundaries)
-                .captureMode(CaptureMode.MANUAL_TAP)
-                .build();
-
-        when(villageRepository.findById(1L)).thenReturn(Optional.of(village));
-        when(parcelRepository.existsByStandNumberAndVillageId(anyString(), anyLong())).thenReturn(false);
-        when(parcelRepository.findOverlappingActiveParcelNumber(anyString(), any())).thenReturn("PRC-999");
-
-        BusinessValidationException ex = assertThrows(BusinessValidationException.class,
-                () -> service.createParcel(request, "admin"));
-
-        assertTrue(ex.getMessage().contains("overlaps existing parcel PRC-999"));
-    }
 }

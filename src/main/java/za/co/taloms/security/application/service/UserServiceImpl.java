@@ -193,6 +193,15 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional(readOnly = true)
+    public List<UserResponse> findUnassignedCompanyUsers() {
+        return userRepository.findByRoleName("ROLE_COMPANY").stream()
+                .filter(u -> u.getCompany() == null)
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
     public void deleteUser(Long id) {
         var user = userRepository.findById(id)
                 .orElseThrow(() ->

@@ -16,5 +16,7 @@ public interface ApiUsageLogRepositoryPort {
 
     long countByCompanyId(Long companyId);
 
+    long countByApiKeyId(Long apiKeyId);
+
     long countAll();
 }

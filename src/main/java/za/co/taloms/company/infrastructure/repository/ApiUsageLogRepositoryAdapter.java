@@ -36,6 +36,11 @@ public class ApiUsageLogRepositoryAdapter implements ApiUsageLogRepositoryPort {
     }
 
     @Override
+    public long countByApiKeyId(Long apiKeyId) {
+        return jpaRepository.countByApiKeyId(apiKeyId);
+    }
+
+    @Override
     public long countAll() {
         return jpaRepository.count();
     }

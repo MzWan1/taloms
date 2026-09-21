@@ -32,6 +32,7 @@ public class CompanyApiKeyServiceImpl implements CompanyApiKeyService {
     private final CompanyRepositoryPort companyRepository;
     private final CompanyApiKeyRepositoryPort apiKeyRepository;
     private final ApiKeyHasher apiKeyHasher;
+    private final za.co.taloms.company.domain.repository.ApiUsageLogRepositoryPort usageLogRepository;
 
     @Override
     public CompanyApiKeyResponse generateKey(Long companyId,
@@ -111,6 +112,7 @@ public class CompanyApiKeyServiceImpl implements CompanyApiKeyService {
     }
 
     private CompanyApiKeySummaryResponse toSummary(CompanyApiKey apiKey) {
+        long totalRequests = apiKey.getId() != null ? usageLogRepository.countByApiKeyId(apiKey.getId()) : 0L;
         return CompanyApiKeySummaryResponse.builder()
                 .id(apiKey.getId())
                 .companyId(apiKey.getCompany() == null ? null : apiKey.getCompany().getId())
@@ -126,6 +128,7 @@ public class CompanyApiKeyServiceImpl implements CompanyApiKeyService {
                 .revokedAt(apiKey.getRevokedAt())
                 .createdBy(apiKey.getCreatedBy())
                 .createdAt(apiKey.getCreatedAt())
+                .totalRequests(totalRequests)
                 .build();
     }
 
