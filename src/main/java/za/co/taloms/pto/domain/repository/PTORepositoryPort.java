@@ -5,15 +5,18 @@ import za.co.taloms.pto.domain.entity.PTOStatus;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface PTORepositoryPort {
     PTO save(PTO pto);
     Optional<PTO> findById(Long id);
     Optional<PTO> findByPtoNumber(String ptoNumber);
     List<PTO> findAll();
+    Page<PTO> findAll(Pageable pageable);
     List<PTO> findByStatus(PTOStatus status);
     List<PTO> findByVillageId(Long villageId);
-    List<PTO> findByTraditionalAuthorityId(Long authorityId);
+    Page<PTO> findByTraditionalAuthorityId(Long authorityId, Pageable pageable);
     List<PTO> findByIdNumber(String idNumber);
     List<PTO> findByParcelId(Long parcelId);
     boolean existsByPtoNumber(String ptoNumber);
@@ -31,11 +34,12 @@ public interface PTORepositoryPort {
     long countAll();
     List<PTO> findByIdNumberAndStatus(String idNumber, PTOStatus status);
     boolean existsByIdNumberAndVillageIdAndStatus(String idNumber, Long villageId, PTOStatus status);
-    List<PTO> search(String holderName, String idNumber, String ptoNumber, PTOStatus status,
-                     za.co.taloms.pto.domain.entity.PTOPurpose purpose, Long villageId, Long authorityId);
+    Page<PTO> search(String holderName, String idNumber, String ptoNumber, PTOStatus status,
+                     za.co.taloms.pto.domain.entity.PTOPurpose purpose, Set<Long> villageIds, Long authorityId, Pageable pageable);
     void softDeleteById(Long id, String deletedBy);
     List<PTO> findAllIncludingDeleted();
-    List<PTO> findDeleted();
+    Page<PTO> findDeleted(Pageable pageable);
+    Page<PTO> findDeletedScoped(Set<Long> villageIds, Pageable pageable);
 
     // Sync operations
     List<PTO> findChangedSince(java.time.LocalDateTime since, int limit);

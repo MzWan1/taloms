@@ -22,7 +22,7 @@ public class VillagesPageController {
 
     @GetMapping
     @PreAuthorize("hasAnyRole('CHIEF','HEADSMAN')")
-    public String list(Model model) {
+    public String list(Model model, @RequestParam(required = false, defaultValue = "1") Integer page) {
         java.util.Set<Long> linkedAuthorityIds = scopeService.getCurrentUserAuthorityIds();
 
         // A chief scoped to exactly one authority goes straight to its detail
@@ -40,7 +40,10 @@ public class VillagesPageController {
         if (linkedAuthorityId != null) {
             var authority = authorityService.findById(linkedAuthorityId);
             model.addAttribute("authority", authority);
-            model.addAttribute("villages", villageService.findByAuthority(linkedAuthorityId));
+            var villages = villageService.findByAuthority(linkedAuthorityId);
+            var pageObj = za.co.taloms.common.pagination.PageRequestUtils.paginateList(villages, page, 10);
+            model.addAttribute("page", pageObj);
+            model.addAttribute("villages", pageObj.getContent());
         } else {
             model.addAttribute("villages", java.util.Collections.emptyList());
         }

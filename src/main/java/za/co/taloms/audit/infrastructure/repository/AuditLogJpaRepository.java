@@ -7,11 +7,16 @@ import za.co.taloms.audit.domain.entity.AuditLog;
 import za.co.taloms.audit.domain.entity.AuditAction;
 import java.time.LocalDateTime;
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface AuditLogJpaRepository extends JpaRepository<AuditLog, Long> {
 
     @Query("SELECT a FROM AuditLog a WHERE a.entityType = :entityType AND a.entityId = :entityId ORDER BY a.performedAt DESC")
     List<AuditLog> findByEntityOrderByPerformedAtDesc(@Param("entityType") String entityType, @Param("entityId") Long entityId);
+
+    @Query("SELECT a FROM AuditLog a WHERE a.entityType = :entityType AND a.entityId = :entityId ORDER BY a.performedAt DESC")
+    Page<AuditLog> findByEntityOrderByPerformedAtDesc(@Param("entityType") String entityType, @Param("entityId") Long entityId, Pageable pageable);
 
     List<AuditLog> findByPerformedBy(String performedBy);
 
@@ -37,5 +42,8 @@ public interface AuditLogJpaRepository extends JpaRepository<AuditLog, Long> {
 
     @Query("SELECT a FROM AuditLog a ORDER BY a.performedAt DESC")
     List<AuditLog> findAllOrderByPerformedAtDesc();
+
+    @Query("SELECT a FROM AuditLog a ORDER BY a.performedAt DESC")
+    Page<AuditLog> findAllOrderByPerformedAtDesc(Pageable pageable);
 }
 

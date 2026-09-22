@@ -168,8 +168,7 @@
                                     <td colspan="6" class="text-center py-5 text-muted">
                                         <i class="bi bi-key display-5 d-block mb-3 opacity-25"></i>
                                         <span class="fw-semibold">No API Keys found</span><br>
-                                        <small>Click "Create API Key" to generate one for accessing the TALOMS
-                                            API.</small>
+                                        <button class="btn btn-outline-primary btn-sm mt-3" data-bs-toggle="modal" data-bs-target="#createKeyModal">Create API Key</button>
                                     </td>
                                 </tr>
                                 <tr th:each="key : ${keys}">
@@ -289,19 +288,7 @@
                                 th:text="${usagePage.totalPages}">10</span> (<span
                                 th:text="${usagePage.totalElements}">100</span> requests)
                         </div>
-                        <ul class="pagination pagination-sm mb-0">
-                            <li class="page-item" th:classappend="${usagePage.pageNumber == 1 ? 'disabled' : ''}">
-                                <a class="page-link"
-                                    th:href="@{/company(page=${usagePage.pageNumber - 1})}">Previous</a>
-                            </li>
-                            <li class="page-item" th:each="i : ${#numbers.sequence(1, usagePage.totalPages)}"
-                                th:classappend="${usagePage.pageNumber == i ? 'active' : ''}">
-                                <a class="page-link" th:href="@{/company(page=${i})}" th:text="${i}">1</a>
-                            </li>
-                            <li class="page-item" th:classappend="${usagePage.last ? 'disabled' : ''}">
-                                <a class="page-link" th:href="@{/company(page=${usagePage.pageNumber + 1})}">Next</a>
-                            </li>
-                        </ul>
+                        
                     </div>
                 </div>
             </div>

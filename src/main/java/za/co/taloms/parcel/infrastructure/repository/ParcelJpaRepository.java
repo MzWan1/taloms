@@ -8,6 +8,8 @@ import za.co.taloms.parcel.domain.entity.ParcelStatus;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import java.util.Set;
 
 public interface ParcelJpaRepository extends JpaRepository<Parcel, Long> {
@@ -31,6 +33,27 @@ public interface ParcelJpaRepository extends JpaRepository<Parcel, Long> {
                      WHERE p.parcelNumber = :parcelNumber
                      """)
        Optional<Parcel> findByParcelNumber(@Param("parcelNumber") String parcelNumber);
+
+    @Query("""
+        SELECT DISTINCT p FROM Parcel p
+        LEFT JOIN p.village v
+        WHERE (:filterByQ = false OR LOWER(p.parcelNumber) LIKE LOWER(CONCAT('%', :q, '%')) OR LOWER(p.standNumber) LIKE LOWER(CONCAT('%', :q, '%')))
+          AND (:filterByStatus = false OR p.status = :status)
+          AND (:filterByVillage = false OR p.village.id = :villageId)
+          AND (:filterByAllowedVillages = false OR p.village.id IN :allowedVillageIds)
+        """)
+    Page<Parcel> searchParcels(
+            @Param("q") String q,
+            @Param("filterByQ") boolean filterByQ,
+            @Param("status") ParcelStatus status,
+            @Param("filterByStatus") boolean filterByStatus,
+            @Param("villageId") Long villageId,
+            @Param("filterByVillage") boolean filterByVillage,
+            @Param("allowedVillageIds") java.util.Set<Long> allowedVillageIds,
+            @Param("filterByAllowedVillages") boolean filterByAllowedVillages,
+            Pageable pageable
+    );
+
 
        @Query("""
                      SELECT DISTINCT p FROM Parcel p

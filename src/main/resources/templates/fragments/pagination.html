@@ -2,29 +2,85 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head></head>
 <body>
-    <div th:fragment="pagination(page, baseUrl)" th:if="${page.totalPages > 1}">
-        <nav aria-label="Page navigation" class="mt-4">
+    <div th:fragment="pagination(page, baseUrl)" class="taloms-pagination-wrapper">
+        <nav aria-label="Page navigation" class="mt-4" th:if="${page.totalPages > 1}">
             <ul class="pagination justify-content-center">
                 <!-- Previous Button -->
                 <li class="page-item" th:classappend="${page.first ? 'disabled' : ''}">
-                    <a class="page-link" th:href="@{${baseUrl}(page=${page.number - 1}, size=${page.size}, search=${param.search}, status=${param.status})}" tabindex="-1">Previous</a>
+                    <a class="page-link ajax-page-link" th:href="@{${baseUrl}(page=${page.number}, size=${page.size}, q=${param.q}, search=${param.search}, status=${param.status}, villageId=${param.villageId}, documentType=${param.documentType}, entityType=${param.entityType})}" tabindex="-1">Previous</a>
                 </li>
 
                 <!-- Page Numbers -->
                 <li class="page-item" th:each="i : ${#numbers.sequence(0, page.totalPages - 1)}" 
                     th:classappend="${page.number == i ? 'active' : ''}">
-                    <a class="page-link" th:href="@{${baseUrl}(page=${i}, size=${page.size}, search=${param.search}, status=${param.status})}" th:text="${i + 1}">1</a>
+                    <a class="page-link ajax-page-link" th:href="@{${baseUrl}(page=${i + 1}, size=${page.size}, q=${param.q}, search=${param.search}, status=${param.status}, villageId=${param.villageId}, documentType=${param.documentType}, entityType=${param.entityType})}" th:text="${i + 1}">1</a>
                 </li>
 
                 <!-- Next Button -->
                 <li class="page-item" th:classappend="${page.last ? 'disabled' : ''}">
-                    <a class="page-link" th:href="@{${baseUrl}(page=${page.number + 1}, size=${page.size}, search=${param.search}, status=${param.status})}">Next</a>
+                    <a class="page-link ajax-page-link" th:href="@{${baseUrl}(page=${page.number + 2}, size=${page.size}, q=${param.q}, search=${param.search}, status=${param.status}, villageId=${param.villageId}, documentType=${param.documentType}, entityType=${param.entityType})}">Next</a>
                 </li>
             </ul>
         </nav>
         <div class="text-center mt-2 text-muted small">
             Showing <span th:text="${page.number * page.size + 1}"></span>–<span th:text="${page.number * page.size + page.numberOfElements}"></span> of <span th:text="${page.totalElements}"></span> records
         </div>
+
+        <script>
+            (function() {
+                // Ensure we only bind once
+                if (window.ajaxPaginationBound) return;
+                window.ajaxPaginationBound = true;
+
+                document.addEventListener('click', function(e) {
+                    const link = e.target.closest('.ajax-page-link');
+                    if (link && !link.parentElement.classList.contains('disabled')) {
+                        e.preventDefault();
+                        const url = link.href;
+
+                        // Find the card containing this specific pagination block
+                        let tableCard = link.closest('.card');
+                        if (!tableCard) {
+                            tableCard = link.closest('.taloms-pagination-wrapper').parentElement;
+                        }
+                        if (!tableCard) {
+                            window.location.href = url; // fallback
+                            return;
+                        }
+
+                        tableCard.style.opacity = '0.5';
+                        tableCard.style.pointerEvents = 'none';
+
+                        fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                            .then(response => response.text())
+                            .then(html => {
+                                const parser = new DOMParser();
+                                const doc = parser.parseFromString(html, 'text/html');
+                                
+                                let newTableCard;
+                                const newWrapper = doc.querySelector('.taloms-pagination-wrapper');
+                                if (newWrapper) {
+                                    newTableCard = newWrapper.closest('.card');
+                                    if (!newTableCard) newTableCard = newWrapper.parentElement;
+                                }
+
+                                if (newTableCard) {
+                                    tableCard.innerHTML = newTableCard.innerHTML;
+                                    tableCard.style.opacity = '1';
+                                    tableCard.style.pointerEvents = 'auto';
+                                    window.history.pushState({}, '', url);
+                                } else {
+                                    window.location.href = url;
+                                }
+                            })
+                            .catch(err => {
+                                console.error('AJAX pagination error:', err);
+                                window.location.href = url;
+                            });
+                    }
+                });
+            })();
+        </script>
     </div>
 </body>
 </html>

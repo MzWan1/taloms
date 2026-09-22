@@ -39,7 +39,7 @@ public class CompanySelfPageController {
     public String dashboard(Model model,
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam(defaultValue = "1") Integer page,
-            @RequestParam(defaultValue = "10") Integer size) {
+            @RequestParam(defaultValue = "5") Integer size) {
         model.addAttribute("pageTitle", "Company Dashboard");
         model.addAttribute("currentPage", "company");
 

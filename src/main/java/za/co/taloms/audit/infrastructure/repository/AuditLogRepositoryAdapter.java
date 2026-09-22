@@ -8,6 +8,8 @@ import za.co.taloms.audit.domain.repository.AuditLogRepositoryPort;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Repository
 @RequiredArgsConstructor
@@ -31,8 +33,18 @@ public class AuditLogRepositoryAdapter implements AuditLogRepositoryPort {
     }
 
     @Override
+    public Page<AuditLog> findAll(Pageable pageable) {
+        return jpaRepository.findAllOrderByPerformedAtDesc(pageable);
+    }
+
+    @Override
     public List<AuditLog> findByEntity(String entityType, Long entityId) {
         return jpaRepository.findByEntityOrderByPerformedAtDesc(entityType, entityId);
+    }
+
+    @Override
+    public Page<AuditLog> findByEntity(String entityType, Long entityId, Pageable pageable) {
+        return jpaRepository.findByEntityOrderByPerformedAtDesc(entityType, entityId, pageable);
     }
 
     @Override

@@ -9,6 +9,8 @@ import za.co.taloms.pto.domain.repository.PTORepositoryPort;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Repository
 @RequiredArgsConstructor
@@ -33,7 +35,12 @@ public class PTORepositoryAdapter implements PTORepositoryPort {
 
     @Override
     public List<PTO> findAll() {
-        return jpaRepository.findAllOrderByCreatedAtDesc();
+        return jpaRepository.findAllOrderByCreatedAtDesc(org.springframework.data.domain.Pageable.unpaged()).getContent();
+    }
+
+    @Override
+    public Page<PTO> findAll(Pageable pageable) {
+        return jpaRepository.findAllOrderByCreatedAtDesc(pageable);
     }
 
     @Override
@@ -47,9 +54,11 @@ public class PTORepositoryAdapter implements PTORepositoryPort {
     }
 
     @Override
-    public List<PTO> findByTraditionalAuthorityId(Long authorityId) {
-        return jpaRepository.findByTraditionalAuthorityId(authorityId);
+    public Page<PTO> findByTraditionalAuthorityId(Long authorityId, Pageable pageable) {
+        return jpaRepository.findByTraditionalAuthorityId(authorityId, pageable);
     }
+
+
 
     @Override
     public List<PTO> findByIdNumber(String idNumber) {
@@ -137,9 +146,30 @@ public class PTORepositoryAdapter implements PTORepositoryPort {
     }
 
     @Override
-    public List<PTO> search(String holderName, String idNumber, String ptoNumber,
-                             PTOStatus status, PTOPurpose purpose, Long villageId, Long authorityId) {
-        return jpaRepository.search(holderName, idNumber, ptoNumber, status, purpose, villageId, authorityId);
+    public Page<PTO> search(String holderName, String idNumber, String ptoNumber, PTOStatus status, PTOPurpose purpose, Set<Long> villageIds, Long authorityId, Pageable pageable) {
+        boolean filterByHolder = holderName != null && !holderName.trim().isEmpty();
+        boolean filterById = idNumber != null && !idNumber.trim().isEmpty();
+        boolean filterByPto = ptoNumber != null && !ptoNumber.trim().isEmpty();
+        boolean filterByStatus = status != null;
+        boolean filterByPurpose = purpose != null;
+        boolean filterByVillages = villageIds != null && !villageIds.isEmpty();
+        boolean filterByAuthority = authorityId != null;
+
+        String safeHolder = filterByHolder ? holderName : "";
+        String safeId = filterById ? idNumber : "";
+        String safePto = filterByPto ? ptoNumber : "";
+        Set<Long> safeVillageIds = filterByVillages ? villageIds : Set.of(-1L);
+
+        return jpaRepository.search(
+                safeHolder, filterByHolder,
+                safeId, filterById,
+                safePto, filterByPto,
+                status, filterByStatus,
+                purpose, filterByPurpose,
+                safeVillageIds, filterByVillages,
+                authorityId, filterByAuthority,
+                pageable
+        );
     }
 
     @Override
@@ -153,8 +183,13 @@ public class PTORepositoryAdapter implements PTORepositoryPort {
     }
 
     @Override
-    public List<PTO> findDeleted() {
-        return jpaRepository.findDeleted();
+    public Page<PTO> findDeleted(Pageable pageable) {
+        return jpaRepository.findDeleted(pageable);
+    }
+
+    @Override
+    public Page<PTO> findDeletedScoped(Set<Long> villageIds, Pageable pageable) {
+        return jpaRepository.findDeletedScoped(villageIds != null && villageIds.isEmpty() ? null : villageIds, pageable);
     }
 
     @Override

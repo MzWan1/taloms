@@ -40,8 +40,11 @@ public class CompanyAdminPageController {
     private final UserService userService;
 
     @GetMapping
-    public String list(Model model) {
-        model.addAttribute("companies", companyService.findAll());
+    public String list(Model model, @RequestParam(required = false, defaultValue = "1") Integer page) {
+        var companies = companyService.findAll();
+        var pageObj = za.co.taloms.common.pagination.PageRequestUtils.paginateList(companies, page, 10);
+        model.addAttribute("page", pageObj);
+        model.addAttribute("companies", pageObj.getContent());
         model.addAttribute("companyForm", new CompanyCreateRequest());
         model.addAttribute("pageTitle", "Companies");
         model.addAttribute("currentPage", "companies");

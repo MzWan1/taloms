@@ -8,6 +8,8 @@ import za.co.taloms.document.domain.entity.EntityType;
 import za.co.taloms.document.domain.repository.DocumentRepositoryPort;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Repository
 @RequiredArgsConstructor
@@ -36,8 +38,18 @@ public class DocumentRepositoryAdapter implements DocumentRepositoryPort {
     }
 
     @Override
+    public Page<Document> findAll(Pageable pageable) {
+        return jpaRepository.findAllOrderByUploadedAtDesc(pageable);
+    }
+
+    @Override
     public List<Document> findByRelatedEntity(EntityType entityType, Long entityId) {
         return jpaRepository.findByRelatedEntityTypeAndRelatedEntityId(entityType, entityId);
+    }
+
+    @Override
+    public Page<Document> findByRelatedEntity(EntityType entityType, Long entityId, Pageable pageable) {
+        return jpaRepository.findByRelatedEntityOrderByUploadedAtDesc(entityType, entityId, pageable);
     }
 
     @Override

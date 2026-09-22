@@ -17,6 +17,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Slf4j
 @Service
@@ -67,10 +69,22 @@ public class AuditServiceImpl implements AuditService {
 
     @Override
     @Transactional(readOnly = true)
+    public Page<AuditLogResponse> findAll(Pageable pageable) {
+        return auditRepository.findAll(pageable).map(this::toResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<AuditLogResponse> findByEntity(String entityType, Long entityId) {
         return auditRepository.findByEntity(entityType, entityId).stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<AuditLogResponse> findByEntity(String entityType, Long entityId, Pageable pageable) {
+        return auditRepository.findByEntity(entityType, entityId, pageable).map(this::toResponse);
     }
 
     @Override

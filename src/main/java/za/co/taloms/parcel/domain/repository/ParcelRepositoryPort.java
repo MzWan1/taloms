@@ -5,6 +5,10 @@ import za.co.taloms.parcel.domain.entity.ParcelStatus;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import java.util.Set;
+import za.co.taloms.parcel.domain.entity.ParcelStatus;
 import java.util.Set;
 
 public interface ParcelRepositoryPort {
@@ -17,6 +21,9 @@ public interface ParcelRepositoryPort {
     Optional<Parcel> findByStandNumberAndVillageId(String standNumber, Long villageId);
 
     List<Parcel> findAll();
+
+    Page<Parcel> searchParcels(String q, ParcelStatus status, Long villageId, java.util.Set<Long> allowedVillageIds, Pageable pageable);
+
 
     List<Parcel> findByVillageId(Long villageId);
 

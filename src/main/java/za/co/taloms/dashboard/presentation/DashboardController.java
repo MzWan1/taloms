@@ -7,6 +7,9 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import za.co.taloms.dashboard.application.service.DashboardService;
+import za.co.taloms.dashboard.application.service.DashboardChartService;
+import za.co.taloms.security.application.service.AuthorityScopeService;
+import org.springframework.web.bind.annotation.ResponseBody;
 import za.co.taloms.traditionalauthority.application.service.TraditionalAuthorityService;
 
 import java.util.Arrays;
@@ -18,6 +21,8 @@ import java.util.Collections;
 public class DashboardController {
 
     private final DashboardService dashboardService;
+    private final DashboardChartService dashboardChartService;
+    private final AuthorityScopeService authorityScopeService;
     private final TraditionalAuthorityService traditionalAuthorityService;
 
     @GetMapping({ "/", "/dashboard" })
@@ -103,6 +108,16 @@ public class DashboardController {
 
             return "dashboard/index";
         }
+    }
+
+
+    @GetMapping("/api/dashboard/chart")
+    @ResponseBody
+    public DashboardChartDto getChartData(Authentication authentication) {
+        boolean isAdmin = authentication != null && authentication.getAuthorities().stream()
+                .anyMatch(a -> "ROLE_ADMIN".equals(a.getAuthority()));
+        java.util.Set<Long> scopedVillageIds = isAdmin ? null : authorityScopeService.scopedVillageIds();
+        return dashboardChartService.getChartData(isAdmin, scopedVillageIds);
     }
 
     @GetMapping("/api/dashboard/summary")

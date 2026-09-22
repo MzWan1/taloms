@@ -30,6 +30,10 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import java.util.Set;
+import za.co.taloms.parcel.domain.entity.ParcelStatus;
 
 @Slf4j
 @Service
@@ -488,6 +492,12 @@ public class ParcelServiceImpl implements ParcelService {
         return parcelRepository.findByVillageId(villageId).stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<ParcelResponse> searchParcels(String q, ParcelStatus status, Long villageId, java.util.Set<Long> allowedVillageIds, Pageable pageable) {
+        return parcelRepository.searchParcels(q, status, villageId, allowedVillageIds, pageable).map(this::toResponse);
     }
 
     @Override

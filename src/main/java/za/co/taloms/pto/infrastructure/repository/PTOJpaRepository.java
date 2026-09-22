@@ -10,6 +10,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface PTOJpaRepository extends JpaRepository<PTO, Long> {
 
@@ -65,7 +67,7 @@ public interface PTOJpaRepository extends JpaRepository<PTO, Long> {
     List<PTO> findByVillageId(@Param("villageId") Long villageId);
 
     @Query("SELECT p FROM PTO p WHERE p.traditionalAuthority.id = :authorityId ORDER BY p.createdAt DESC")
-    List<PTO> findByTraditionalAuthorityId(@Param("authorityId") Long authorityId);
+    Page<PTO> findByTraditionalAuthorityId(@Param("authorityId") Long authorityId, Pageable pageable);
 
     @Query("SELECT p FROM PTO p WHERE p.idNumber = :idNumber AND p.status = :status ORDER BY p.createdAt DESC")
     List<PTO> findByIdNumberAndStatus(@Param("idNumber") String idNumber, @Param("status") PTOStatus status);
@@ -74,30 +76,28 @@ public interface PTOJpaRepository extends JpaRepository<PTO, Long> {
     boolean existsByIdNumberAndVillageIdAndStatus(@Param("idNumber") String idNumber, @Param("villageId") Long villageId, @Param("status") PTOStatus status);
 
     @Query("SELECT p FROM PTO p ORDER BY p.createdAt DESC")
-    List<PTO> findAllOrderByCreatedAtDesc();
+    Page<PTO> findAllOrderByCreatedAtDesc(Pageable pageable);
 
     @Query("""
             SELECT p FROM PTO p WHERE
-            (CAST(:holderName AS String) IS NULL
-                OR LOWER(p.ptoHolderName) LIKE LOWER(CONCAT('%', CAST(:holderName AS String), '%')))
-            AND (CAST(:idNumber AS String) IS NULL
-                OR p.idNumber LIKE CONCAT('%', CAST(:idNumber AS String), '%'))
-            AND (CAST(:ptoNumber AS String) IS NULL
-                OR LOWER(p.ptoNumber) LIKE LOWER(CONCAT('%', CAST(:ptoNumber AS String), '%')))
-            AND (:status IS NULL OR p.status = :status)
-            AND (:purpose IS NULL OR p.purpose = :purpose)
-            AND (:villageId IS NULL OR p.village.id = :villageId)
-            AND (:authorityId IS NULL OR p.traditionalAuthority.id = :authorityId)
+            (:filterByHolder = false OR LOWER(p.ptoHolderName) LIKE LOWER(CONCAT('%', :holderName, '%')))
+            AND (:filterById = false OR p.idNumber LIKE CONCAT('%', :idNumber, '%'))
+            AND (:filterByPto = false OR LOWER(p.ptoNumber) LIKE LOWER(CONCAT('%', :ptoNumber, '%')))
+            AND (:filterByStatus = false OR p.status = :status)
+            AND (:filterByPurpose = false OR p.purpose = :purpose)
+            AND (:filterByVillages = false OR p.village.id IN :villageIds)
+            AND (:filterByAuthority = false OR p.traditionalAuthority.id = :authorityId)
             AND p.deletedAt IS NULL
             ORDER BY p.createdAt DESC
             """)
-    List<PTO> search(@Param("holderName") String holderName,
-                     @Param("idNumber") String idNumber,
-                     @Param("ptoNumber") String ptoNumber,
-                     @Param("status") PTOStatus status,
-                     @Param("purpose") za.co.taloms.pto.domain.entity.PTOPurpose purpose,
-                     @Param("villageId") Long villageId,
-                     @Param("authorityId") Long authorityId);
+    Page<PTO> search(@Param("holderName") String holderName, @Param("filterByHolder") boolean filterByHolder,
+                     @Param("idNumber") String idNumber, @Param("filterById") boolean filterById,
+                     @Param("ptoNumber") String ptoNumber, @Param("filterByPto") boolean filterByPto,
+                     @Param("status") PTOStatus status, @Param("filterByStatus") boolean filterByStatus,
+                     @Param("purpose") za.co.taloms.pto.domain.entity.PTOPurpose purpose, @Param("filterByPurpose") boolean filterByPurpose,
+                     @Param("villageIds") Set<Long> villageIds, @Param("filterByVillages") boolean filterByVillages,
+                     @Param("authorityId") Long authorityId, @Param("filterByAuthority") boolean filterByAuthority,
+                     Pageable pageable);
 
     @Modifying
     @Query(value = "UPDATE pto_records SET deleted_at = CURRENT_TIMESTAMP, deleted_by = :deletedBy, status = 'REVOKED', revoked_by = :deletedBy, revoked_at = CURRENT_TIMESTAMP, revoke_reason = 'PTO record deleted by ' || :deletedBy WHERE id = :id", nativeQuery = true)
@@ -107,7 +107,10 @@ public interface PTOJpaRepository extends JpaRepository<PTO, Long> {
     List<PTO> findAllIncludingDeleted();
 
     @Query("SELECT p FROM PTO p WHERE p.deletedAt IS NOT NULL ORDER BY p.deletedAt DESC")
-    List<PTO> findDeleted();
+    Page<PTO> findDeleted(Pageable pageable);
+
+    @Query("SELECT p FROM PTO p WHERE p.deletedAt IS NOT NULL AND (COALESCE(:villageIds, NULL) IS NULL OR p.village.id IN :villageIds) ORDER BY p.deletedAt DESC")
+    Page<PTO> findDeletedScoped(@Param("villageIds") Set<Long> villageIds, Pageable pageable);
 
     // Sync & Batch operations
     @Query("""

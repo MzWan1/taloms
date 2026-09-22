@@ -28,6 +28,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import za.co.taloms.common.pagination.PageRequestUtils;
 
 @Slf4j
 @Controller
@@ -54,7 +57,8 @@ public class PTOPageController {
     @GetMapping
     public String list(Model model,
                        @RequestParam(required = false) String status,
-                       @RequestParam(required = false) String search) {
+                       @RequestParam(required = false) String search,
+                       @RequestParam(required = false, defaultValue = "1") Integer page) {
         try {
             var criteria = PTOSearchCriteria.builder();
             if (status != null && !status.isBlank()) {
@@ -68,37 +72,43 @@ public class PTOPageController {
             boolean scopedUser = scopeService.isCurrentUserChiefOrHeadsman();
             Set<Long> scopedVillageIds = scopedUser ? scopeService.scopedVillageIds() : null;
 
-            List<PTOResponse> ptos;
+
+            Pageable pageable = PageRequestUtils.toPageable(page, 10);
+            Page<PTOResponse> pageObj;
+
             if (scopedUser && (scopedVillageIds == null || scopedVillageIds.isEmpty())) {
                 // Chief/headman scoped to no village sees nothing
-                ptos = Collections.emptyList();
+                pageObj = new org.springframework.data.domain.PageImpl<>(Collections.emptyList(), pageable, 0);
             } else if ((status != null && !status.isBlank())
                     || (search != null && !search.isBlank())
                     || scopedVillageIds != null) {
-                ptos = ptoService.search(criteria.build());
+                if (scopedVillageIds != null) {
+                    criteria.villageIds(scopedVillageIds);
+                }
+                pageObj = ptoService.search(criteria.build(), pageable);
             } else {
-                ptos = ptoService.findAll();
+                pageObj = ptoService.findAll(pageable);
             }
 
-            // Guard against authorities/implementations that ignore the criteria filter:
-            // restrict to the scoped villages for chiefs/headsmen.
-            if (scopedVillageIds != null) {
-                ptos = ptos.stream()
-                        .filter(p -> p.getVillageId() != null
-                                && scopedVillageIds.contains(p.getVillageId()))
-                        .toList();
-            }
-
-            model.addAttribute("ptos", ptos);
+            model.addAttribute("page", pageObj);
+            model.addAttribute("ptos", pageObj.getContent());
             model.addAttribute("statuses", PTOStatus.values());
             model.addAttribute("purposes", PTOPurpose.values());
-            model.addAttribute("totalCount", ptos.size());
-            model.addAttribute("pendingCount", ptos.stream()
-                    .filter(p -> p.getStatus() == PTOStatus.PENDING).count());
-            model.addAttribute("activeCount", ptos.stream()
-                    .filter(p -> p.getStatus() == PTOStatus.ACTIVE).count());
-            model.addAttribute("revokedCount", ptos.stream()
-                    .filter(p -> p.getStatus() == PTOStatus.REVOKED).count());
+            model.addAttribute("totalCount", pageObj.getTotalElements());
+            // pendingCount cannot be easily computed from just the page, so we use count queries
+            model.addAttribute("pendingCount", scopedUser ? 
+                (scopedVillageIds != null && !scopedVillageIds.isEmpty() ? 
+                    scopedVillageIds.stream().mapToLong(vid -> ptoService.countByVillageIdAndStatus(vid, PTOStatus.PENDING)).sum() : 0) 
+                : ptoService.countByStatus(PTOStatus.PENDING));
+            model.addAttribute("activeCount", scopedUser ? 
+                (scopedVillageIds != null && !scopedVillageIds.isEmpty() ? 
+                    scopedVillageIds.stream().mapToLong(vid -> ptoService.countByVillageIdAndStatus(vid, PTOStatus.ACTIVE)).sum() : 0) 
+                : ptoService.countByStatus(PTOStatus.ACTIVE));
+            model.addAttribute("revokedCount", scopedUser ? 
+                (scopedVillageIds != null && !scopedVillageIds.isEmpty() ? 
+                    scopedVillageIds.stream().mapToLong(vid -> ptoService.countByVillageIdAndStatus(vid, PTOStatus.REVOKED)).sum() : 0) 
+                : ptoService.countByStatus(PTOStatus.REVOKED));
+
             model.addAttribute("selectedStatus", status);
             model.addAttribute("searchTerm", search);
             model.addAttribute("pageTitle", "PTO Management");
@@ -441,7 +451,7 @@ public class PTOPageController {
     }
 
     @GetMapping("/by-authority/{authorityId}")
-    public String byAuthority(@PathVariable Long authorityId, Model model, RedirectAttributes ra) {
+    public String byAuthority(@PathVariable Long authorityId, @RequestParam(required = false, defaultValue = "1") Integer page, Model model, RedirectAttributes ra) {
         try {
             // Chiefs/headsmen may only view PTOs of their own authority
             if (scopeService.isCurrentUserChiefOrHeadsman()
@@ -451,8 +461,13 @@ public class PTOPageController {
                 return "redirect:/ptos";
             }
 
+
             var authority = authorityService.findById(authorityId);
-            model.addAttribute("ptos", ptoService.findByAuthority(authorityId));
+            Pageable pageable = PageRequestUtils.toPageable(page, 10);
+            Page<PTOResponse> pageObj = ptoService.findByAuthority(authorityId, pageable);
+            model.addAttribute("page", pageObj);
+            model.addAttribute("ptos", pageObj.getContent());
+
             model.addAttribute("authority", authority);
             model.addAttribute("statuses", PTOStatus.values());
             model.addAttribute("purposes", PTOPurpose.values());
@@ -695,23 +710,29 @@ public class PTOPageController {
     }
 
     @GetMapping("/deleted")
-    public String deletedList(Model model, RedirectAttributes ra) {
+    public String deletedList(Model model, @RequestParam(required = false, defaultValue = "1") Integer page, RedirectAttributes ra) {
         try {
-            var deletedPtos = ptoService.findDeleted();
 
-            // Chiefs/headsmen only see deleted PTOs of the villages they manage
             boolean scopedUser = scopeService.isCurrentUserChiefOrHeadsman();
             Set<Long> scopedVillageIds = scopedUser ? scopeService.scopedVillageIds() : null;
+            
+            Pageable pageable = PageRequestUtils.toPageable(page, 10);
+            Page<PTOResponse> pageObj;
+            
             if (scopedUser) {
-                Set<Long> allowed = scopedVillageIds != null ? scopedVillageIds : Set.of();
-                deletedPtos = deletedPtos.stream()
-                        .filter(p -> p.getVillageId() != null
-                                && allowed.contains(p.getVillageId()))
-                        .toList();
+                if (scopedVillageIds == null || scopedVillageIds.isEmpty()) {
+                    pageObj = new org.springframework.data.domain.PageImpl<>(Collections.emptyList(), pageable, 0);
+                } else {
+                    pageObj = ptoService.findDeletedScoped(scopedVillageIds, pageable);
+                }
+            } else {
+                pageObj = ptoService.findDeleted(pageable);
             }
 
-            model.addAttribute("ptos", deletedPtos);
+            model.addAttribute("page", pageObj);
+            model.addAttribute("ptos", pageObj.getContent());
             model.addAttribute("pageTitle", "Deleted PTOs");
+
             model.addAttribute("currentPage", "ptos");
             return "ptos/deleted";
         } catch (Exception e) {

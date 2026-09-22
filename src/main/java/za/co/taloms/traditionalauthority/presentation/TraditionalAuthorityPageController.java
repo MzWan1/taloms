@@ -26,7 +26,10 @@ public class TraditionalAuthorityPageController {
     private final AuthorityScopeService       scopeService;
 
     @GetMapping
-    public String list(Model model) {
+    public String list(Model model, 
+                       @RequestParam(required = false) String search,
+                       @RequestParam(required = false) String statusFilter,
+                       @RequestParam(required = false, defaultValue = "1") Integer page) {
         List<TraditionalAuthorityResponse> authorities;
         if (scopeService.isCurrentUserChiefOrHeadsman()) {
             // Chiefs/headsmen see every authority that belongs to them
@@ -40,7 +43,16 @@ public class TraditionalAuthorityPageController {
             authorities = authorityService.findAll();
         }
         log.info("AuthoritiesPageController: model 'authorities' size = {}", authorities.size());
-        model.addAttribute("authorities", authorities);
+        if (search != null && !search.isBlank()) {
+            String lower = search.toLowerCase();
+            authorities = authorities.stream().filter(a -> (a.getAuthorityName() != null && a.getAuthorityName().toLowerCase().contains(lower))).toList();
+        }
+        if (statusFilter != null && !statusFilter.isBlank()) {
+            authorities = authorities.stream().filter(a -> (statusFilter.equalsIgnoreCase("active") && (a.getActive() != null && a.getActive())) || (statusFilter.equalsIgnoreCase("inactive") && !(a.getActive() != null && a.getActive()))).toList();
+        }
+        var pageObj = za.co.taloms.common.pagination.PageRequestUtils.paginateList(authorities, page, 10);
+        model.addAttribute("page", pageObj);
+        model.addAttribute("authorities", pageObj.getContent());
         model.addAttribute("pageTitle",   "Traditional Authorities");
         model.addAttribute("currentPage", "authorities");
         return "authorities/list";

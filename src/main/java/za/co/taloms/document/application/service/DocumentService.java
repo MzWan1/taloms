@@ -7,13 +7,17 @@ import za.co.taloms.document.application.dto.DocumentUploadRequest;
 import za.co.taloms.document.domain.entity.DocumentType;
 import za.co.taloms.document.domain.entity.EntityType;
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface DocumentService {
     DocumentResponse uploadDocument(MultipartFile file, DocumentUploadRequest request, String uploadedBy, String clientIp, String userAgent);
     DocumentResponse findById(Long id);
     DocumentResponse findByStoredFilename(String storedFilename);
     List<DocumentResponse> findAll();
+    Page<DocumentResponse> findAll(Pageable pageable);
     List<DocumentResponse> findByRelatedEntity(EntityType entityType, Long entityId);
+    Page<DocumentResponse> findByRelatedEntity(EntityType entityType, Long entityId, Pageable pageable);
     List<DocumentResponse> findByDocumentType(DocumentType documentType);
     List<DocumentResponse> findByUploadedBy(String uploadedBy);
     List<DocumentResponse> findByActive();
