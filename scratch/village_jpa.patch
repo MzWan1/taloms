@@ -1,8 +1,0 @@
-@@ -10,6 +10,7 @@
- public interface VillageJpaRepository extends JpaRepository<Village, Long> {
-     Optional<Village> findByVillageName(String villageName);
-     List<Village> findByTraditionalAuthorityIdOrderByVillageNameAsc(Long authorityId);
-+    org.springframework.data.domain.Page<Village> findByTraditionalAuthorityId(Long authorityId, org.springframework.data.domain.Pageable pageable);
-     List<Village> findByHeadmanId(Long headmanId);
-     boolean existsByVillageName(String villageName);
-     @Query("SELECT COUNT(v) > 0 FROM Village v WHERE v.headmanId = :headmanId AND v.id <> :excludeId")

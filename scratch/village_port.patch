@@ -1,9 +1,0 @@
-@@ -10,6 +10,8 @@
-     Optional<Village> findById(Long id);
-     List<Village> findAll();
-     List<Village> findByTraditionalAuthorityId(Long authorityId);
-+    org.springframework.data.domain.Page<Village> findAll(org.springframework.data.domain.Pageable pageable);
-+    org.springframework.data.domain.Page<Village> findByTraditionalAuthorityId(Long authorityId, org.springframework.data.domain.Pageable pageable);
-     List<Village> findByHeadmanId(Long headmanId);
-     boolean existsByVillageName(String name);
-     boolean existsByVillageNameAndIdNot(String name, Long id);
