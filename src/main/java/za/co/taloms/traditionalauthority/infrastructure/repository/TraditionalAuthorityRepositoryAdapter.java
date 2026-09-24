@@ -50,6 +50,16 @@ public class TraditionalAuthorityRepositoryAdapter
     }
 
     @Override
+    public boolean existsByHeadmanId(Long headmanId) {
+        return jpaRepository.existsByHeadmanId(headmanId);
+    }
+
+    @Override
+    public List<Long> findIdsByChiefIdOrHeadmanId(Long userId) {
+        return jpaRepository.findIdsByChiefIdOrHeadmanId(userId);
+    }
+
+    @Override
     public void delete(TraditionalAuthority authority) {
         jpaRepository.delete(authority);
     }

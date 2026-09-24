@@ -1,0 +1,936 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" agent="TALOMS documentation generator" version="24.7.17">
+  <diagram name=" Browser authentication " id=" d90 ">
+    <mxGraphModel dx="1422" dy="798" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth=" 880 " pageHeight=" 1000 " math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="Browser authentication | UC-01" style="text;html=0;fontSize=22;align=left;" vertex="1" parent="1">
+          <mxGeometry x="30" y="10" width="820" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="pool" value="TALOMS process" style="swimlane;html=0;startSize=30;horizontal=1;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="30" y="80" width="820" height="700" as="geometry" />
+        </mxCell>
+        <mxCell id="lane0" value="Visitor" style="swimlane;html=0;startSize=35;horizontal=1;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="60" y="120" width="320" height="650" as="geometry" />
+        </mxCell>
+        <mxCell id="lane1" value="TALOMS" style="swimlane;html=0;startSize=35;horizontal=1;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="380" y="120" width="320" height="650" as="geometry" />
+        </mxCell>
+        <mxCell id="start" value="Start" style="ellipse;whiteSpace=wrap;html=0;fontSize=11;fillColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="190" y="165" width="48" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="task0" value="«user task»&#10;Submit login form" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="100" y="245" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="start_task0" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="start" target="task0">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="task1" value="«service task»&#10;Authenticate password and account; eligible?" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="420" y="390" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="task0_task1" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task0" target="task1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="g1" value="×" style="rhombus;html=0;fontSize=20;fillColor=#fff2cc;" vertex="1" parent="1">
+          <mxGeometry x="510" y="468" width="48" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="task1_g1" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task1" target="g1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fail1" value="Reject; update failure counter / lock where applicable" style="rounded=1;whiteSpace=wrap;html=0;fontSize=12;fillColor=#f8cecc;" vertex="1" parent="1">
+          <mxGeometry x="700" y="390" width="145" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="g1_fail1" value="No" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="g1" target="fail1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="endfail1" value="End" style="ellipse;strokeWidth=3;html=0;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="750" y="478" width="38" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="fail1_endfail1" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="fail1" target="endfail1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="task2" value="«service task»&#10;Record successful login; reset attempts" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="420" y="535" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="g1_task2" value="Yes" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="g1" target="task2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="task3" value="«service task»&#10;Redirect according to role" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="420" y="680" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="task2_task3" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task2" target="task3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="end" value="End" style="ellipse;strokeWidth=3;whiteSpace=wrap;html=0;fontSize=11;fillColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="510" y="825" width="48" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="task3_end" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task3" target="end">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="note" value="API JWT login is a separate path. Company API keys do not use this session process. Notation: rounded rectangles = tasks; × = exclusive decision after validation task. Solid arrows are sequence flows within one pool; role lanes are not independent pools. Failure outcomes end this attempt." style="text;html=0;whiteSpace=wrap;align=left;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="30" y="870" width="820" height="100" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram name=" Authority and village maintenance " id=" d91 ">
+    <mxGraphModel dx="1422" dy="798" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth=" 880 " pageHeight=" 1145 " math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="Authority and village maintenance | UC-06 / UC-07 / UC-14" style="text;html=0;fontSize=22;align=left;" vertex="1" parent="1">
+          <mxGeometry x="30" y="10" width="820" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="pool" value="TALOMS process" style="swimlane;html=0;startSize=30;horizontal=1;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="30" y="80" width="820" height="845" as="geometry" />
+        </mxCell>
+        <mxCell id="lane0" value="Admin or Chief" style="swimlane;html=0;startSize=35;horizontal=1;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="60" y="120" width="320" height="795" as="geometry" />
+        </mxCell>
+        <mxCell id="lane1" value="TALOMS" style="swimlane;html=0;startSize=35;horizontal=1;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="380" y="120" width="320" height="795" as="geometry" />
+        </mxCell>
+        <mxCell id="start" value="Start" style="ellipse;whiteSpace=wrap;html=0;fontSize=11;fillColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="190" y="165" width="48" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="task0" value="«user task»&#10;Admin maintains authority / Chief maintains village" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="100" y="245" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="start_task0" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="start" target="task0">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="task1" value="«service task»&#10;Check role, scope, record and leadership rules; valid?" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="420" y="390" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="task0_task1" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task0" target="task1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="g1" value="×" style="rhombus;html=0;fontSize=20;fillColor=#fff2cc;" vertex="1" parent="1">
+          <mxGeometry x="510" y="468" width="48" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="task1_g1" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task1" target="g1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fail1" value="Reject change" style="rounded=1;whiteSpace=wrap;html=0;fontSize=12;fillColor=#f8cecc;" vertex="1" parent="1">
+          <mxGeometry x="700" y="390" width="145" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="g1_fail1" value="No" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="g1" target="fail1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="endfail1" value="End" style="ellipse;strokeWidth=3;html=0;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="750" y="478" width="38" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="fail1_endfail1" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="fail1" target="endfail1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="task2" value="«service task»&#10;Validate duplicate name and optional boundary; valid?" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="420" y="535" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="g1_task2" value="Yes" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="g1" target="task2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="g2" value="×" style="rhombus;html=0;fontSize=20;fillColor=#fff2cc;" vertex="1" parent="1">
+          <mxGeometry x="510" y="613" width="48" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="task2_g2" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task2" target="g2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fail2" value="Return validation error" style="rounded=1;whiteSpace=wrap;html=0;fontSize=12;fillColor=#f8cecc;" vertex="1" parent="1">
+          <mxGeometry x="700" y="535" width="145" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="g2_fail2" value="No" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="g2" target="fail2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="endfail2" value="End" style="ellipse;strokeWidth=3;html=0;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="750" y="623" width="38" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="fail2_endfail2" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="fail2" target="endfail2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="task3" value="«service task»&#10;Persist authority or village and applicable leadership links" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="420" y="680" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="g2_task3" value="Yes" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="g2" target="task3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="task4" value="«user task»&#10;View saved record" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="100" y="825" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="task3_task4" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task3" target="task4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="end" value="End" style="ellipse;strokeWidth=3;whiteSpace=wrap;html=0;fontSize=11;fillColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="190" y="970" width="48" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="task4_end" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task4" target="end">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="note" value="Admin writes authorities; only Chief manages villages. Chief membership is many-to-many. Headsman assignment is checked by services, not a UNIQUE database constraint. Notation: rounded rectangles = tasks; × = exclusive decision after validation task. Solid arrows are sequence flows within one pool; role lanes are not independent pools. Failure outcomes end this attempt." style="text;html=0;whiteSpace=wrap;align=left;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="30" y="1015" width="820" height="100" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram name=" Parcel capture " id=" d92 ">
+    <mxGraphModel dx="1422" dy="798" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth=" 880 " pageHeight=" 1145 " math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="Parcel capture | UC-15" style="text;html=0;fontSize=22;align=left;" vertex="1" parent="1">
+          <mxGeometry x="30" y="10" width="820" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="pool" value="TALOMS process" style="swimlane;html=0;startSize=30;horizontal=1;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="30" y="80" width="820" height="845" as="geometry" />
+        </mxCell>
+        <mxCell id="lane0" value="Staff" style="swimlane;html=0;startSize=35;horizontal=1;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="60" y="120" width="320" height="795" as="geometry" />
+        </mxCell>
+        <mxCell id="lane1" value="TALOMS" style="swimlane;html=0;startSize=35;horizontal=1;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="380" y="120" width="320" height="795" as="geometry" />
+        </mxCell>
+        <mxCell id="start" value="Start" style="ellipse;whiteSpace=wrap;html=0;fontSize=11;fillColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="190" y="165" width="48" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="task0" value="«user task»&#10;Submit village, stand and boundary" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="100" y="245" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="start_task0" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="start" target="task0">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="task1" value="«service task»&#10;Check route scope, village and parcel data; valid?" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="420" y="390" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="task0_task1" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task0" target="task1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="g1" value="×" style="rhombus;html=0;fontSize=20;fillColor=#fff2cc;" vertex="1" parent="1">
+          <mxGeometry x="510" y="468" width="48" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="task1_g1" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task1" target="g1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fail1" value="Reject request" style="rounded=1;whiteSpace=wrap;html=0;fontSize=12;fillColor=#f8cecc;" vertex="1" parent="1">
+          <mxGeometry x="700" y="390" width="145" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="g1_fail1" value="No" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="g1" target="fail1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="endfail1" value="End" style="ellipse;strokeWidth=3;html=0;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="750" y="478" width="38" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="fail1_endfail1" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="fail1" target="endfail1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="task2" value="«service task»&#10;Check geometry and applicable overlap rules; valid?" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="420" y="535" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="g1_task2" value="Yes" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="g1" target="task2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="g2" value="×" style="rhombus;html=0;fontSize=20;fillColor=#fff2cc;" vertex="1" parent="1">
+          <mxGeometry x="510" y="613" width="48" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="task2_g2" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task2" target="g2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fail2" value="Return validation error" style="rounded=1;whiteSpace=wrap;html=0;fontSize=12;fillColor=#f8cecc;" vertex="1" parent="1">
+          <mxGeometry x="700" y="535" width="145" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="g2_fail2" value="No" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="g2" target="fail2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="endfail2" value="End" style="ellipse;strokeWidth=3;html=0;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="750" y="623" width="38" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="fail2_endfail2" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="fail2" target="endfail2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="task3" value="«service task»&#10;Generate parcel number; save parcel/boundary" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="420" y="680" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="g2_task3" value="Yes" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="g2" target="task3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="task4" value="«user task»&#10;View parcel result" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="100" y="825" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="task3_task4" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task3" target="task4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="end" value="End" style="ellipse;strokeWidth=3;whiteSpace=wrap;html=0;fontSize=11;fillColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="190" y="970" width="48" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="task4_end" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task4" target="end">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="note" value="Admin, Chief and Headsman capture parcels. Deletion is Admin-only; status change Admin/Chief. Sync is a separate operation. Notation: rounded rectangles = tasks; × = exclusive decision after validation task. Solid arrows are sequence flows within one pool; role lanes are not independent pools. Failure outcomes end this attempt." style="text;html=0;whiteSpace=wrap;align=left;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="30" y="1015" width="820" height="100" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram name=" PTO creation and approval " id=" d93 ">
+    <mxGraphModel dx="1422" dy="798" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth=" 880 " pageHeight=" 1580 " math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="PTO creation and approval | UC-16 / UC-17 / UC-24 / UC-37" style="text;html=0;fontSize=22;align=left;" vertex="1" parent="1">
+          <mxGeometry x="30" y="10" width="820" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="pool" value="TALOMS process" style="swimlane;html=0;startSize=30;horizontal=1;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="30" y="80" width="820" height="1280" as="geometry" />
+        </mxCell>
+        <mxCell id="lane0" value="Staff / Chief" style="swimlane;html=0;startSize=35;horizontal=1;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="60" y="120" width="320" height="1230" as="geometry" />
+        </mxCell>
+        <mxCell id="lane1" value="TALOMS" style="swimlane;html=0;startSize=35;horizontal=1;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="380" y="120" width="320" height="1230" as="geometry" />
+        </mxCell>
+        <mxCell id="start" value="Start" style="ellipse;whiteSpace=wrap;html=0;fontSize=11;fillColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="190" y="165" width="48" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="task0" value="«user task»&#10;Staff submits holder, dates, purpose and parcel" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="100" y="245" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="start_task0" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="start" target="task0">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="task1" value="«service task»&#10;Derive authority/village; stand matches and parcel AVAILABLE without ACTIVE/SUSPENDED conflict?" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="420" y="390" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="task0_task1" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task0" target="task1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="g1" value="×" style="rhombus;html=0;fontSize=20;fillColor=#fff2cc;" vertex="1" parent="1">
+          <mxGeometry x="510" y="468" width="48" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="task1_g1" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task1" target="g1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fail1" value="Reject creation" style="rounded=1;whiteSpace=wrap;html=0;fontSize=12;fillColor=#f8cecc;" vertex="1" parent="1">
+          <mxGeometry x="700" y="390" width="145" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="g1_fail1" value="No" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="g1" target="fail1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="endfail1" value="End" style="ellipse;strokeWidth=3;html=0;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="750" y="478" width="38" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="fail1_endfail1" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="fail1" target="endfail1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="task2" value="«service task»&#10;Save PENDING PTO; publish creation event" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="420" y="535" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="g1_task2" value="Yes" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="g1" target="task2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="task3" value="«user task»&#10;Upload required documents; Chief requests approval" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="100" y="680" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="task2_task3" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task2" target="task3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="task4" value="«service task»&#10;Status and Chief creator/scope rules satisfied?" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="420" y="825" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="task3_task4" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task3" target="task4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="g4" value="×" style="rhombus;html=0;fontSize=20;fillColor=#fff2cc;" vertex="1" parent="1">
+          <mxGeometry x="510" y="903" width="48" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="task4_g4" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task4" target="g4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fail4" value="Reject approval" style="rounded=1;whiteSpace=wrap;html=0;fontSize=12;fillColor=#f8cecc;" vertex="1" parent="1">
+          <mxGeometry x="700" y="825" width="145" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="g4_fail4" value="No" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="g4" target="fail4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="endfail4" value="End" style="ellipse;strokeWidth=3;html=0;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="750" y="913" width="38" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="fail4_endfail4" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="fail4" target="endfail4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="task5" value="«service task»&#10;Required document types present and no competing ACTIVE PTO?" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="420" y="970" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="g4_task5" value="Yes" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="g4" target="task5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="g5" value="×" style="rhombus;html=0;fontSize=20;fillColor=#fff2cc;" vertex="1" parent="1">
+          <mxGeometry x="510" y="1048" width="48" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="task5_g5" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task5" target="g5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fail5" value="Reject approval" style="rounded=1;whiteSpace=wrap;html=0;fontSize=12;fillColor=#f8cecc;" vertex="1" parent="1">
+          <mxGeometry x="700" y="970" width="145" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="g5_fail5" value="No" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="g5" target="fail5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="endfail5" value="End" style="ellipse;strokeWidth=3;html=0;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="750" y="1058" width="38" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="fail5_endfail5" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="fail5" target="endfail5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="task6" value="«service task»&#10;Set ACTIVE; save approval metadata and optional signature" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="420" y="1115" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="g5_task6" value="Yes" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="g5" target="task6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="task7" value="«service task»&#10;Set parcel ALLOCATED and PTO pointer; publish approval event" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="420" y="1260" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="task6_task7" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task6" target="task7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="end" value="End" style="ellipse;strokeWidth=3;whiteSpace=wrap;html=0;fontSize=11;fillColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="510" y="1405" width="48" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="task7_end" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task7" target="end">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="note" value="Signature is conditional. Required types: ID_COPY, TA_ALLOCATION_LETTER, SITE_SKETCH. Creation and approval are separate transactions; rejected approval leaves the created PTO in place. Notation: rounded rectangles = tasks; × = exclusive decision after validation task. Solid arrows are sequence flows within one pool; role lanes are not independent pools. Failure outcomes end this attempt." style="text;html=0;whiteSpace=wrap;align=left;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="30" y="1450" width="820" height="100" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram name=" PTO lifecycle changes " id=" d94 ">
+    <mxGraphModel dx="1422" dy="798" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth=" 880 " pageHeight=" 1290 " math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="PTO lifecycle changes | UC-18 / UC-19 / UC-20 / UC-21 / UC-22" style="text;html=0;fontSize=22;align=left;" vertex="1" parent="1">
+          <mxGeometry x="30" y="10" width="820" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="pool" value="TALOMS process" style="swimlane;html=0;startSize=30;horizontal=1;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="30" y="80" width="820" height="990" as="geometry" />
+        </mxCell>
+        <mxCell id="lane0" value="Authorized staff" style="swimlane;html=0;startSize=35;horizontal=1;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="60" y="120" width="320" height="940" as="geometry" />
+        </mxCell>
+        <mxCell id="lane1" value="TALOMS" style="swimlane;html=0;startSize=35;horizontal=1;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="380" y="120" width="320" height="940" as="geometry" />
+        </mxCell>
+        <mxCell id="start" value="Start" style="ellipse;whiteSpace=wrap;html=0;fontSize=11;fillColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="190" y="165" width="48" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="task0" value="«user task»&#10;Choose suspend / reactivate / revoke / reinstate / delete" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="100" y="245" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="start_task0" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="start" target="task0">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="task1" value="«service task»&#10;Check selected route guard and transition; permitted?" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="420" y="390" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="task0_task1" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task0" target="task1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="g1" value="×" style="rhombus;html=0;fontSize=20;fillColor=#fff2cc;" vertex="1" parent="1">
+          <mxGeometry x="510" y="468" width="48" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="task1_g1" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task1" target="g1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fail1" value="Reject operation" style="rounded=1;whiteSpace=wrap;html=0;fontSize=12;fillColor=#f8cecc;" vertex="1" parent="1">
+          <mxGeometry x="700" y="390" width="145" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="g1_fail1" value="No" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="g1" target="fail1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="endfail1" value="End" style="ellipse;strokeWidth=3;html=0;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="750" y="478" width="38" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="fail1_endfail1" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="fail1" target="endfail1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="task2" value="«service task»&#10;Reactivate/reinstate: no competing ACTIVE PTO? Other actions pass this check" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="420" y="535" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="g1_task2" value="Yes" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="g1" target="task2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="g2" value="×" style="rhombus;html=0;fontSize=20;fillColor=#fff2cc;" vertex="1" parent="1">
+          <mxGeometry x="510" y="613" width="48" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="task2_g2" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task2" target="g2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fail2" value="Reject conflict" style="rounded=1;whiteSpace=wrap;html=0;fontSize=12;fillColor=#f8cecc;" vertex="1" parent="1">
+          <mxGeometry x="700" y="535" width="145" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="g2_fail2" value="No" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="g2" target="fail2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="endfail2" value="End" style="ellipse;strokeWidth=3;html=0;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="750" y="623" width="38" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="fail2_endfail2" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="fail2" target="endfail2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="task3" value="«service task»&#10;Apply selected state and metadata; publish corresponding event" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="420" y="680" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="g2_task3" value="Yes" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="g2" target="task3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="task4" value="«service task»&#10;Revoke releases parcel; reinstate allocates; suspend/reactivate/delete leave parcel unchanged" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="420" y="825" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="task3_task4" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task3" target="task4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="task5" value="«user task»&#10;View result" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="100" y="970" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="task4_task5" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task4" target="task5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="end" value="End" style="ellipse;strokeWidth=3;whiteSpace=wrap;html=0;fontSize=11;fillColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="190" y="1115" width="48" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="task5_end" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task5" target="end">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="note" value="Suspend ACTIVE→SUSPENDED; reactivate SUSPENDED→ACTIVE; revoke ACTIVE/SUSPENDED→REVOKED; reinstate REVOKED→ACTIVE. Delete marks deletion and REVOKED without an ACTIVE/SUSPENDED prohibition in service. REST lifecycle actions Admin/Chief; page guards differ (see Word notes). Notation: rounded rectangles = tasks; × = exclusive decision after validation task. Solid arrows are sequence flows within one pool; role lanes are not independent pools. Failure outcomes end this attempt." style="text;html=0;whiteSpace=wrap;align=left;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="30" y="1160" width="820" height="100" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram name=" Portal proof and shared access " id=" d95 ">
+    <mxGraphModel dx="1422" dy="798" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth=" 880 " pageHeight=" 1145 " math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="Portal proof and shared access | UC-26 / UC-27 / UC-28" style="text;html=0;fontSize=22;align=left;" vertex="1" parent="1">
+          <mxGeometry x="30" y="10" width="820" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="pool" value="TALOMS process" style="swimlane;html=0;startSize=30;horizontal=1;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="30" y="80" width="820" height="845" as="geometry" />
+        </mxCell>
+        <mxCell id="lane0" value="Portal user" style="swimlane;html=0;startSize=35;horizontal=1;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="60" y="120" width="320" height="795" as="geometry" />
+        </mxCell>
+        <mxCell id="lane1" value="TALOMS" style="swimlane;html=0;startSize=35;horizontal=1;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="380" y="120" width="320" height="795" as="geometry" />
+        </mxCell>
+        <mxCell id="start" value="Start" style="ellipse;whiteSpace=wrap;html=0;fontSize=11;fillColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="190" y="165" width="48" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="task0" value="«user task»&#10;Select owned/shared PTO and request proof" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="100" y="245" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="start_task0" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="start" target="task0">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="task1" value="«service task»&#10;Nondeleted PTO accessible by ownership or explicit link?" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="420" y="390" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="task0_task1" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task0" target="task1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="g1" value="×" style="rhombus;html=0;fontSize=20;fillColor=#fff2cc;" vertex="1" parent="1">
+          <mxGeometry x="510" y="468" width="48" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="task1_g1" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task1" target="g1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fail1" value="Deny access" style="rounded=1;whiteSpace=wrap;html=0;fontSize=12;fillColor=#f8cecc;" vertex="1" parent="1">
+          <mxGeometry x="700" y="390" width="145" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="g1_fail1" value="No" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="g1" target="fail1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="endfail1" value="End" style="ellipse;strokeWidth=3;html=0;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="750" y="478" width="38" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="fail1_endfail1" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="fail1" target="endfail1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="task2" value="«user task»&#10;Enter own account password" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="100" y="535" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="g1_task2" value="Yes" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="g1" target="task2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="task3" value="«service task»&#10;Password matches?" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="420" y="680" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="task2_task3" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task2" target="task3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="g3" value="×" style="rhombus;html=0;fontSize=20;fillColor=#fff2cc;" vertex="1" parent="1">
+          <mxGeometry x="510" y="758" width="48" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="task3_g3" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task3" target="g3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fail3" value="Redirect; no download" style="rounded=1;whiteSpace=wrap;html=0;fontSize=12;fillColor=#f8cecc;" vertex="1" parent="1">
+          <mxGeometry x="700" y="680" width="145" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="g3_fail3" value="No" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="g3" target="fail3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="endfail3" value="End" style="ellipse;strokeWidth=3;html=0;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="750" y="768" width="38" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="fail3_endfail3" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="fail3" target="endfail3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="task4" value="«service task»&#10;Generate proof with requester identity; stream PDF" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="420" y="825" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="g3_task4" value="Yes" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="g3" target="task4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="end" value="End" style="ellipse;strokeWidth=3;whiteSpace=wrap;html=0;fontSize=11;fillColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="510" y="970" width="48" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="task4_end" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task4" target="end">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="note" value="USER or ADMIN portal. No ACTIVE/unexpired check on this download path. Separate owner-only add/remove access action also requires password confirmation; linked users cannot grant access. Notation: rounded rectangles = tasks; × = exclusive decision after validation task. Solid arrows are sequence flows within one pool; role lanes are not independent pools. Failure outcomes end this attempt." style="text;html=0;whiteSpace=wrap;align=left;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="30" y="1015" width="820" height="100" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram name=" Company onboarding and credentials " id=" d96 ">
+    <mxGraphModel dx="1422" dy="798" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth=" 880 " pageHeight=" 1145 " math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="Company onboarding and credentials | UC-09 / UC-10 / UC-11 / UC-29" style="text;html=0;fontSize=22;align=left;" vertex="1" parent="1">
+          <mxGeometry x="30" y="10" width="820" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="pool" value="TALOMS process" style="swimlane;html=0;startSize=30;horizontal=1;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="30" y="80" width="820" height="845" as="geometry" />
+        </mxCell>
+        <mxCell id="lane0" value="Admin / Company user" style="swimlane;html=0;startSize=35;horizontal=1;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="60" y="120" width="320" height="795" as="geometry" />
+        </mxCell>
+        <mxCell id="lane1" value="TALOMS" style="swimlane;html=0;startSize=35;horizontal=1;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="380" y="120" width="320" height="795" as="geometry" />
+        </mxCell>
+        <mxCell id="start" value="Start" style="ellipse;whiteSpace=wrap;html=0;fontSize=11;fillColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="190" y="165" width="48" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="task0" value="«service task»&#10;Admin registers company; user selects own linked company" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="100" y="245" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="start_task0" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="start" target="task0">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="task1" value="«service task»&#10;Valid company / association and ACTIVE status for generation?" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="420" y="390" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="task0_task1" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task0" target="task1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="g1" value="×" style="rhombus;html=0;fontSize=20;fillColor=#fff2cc;" vertex="1" parent="1">
+          <mxGeometry x="510" y="468" width="48" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="task1_g1" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task1" target="g1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fail1" value="Reject key generation" style="rounded=1;whiteSpace=wrap;html=0;fontSize=12;fillColor=#f8cecc;" vertex="1" parent="1">
+          <mxGeometry x="700" y="390" width="145" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="g1_fail1" value="No" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="g1" target="fail1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="endfail1" value="End" style="ellipse;strokeWidth=3;html=0;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="750" y="478" width="38" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="fail1_endfail1" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="fail1" target="endfail1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="task2" value="«user task»&#10;Request key with label/scopes" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="100" y="535" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="g1_task2" value="Yes" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="g1" target="task2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="task3" value="«service task»&#10;Generate random raw key; store SHA-256 digest, prefix and scopes" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="420" y="680" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="task2_task3" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task2" target="task3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="task4" value="«user task»&#10;Receive raw key once; store securely" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="100" y="825" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="task3_task4" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task3" target="task4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="end" value="End" style="ellipse;strokeWidth=3;whiteSpace=wrap;html=0;fontSize=11;fillColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="190" y="970" width="48" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="task4_end" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task4" target="end">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="note" value="Admin may disable/reactivate company or revoke its keys. Company browser user generates/revokes own keys only. Revoked keys remain revoked after company reactivation. Notation: rounded rectangles = tasks; × = exclusive decision after validation task. Solid arrows are sequence flows within one pool; role lanes are not independent pools. Failure outcomes end this attempt." style="text;html=0;whiteSpace=wrap;align=left;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="30" y="1015" width="820" height="100" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram name=" External proof verification " id=" d97 ">
+    <mxGraphModel dx="1422" dy="798" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth=" 880 " pageHeight=" 1580 " math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="External proof verification | UC-31 / UC-32" style="text;html=0;fontSize=22;align=left;" vertex="1" parent="1">
+          <mxGeometry x="30" y="10" width="820" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="pool" value="TALOMS API" style="swimlane;html=0;startSize=30;horizontal=1;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="365" y="80" width="475" height="1280" as="geometry" />
+        </mxCell>
+        <mxCell id="lane0" value="External company system (black-box pool)" style="swimlane;html=0;startSize=35;horizontal=1;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="60" y="120" width="320" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="lane1" value="API request handling" style="swimlane;html=0;startSize=35;horizontal=1;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="380" y="120" width="320" height="1230" as="geometry" />
+        </mxCell>
+        <mxCell id="start" value="Start" style="ellipse;whiteSpace=wrap;html=0;fontSize=11;fillColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="510.0" y="165" width="48" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="task0" value="«receive task»&#10;Receive X-API-Key and ID verification request" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="420.0" y="245" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="start_task0" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="start" target="task0">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="task1" value="«service task»&#10;Authenticate digest, ACTIVE key and ACTIVE company; valid?" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="420" y="390" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="task0_task1" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task0" target="task1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="g1" value="×" style="rhombus;html=0;fontSize=20;fillColor=#fff2cc;" vertex="1" parent="1">
+          <mxGeometry x="510" y="468" width="48" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="task1_g1" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task1" target="g1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fail1" value="401; attempt usage log" style="rounded=1;whiteSpace=wrap;html=0;fontSize=12;fillColor=#f8cecc;" vertex="1" parent="1">
+          <mxGeometry x="700" y="390" width="145" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="g1_fail1" value="No" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="g1" target="fail1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="endfail1" value="End" style="ellipse;strokeWidth=3;html=0;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="750" y="478" width="38" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="fail1_endfail1" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="fail1" target="endfail1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="task2" value="«service task»&#10;Per-key throughput allowed?" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="420" y="535" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="g1_task2" value="Yes" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="g1" target="task2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="g2" value="×" style="rhombus;html=0;fontSize=20;fillColor=#fff2cc;" vertex="1" parent="1">
+          <mxGeometry x="510" y="613" width="48" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="task2_g2" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task2" target="g2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fail2" value="429; attempt usage log" style="rounded=1;whiteSpace=wrap;html=0;fontSize=12;fillColor=#f8cecc;" vertex="1" parent="1">
+          <mxGeometry x="700" y="535" width="145" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="g2_fail2" value="No" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="g2" target="fail2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="endfail2" value="End" style="ellipse;strokeWidth=3;html=0;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="750" y="623" width="38" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="fail2_endfail2" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="fail2" target="endfail2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="task3" value="«service task»&#10;POR_READ scope and request format valid?" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="420" y="680" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="g2_task3" value="Yes" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="g2" target="task3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="g3" value="×" style="rhombus;html=0;fontSize=20;fillColor=#fff2cc;" vertex="1" parent="1">
+          <mxGeometry x="510" y="758" width="48" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="task3_g3" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task3" target="g3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fail3" value="403 / input error; attempt log" style="rounded=1;whiteSpace=wrap;html=0;fontSize=12;fillColor=#f8cecc;" vertex="1" parent="1">
+          <mxGeometry x="700" y="680" width="145" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="g3_fail3" value="No" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="g3" target="fail3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="endfail3" value="End" style="ellipse;strokeWidth=3;html=0;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="750" y="768" width="38" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="fail3_endfail3" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="fail3" target="endfail3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="task4" value="«service task»&#10;Repeated-ID query limit allowed?" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="420" y="825" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="g3_task4" value="Yes" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="g3" target="task4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="g4" value="×" style="rhombus;html=0;fontSize=20;fillColor=#fff2cc;" vertex="1" parent="1">
+          <mxGeometry x="510" y="903" width="48" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="task4_g4" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task4" target="g4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fail4" value="429; attempt usage log" style="rounded=1;whiteSpace=wrap;html=0;fontSize=12;fillColor=#f8cecc;" vertex="1" parent="1">
+          <mxGeometry x="700" y="825" width="145" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="g4_fail4" value="No" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="g4" target="fail4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="endfail4" value="End" style="ellipse;strokeWidth=3;html=0;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="750" y="913" width="38" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="fail4_endfail4" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="fail4" target="endfail4">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="task5" value="«service task»&#10;Find nondeleted ACTIVE PTO not past expiry; found?" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="420" y="970" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="g4_task5" value="Yes" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="g4" target="task5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="g5" value="×" style="rhombus;html=0;fontSize=20;fillColor=#fff2cc;" vertex="1" parent="1">
+          <mxGeometry x="510" y="1048" width="48" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="task5_g5" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task5" target="g5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="fail5" value="200 verified=false NOT_FOUND; attempt log" style="rounded=1;whiteSpace=wrap;html=0;fontSize=12;fillColor=#f8cecc;" vertex="1" parent="1">
+          <mxGeometry x="700" y="970" width="145" height="70" as="geometry" />
+        </mxCell>
+        <mxCell id="g5_fail5" value="No" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="g5" target="fail5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="endfail5" value="End" style="ellipse;strokeWidth=3;html=0;fontSize=10;" vertex="1" parent="1">
+          <mxGeometry x="750" y="1058" width="38" height="38" as="geometry" />
+        </mxCell>
+        <mxCell id="fail5_endfail5" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="fail5" target="endfail5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="task6" value="«service task»&#10;Resolve resident name or holder fallback; mask ID; return proof fields" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="420" y="1115" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="g5_task6" value="Yes" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="g5" target="task6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="task7" value="«service task»&#10;Attempt usage record in separate transaction" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="420" y="1260" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="task6_task7" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task6" target="task7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="end" value="End" style="ellipse;strokeWidth=3;whiteSpace=wrap;html=0;fontSize=11;fillColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="510" y="1405" width="48" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="task7_end" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task7" target="end">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="note" value="External company is a black-box participant; dashed arrows are messages. Solid arrows are internal sequence flows. Error tasks return the stated response and attempt usage logging. PTO-first lookup; no PDF or stored-proof check. Logging uses a separate transaction and is best-effort. External self reads require COMPANY_SELF_READ." style="text;html=0;whiteSpace=wrap;align=left;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="30" y="1450" width="820" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="request_message" value="Verification request" edge="1" parent="1" source="lane0" target="task0" style="dashed=1;startArrow=oval;startFill=0;endArrow=open;endFill=0;edgeStyle=orthogonalEdgeStyle;html=0;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="response_message" value="Verification response" edge="1" parent="1" source="task6" target="lane0" style="dashed=1;startArrow=oval;startFill=0;endArrow=open;endFill=0;edgeStyle=orthogonalEdgeStyle;html=0;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+  <diagram name=" Scheduled PTO expiry " id=" d98 ">
+    <mxGraphModel dx="1422" dy="798" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth=" 560 " pageHeight=" 1000 " math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="Scheduled PTO expiry | UC-33" style="text;html=0;fontSize=22;align=left;" vertex="1" parent="1">
+          <mxGeometry x="30" y="10" width="500" height="55" as="geometry" />
+        </mxCell>
+        <mxCell id="pool" value="TALOMS process" style="swimlane;html=0;startSize=30;horizontal=1;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="30" y="80" width="500" height="700" as="geometry" />
+        </mxCell>
+        <mxCell id="lane0" value="TALOMS scheduler" style="swimlane;html=0;startSize=35;horizontal=1;fillColor=none;" vertex="1" parent="1">
+          <mxGeometry x="60" y="120" width="320" height="650" as="geometry" />
+        </mxCell>
+        <mxCell id="start" value="Timer" style="shape=mxgraph.bpmn.event;symbol=timer;outline=standard;html=0;" vertex="1" parent="1">
+          <mxGeometry x="190" y="165" width="48" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="task0" value="«service task»&#10;Daily 01:00: load ACTIVE PTOs" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="100" y="245" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="start_task0" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="start" target="task0">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="task1" value="«service task»&#10;Advance iterator; any remaining record?" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="100" y="390" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="task0_task1" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task0" target="task1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="g1" value="×" style="rhombus;html=0;fontSize=20;fillColor=#fff2cc;" vertex="1" parent="1">
+          <mxGeometry x="190" y="468" width="48" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="task1_g1" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task1" target="g1">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="task2" value="«service task»&#10;Expiry nonnull and before today?" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="100" y="535" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="g1_task2" value="Yes" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="g1" target="task2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="g2" value="×" style="rhombus;html=0;fontSize=20;fillColor=#fff2cc;" vertex="1" parent="1">
+          <mxGeometry x="190" y="613" width="48" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="task2_g2" value="" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="task2" target="g2">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="task3" value="«service task»&#10;Set EXPIRED; save; publish PTOExpiredEvent" style="rounded=1;arcSize=12;whiteSpace=wrap;html=0;fontSize=13;fillColor=#dae8fc;" vertex="1" parent="1">
+          <mxGeometry x="100" y="680" width="235" height="65" as="geometry" />
+        </mxCell>
+        <mxCell id="g2_task3" value="Yes" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;endFill=1;html=0;fontSize=11;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="g2" target="task3">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="end" value="End" style="ellipse;strokeWidth=3;whiteSpace=wrap;html=0;fontSize=11;fillColor=#ffffff;" vertex="1" parent="1">
+          <mxGeometry x="190" y="825" width="48" height="48" as="geometry" />
+        </mxCell>
+        <mxCell id="note" value="Per-record behavior is shown; implementation loops over all ACTIVE PTOs. Null/today/future dates remain unchanged. Parcel is not released. Listener creates in-app notification for literal recipient system; no human delivery guarantee. Notation: rounded rectangles = tasks; × = exclusive decision after validation task. Solid arrows are sequence flows within one pool; role lanes are not independent pools. Failure outcomes end this attempt." style="text;html=0;whiteSpace=wrap;align=left;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="30" y="870" width="500" height="100" as="geometry" />
+        </mxCell>
+        <mxCell id="loop_next" value="Next record" edge="1" parent="1" source="task3" target="task1" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;html=0;labelBackgroundColor=#ffffff;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="loop_skip" value="No — next record" edge="1" parent="1" source="g2" target="task1" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;html=0;labelBackgroundColor=#ffffff;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+        <mxCell id="done" value="No" edge="1" parent="1" source="g1" target="end" style="edgeStyle=orthogonalEdgeStyle;endArrow=block;html=0;labelBackgroundColor=#ffffff;">
+          <mxGeometry as="geometry" relative="1" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

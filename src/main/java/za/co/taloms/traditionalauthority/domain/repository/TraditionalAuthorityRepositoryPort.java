@@ -13,6 +13,11 @@ public interface TraditionalAuthorityRepositoryPort {
     boolean existsByAuthorityNameAndIdNot(String name, Long id);
     boolean existsByHeadmanIdAndIdNot(Long headmanId, Long excludeId);
 
+    boolean existsByHeadmanId(Long headmanId);
+
+    /** IDs of authorities whose primary chief or headman is the given user. */
+    List<Long> findIdsByChiefIdOrHeadmanId(Long userId);
+
     void delete(TraditionalAuthority authority);
 }
 

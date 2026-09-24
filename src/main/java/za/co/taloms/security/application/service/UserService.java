@@ -12,6 +12,7 @@ public interface UserService {
     UserResponse updateUser(Long id, UserUpdateRequest request);
     UserResponse findById(Long id);
     List<UserResponse> findAll();
+    List<UserResponse> findUnassignedCompanyUsers();
     void deleteUser(Long id);
     void activateUser(Long id);
 
@@ -31,5 +32,11 @@ public interface UserService {
 
     // Roles
     List<Role> findAllRoles();
+
+    /**
+     * IDs of the authorities a user belongs to (many-to-many chief ↔ authority).
+     * Used by the admin user form and API responses.
+     */
+    java.util.Set<Long> getUserAuthorityIds(Long userId);
 }
 

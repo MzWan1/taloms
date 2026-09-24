@@ -14,10 +14,21 @@ public interface TraditionalAuthorityJpaRepository
 
     boolean existsByHeadmanIdAndIdNot(Long headmanId, Long id);
 
+    boolean existsByHeadmanId(Long headmanId);
+
     @Query("SELECT t FROM TraditionalAuthority t WHERE t.active = true ORDER BY t.authorityName")
     List<TraditionalAuthority> findAllActive();
 
     @Query("SELECT t FROM TraditionalAuthority t ORDER BY t.authorityName")
     List<TraditionalAuthority> findAllOrderByName();
+
+    /**
+     * IDs of authorities whose primary chief or headman is the given user.
+     * Used as a scoping fallback so an authority-side link alone still grants
+     * access (headsmen, and legacy chief links predating the join table).
+     */
+    @Query("SELECT t.id FROM TraditionalAuthority t " +
+           "WHERE t.chiefId = :userId OR t.headmanId = :userId")
+    List<Long> findIdsByChiefIdOrHeadmanId(@org.springframework.data.repository.query.Param("userId") Long userId);
 }
 

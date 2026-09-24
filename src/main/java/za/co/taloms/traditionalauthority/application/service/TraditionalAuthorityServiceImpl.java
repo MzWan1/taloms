@@ -2,6 +2,8 @@ package za.co.taloms.traditionalauthority.application.service;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import za.co.taloms.common.BusinessValidationException;
@@ -29,6 +31,7 @@ public class TraditionalAuthorityServiceImpl
     private final com.fasterxml.jackson.databind.ObjectMapper objectMapper;
 
     @Override
+    @CacheEvict(value = {"authorities", "authoritiesActive"}, allEntries = true)
     public TraditionalAuthorityResponse create(
             TraditionalAuthorityRequest request, String createdBy) {
 
@@ -90,6 +93,7 @@ public class TraditionalAuthorityServiceImpl
     }
 
     @Override
+    @CacheEvict(value = {"authorities", "authoritiesActive"}, allEntries = true)
     public TraditionalAuthorityResponse update(
             Long id, TraditionalAuthorityRequest request) {
 
@@ -166,6 +170,7 @@ public class TraditionalAuthorityServiceImpl
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable("authorities")
     public List<TraditionalAuthorityResponse> findAll() {
         List<TraditionalAuthority> all = authorityRepository.findAll();
         log.info("findAll() raw query returned {} authorities", all.size());
@@ -185,6 +190,7 @@ public class TraditionalAuthorityServiceImpl
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable("authoritiesActive")
     public List<TraditionalAuthorityResponse> findAllActive() {
         List<TraditionalAuthority> active = authorityRepository.findAllActive();
         log.info("findAllActive() raw query returned {} authorities", active.size());
@@ -204,6 +210,7 @@ public class TraditionalAuthorityServiceImpl
 
     @Override
     @Transactional(readOnly = true)
+    @Cacheable(cacheNames = "authorities", key = "#name")
     public List<TraditionalAuthorityResponse> searchByName(String name) {
         if (name == null || name.trim().isEmpty()) {
             return findAll();
@@ -227,6 +234,7 @@ public class TraditionalAuthorityServiceImpl
     }
 
     @Override
+    @CacheEvict(value = {"authorities", "authoritiesActive"}, allEntries = true)
     public void deactivate(Long id) {
         var authority = authorityRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(
@@ -238,6 +246,7 @@ public class TraditionalAuthorityServiceImpl
     }
 
     @Override
+    @CacheEvict(value = {"authorities", "authoritiesActive"}, allEntries = true)
     public void activate(Long id) {
         var authority = authorityRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(
@@ -248,6 +257,69 @@ public class TraditionalAuthorityServiceImpl
                 authority.getAuthorityName());
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public List<TraditionalAuthorityChiefDto> findChiefs(Long authorityId) {
+
+        authorityRepository.findById(authorityId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Traditional Authority", authorityId));
+        return userRepository.findByAuthorityId(authorityId).stream()
+                .filter(u -> u.getRoles().stream()
+                        .anyMatch(r -> "ROLE_CHIEF".equals(r.getName())))
+                .sorted(java.util.Comparator.comparing(
+                        u -> u.getFullName() == null ? "" : u.getFullName(),
+                        String.CASE_INSENSITIVE_ORDER))
+                .map(u -> TraditionalAuthorityChiefDto.builder()
+                        .id(u.getId())
+                        .fullName(u.getFullName())
+                        .username(u.getUsername())
+                        .email(u.getEmail())
+                        .build())
+                .toList();
+    }
+
+    @Override
+    @CacheEvict(value = {"authorities", "authoritiesActive"}, allEntries = true)
+    public void addChiefToAuthority(Long authorityId, Long chiefId) {
+        TraditionalAuthority authority = authorityRepository.findById(authorityId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Traditional Authority", authorityId));
+        User chief = userRepository.findById(chiefId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", chiefId));
+
+        boolean isChief = chief.getRoles().stream()
+                .anyMatch(r -> "ROLE_CHIEF".equals(r.getName()));
+        if (!isChief) {
+            throw new BusinessValidationException(
+                    "Selected user is not a chief: " + chief.getFullName());
+        }
+
+        if (chief.getAuthorities().add(authority)) {
+            userRepository.save(chief);
+            log.info("Admin linked chief {} to authority {}",
+                    chief.getUsername(), authority.getAuthorityName());
+        }
+    }
+
+    @Override
+    @CacheEvict(value = {"authorities", "authoritiesActive"}, allEntries = true)
+    public void removeChiefFromAuthority(Long authorityId, Long chiefId) {
+        TraditionalAuthority authority = authorityRepository.findById(authorityId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Traditional Authority", authorityId));
+        User chief = userRepository.findById(chiefId)
+                .orElseThrow(() -> new ResourceNotFoundException("User", chiefId));
+
+        boolean removed = chief.getAuthorities().removeIf(
+                a -> authorityId.equals(a.getId()));
+        if (removed) {
+            userRepository.save(chief);
+            log.info("Admin unlinked chief {} from authority {}",
+                    chief.getUsername(), authority.getAuthorityName());
+        }
+    }
+
     private String resolveUserName(Long userId) {
         return userRepository.findById(userId)
                 .map(User::getFullName)
@@ -256,15 +328,24 @@ public class TraditionalAuthorityServiceImpl
     }
 
     /**
-     * Links a Chief user to an authority by setting the user's traditionalAuthorityId.
-     * This allows the chief to manage villages within that authority.
+     * Links a CHIEF user to an authority through the chief_authorities join
+     * table. A chief may belong to several authorities, so this ADDS a link and
+     * never removes any existing link. The legacy single
+     * user.traditionalAuthorityId column is left untouched for chiefs (it
+     * remains the headsman link).
      */
     private void linkChiefToAuthority(Long chiefId, Long authorityId) {
-        userRepository.findById(chiefId).ifPresent(user -> {
-            user.setTraditionalAuthorityId(authorityId);
-            userRepository.save(user);
-            log.info("Linked chief user {} to authority {}", user.getUsername(), authorityId);
-        });
+        if (chiefId == null || authorityId == null) {
+            return;
+        }
+        userRepository.findById(chiefId).ifPresent(user ->
+            authorityRepository.findById(authorityId).ifPresent(authority -> {
+                if (user.getAuthorities().add(authority)) {
+                    userRepository.save(user);
+                    log.info("Linked chief user {} to authority {}",
+                            user.getUsername(), authorityId);
+                }
+            }));
     }
 
     /**

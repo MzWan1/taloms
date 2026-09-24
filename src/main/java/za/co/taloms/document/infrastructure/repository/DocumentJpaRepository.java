@@ -8,6 +8,8 @@ import za.co.taloms.document.domain.entity.DocumentType;
 import za.co.taloms.document.domain.entity.EntityType;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface DocumentJpaRepository extends JpaRepository<Document, Long> {
 
@@ -30,9 +32,16 @@ public interface DocumentJpaRepository extends JpaRepository<Document, Long> {
     List<Document> findByRelatedEntityOrderByUploadedAtDesc(@Param("entityType") EntityType entityType,
                                                             @Param("entityId") Long entityId);
 
+    @Query("SELECT d FROM Document d WHERE d.relatedEntityType = :entityType AND d.relatedEntityId = :entityId ORDER BY d.uploadedAt DESC")
+    Page<Document> findByRelatedEntityOrderByUploadedAtDesc(@Param("entityType") EntityType entityType,
+                                                            @Param("entityId") Long entityId, Pageable pageable);
+
     long countByRelatedEntityTypeAndRelatedEntityId(EntityType entityType, Long entityId);
 
     @Query("SELECT d FROM Document d ORDER BY d.uploadedAt DESC")
     List<Document> findAllOrderByUploadedAtDesc();
+
+    @Query("SELECT d FROM Document d ORDER BY d.uploadedAt DESC")
+    Page<Document> findAllOrderByUploadedAtDesc(Pageable pageable);
 }
 

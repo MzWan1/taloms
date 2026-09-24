@@ -26,6 +26,8 @@ public class ApiUsageRecord {
     private ApiOutcome outcome;
     private Integer responseStatus;
     private ApiFailureReason failureReason;
+    private String searchType;
+    private String maskedSearchValue;
     private String idNumberHash;
     private String clientIp;
     private String userAgent;

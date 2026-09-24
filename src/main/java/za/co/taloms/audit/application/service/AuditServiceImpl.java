@@ -17,6 +17,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Slf4j
 @Service
@@ -40,24 +42,21 @@ public class AuditServiceImpl implements AuditService {
                     .ipAddress(request.getIpAddress())
                     .userAgent(request.getUserAgent())
                     .description(request.getDescription())
+                    .performedAt(LocalDateTime.now())
                     .build();
 
             auditRepository.save(auditLog);
-            log.debug("Audit log saved: {} on {}#{} by {}",
-                    request.getAction(), request.getEntityType(),
-                    request.getEntityId(), request.getPerformedBy());
         } catch (Exception e) {
-            log.error("Failed to save audit log: {}", e.getMessage(), e);
-            // Don't throw - audit should not break the main flow
+            log.error("Failed to log audit action", e);
         }
     }
 
     @Override
     @Transactional(readOnly = true)
     public AuditLogResponse findById(Long id) {
-        return auditRepository.findById(id)
-                .map(this::toResponse)
-                .orElseThrow(() -> new ResourceNotFoundException("Audit Log", id));
+        AuditLog log = auditRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Audit log not found with id: " + id));
+        return toResponse(log);
     }
 
     @Override
@@ -70,10 +69,22 @@ public class AuditServiceImpl implements AuditService {
 
     @Override
     @Transactional(readOnly = true)
+    public Page<AuditLogResponse> findAll(Pageable pageable) {
+        return auditRepository.findAll(pageable).map(this::toResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<AuditLogResponse> findByEntity(String entityType, Long entityId) {
         return auditRepository.findByEntity(entityType, entityId).stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<AuditLogResponse> findByEntity(String entityType, Long entityId, Pageable pageable) {
+        return auditRepository.findByEntity(entityType, entityId, pageable).map(this::toResponse);
     }
 
     @Override
@@ -95,12 +106,11 @@ public class AuditServiceImpl implements AuditService {
     @Override
     @Transactional(readOnly = true)
     public List<AuditLogResponse> search(AuditSearchCriteria criteria) {
-        var logs = auditRepository.findAll();
+        List<AuditLog> logs = auditRepository.findAll();
 
-        // Apply filters
         if (criteria.getEntityType() != null && !criteria.getEntityType().isEmpty()) {
             logs = logs.stream()
-                    .filter(a -> a.getEntityType().equals(criteria.getEntityType()))
+                    .filter(a -> a.getEntityType() != null && a.getEntityType().equalsIgnoreCase(criteria.getEntityType()))
                     .collect(Collectors.toList());
         }
 
@@ -134,6 +144,18 @@ public class AuditServiceImpl implements AuditService {
                     .collect(Collectors.toList());
         }
 
+        return logs.stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<AuditLogResponse> findRecent(int limit) {
+        List<AuditLog> logs = auditRepository.findByEntityOrderByPerformedAtDesc(null, null);
+        if (logs.size() > limit) {
+            logs = logs.subList(0, limit);
+        }
         return logs.stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
@@ -178,6 +200,7 @@ public class AuditServiceImpl implements AuditService {
     }
 
     private String getEntityTypeDisplay(String entityType) {
+        if (entityType == null) return "";
         return switch (entityType.toUpperCase()) {
             case "PTO" -> "PTO";
             case "PARCEL" -> "Parcel";
@@ -192,4 +215,3 @@ public class AuditServiceImpl implements AuditService {
         };
     }
 }
-

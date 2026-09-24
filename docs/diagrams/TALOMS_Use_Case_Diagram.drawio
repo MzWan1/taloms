@@ -1,0 +1,619 @@
+<mxfile host="app.diagrams.net" agent="TALOMS documentation generator" version="24.7.17">
+<diagram name="
+Identity and oversight / Admin
+" id="
+d90
+">
+<mxGraphModel dx="1422" dy="798" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="
+1100
+" pageHeight="
+1190
+" math="0" shadow="0">
+<root>
+<mxCell id="0"/>
+<mxCell id="1" parent="0"/>
+<mxCell id="title" value="Identity and oversight — Admin" style="text;html=0;fontSize=22;" vertex="1" parent="1"><mxGeometry x="40" y="20" width="1000" height="50" as="geometry"/></mxCell>
+<mxCell id="boundary" value="TALOMS" style="rounded=0;html=0;verticalAlign=top;fillColor=none;fontSize=18;" vertex="1" parent="1"><mxGeometry x="350" y="100" width="560" height="870" as="geometry"/></mxCell>
+<mxCell id="actor" value="Admin" style="shape=umlActor;html=0;verticalLabelPosition=bottom;verticalAlign=top;fontSize=14;" vertex="1" parent="1"><mxGeometry x="110" y="160" width="60" height="100" as="geometry"/></mxCell>
+<mxCell id="UC-02" value="UC-02
+Log Out" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="160" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-02" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-02"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-03" value="UC-03
+Change Own Password" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="270" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-03" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-03"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-05" value="UC-05
+Manage Users" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="380" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-05" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-05"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-07" value="UC-07
+Link Chief to Traditional Authority" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="490" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-07" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-07"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-08" value="UC-08
+View Audit Trail" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="600" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-08" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-08"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-13" value="UC-13
+View Dashboard" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="710" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-13" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-13"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-46" value="UC-46
+Search TALOMS Records" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="820" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-46" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-46"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="note" value="Associations indicate participation, not permission for every sub-operation. See matching UC descriptions.
+Same UC ID across pages denotes the same use case. Time is an external trigger, not an internal system actor." style="text;html=0;whiteSpace=wrap;fontSize=13;" vertex="1" parent="1"><mxGeometry x="40" y="1090" width="1000" height="70" as="geometry"/></mxCell>
+</root>
+</mxGraphModel>
+</diagram>
+<diagram name="
+Identity and oversight / Chief
+" id="
+d91
+">
+<mxGraphModel dx="1422" dy="798" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="
+1100
+" pageHeight="
+860
+" math="0" shadow="0">
+<root>
+<mxCell id="0"/>
+<mxCell id="1" parent="0"/>
+<mxCell id="title" value="Identity and oversight — Chief" style="text;html=0;fontSize=22;" vertex="1" parent="1"><mxGeometry x="40" y="20" width="1000" height="50" as="geometry"/></mxCell>
+<mxCell id="boundary" value="TALOMS" style="rounded=0;html=0;verticalAlign=top;fillColor=none;fontSize=18;" vertex="1" parent="1"><mxGeometry x="350" y="100" width="560" height="540" as="geometry"/></mxCell>
+<mxCell id="actor" value="Chief" style="shape=umlActor;html=0;verticalLabelPosition=bottom;verticalAlign=top;fontSize=14;" vertex="1" parent="1"><mxGeometry x="110" y="160" width="60" height="100" as="geometry"/></mxCell>
+<mxCell id="UC-02" value="UC-02
+Log Out" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="160" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-02" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-02"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-03" value="UC-03
+Change Own Password" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="270" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-03" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-03"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-13" value="UC-13
+View Dashboard" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="380" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-13" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-13"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-46" value="UC-46
+Search TALOMS Records" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="490" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-46" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-46"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="note" value="Associations indicate participation, not permission for every sub-operation. See matching UC descriptions.
+Same UC ID across pages denotes the same use case. Time is an external trigger, not an internal system actor." style="text;html=0;whiteSpace=wrap;fontSize=13;" vertex="1" parent="1"><mxGeometry x="40" y="760" width="1000" height="70" as="geometry"/></mxCell>
+</root>
+</mxGraphModel>
+</diagram>
+<diagram name="
+Identity and oversight / Headsman
+" id="
+d92
+">
+<mxGraphModel dx="1422" dy="798" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="
+1100
+" pageHeight="
+860
+" math="0" shadow="0">
+<root>
+<mxCell id="0"/>
+<mxCell id="1" parent="0"/>
+<mxCell id="title" value="Identity and oversight — Headsman" style="text;html=0;fontSize=22;" vertex="1" parent="1"><mxGeometry x="40" y="20" width="1000" height="50" as="geometry"/></mxCell>
+<mxCell id="boundary" value="TALOMS" style="rounded=0;html=0;verticalAlign=top;fillColor=none;fontSize=18;" vertex="1" parent="1"><mxGeometry x="350" y="100" width="560" height="540" as="geometry"/></mxCell>
+<mxCell id="actor" value="Headsman" style="shape=umlActor;html=0;verticalLabelPosition=bottom;verticalAlign=top;fontSize=14;" vertex="1" parent="1"><mxGeometry x="110" y="160" width="60" height="100" as="geometry"/></mxCell>
+<mxCell id="UC-02" value="UC-02
+Log Out" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="160" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-02" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-02"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-03" value="UC-03
+Change Own Password" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="270" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-03" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-03"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-13" value="UC-13
+View Dashboard" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="380" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-13" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-13"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-46" value="UC-46
+Search TALOMS Records" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="490" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-46" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-46"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="note" value="Associations indicate participation, not permission for every sub-operation. See matching UC descriptions.
+Same UC ID across pages denotes the same use case. Time is an external trigger, not an internal system actor." style="text;html=0;whiteSpace=wrap;fontSize=13;" vertex="1" parent="1"><mxGeometry x="40" y="760" width="1000" height="70" as="geometry"/></mxCell>
+</root>
+</mxGraphModel>
+</diagram>
+<diagram name="
+Identity and oversight / Resident user (ROLE_USER)
+" id="
+d93
+">
+<mxGraphModel dx="1422" dy="798" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="
+1100
+" pageHeight="
+860
+" math="0" shadow="0">
+<root>
+<mxCell id="0"/>
+<mxCell id="1" parent="0"/>
+<mxCell id="title" value="Identity and oversight — Resident user (ROLE_USER)" style="text;html=0;fontSize=22;" vertex="1" parent="1"><mxGeometry x="40" y="20" width="1000" height="50" as="geometry"/></mxCell>
+<mxCell id="boundary" value="TALOMS" style="rounded=0;html=0;verticalAlign=top;fillColor=none;fontSize=18;" vertex="1" parent="1"><mxGeometry x="350" y="100" width="560" height="540" as="geometry"/></mxCell>
+<mxCell id="actor" value="Resident user (ROLE_USER)" style="shape=umlActor;html=0;verticalLabelPosition=bottom;verticalAlign=top;fontSize=14;" vertex="1" parent="1"><mxGeometry x="110" y="160" width="60" height="100" as="geometry"/></mxCell>
+<mxCell id="UC-02" value="UC-02
+Log Out" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="160" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-02" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-02"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-03" value="UC-03
+Change Own Password" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="270" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-03" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-03"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-13" value="UC-13
+View Dashboard" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="380" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-13" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-13"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-46" value="UC-46
+Search TALOMS Records" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="490" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-46" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-46"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="note" value="Associations indicate participation, not permission for every sub-operation. See matching UC descriptions.
+Same UC ID across pages denotes the same use case. Time is an external trigger, not an internal system actor." style="text;html=0;whiteSpace=wrap;fontSize=13;" vertex="1" parent="1"><mxGeometry x="40" y="760" width="1000" height="70" as="geometry"/></mxCell>
+</root>
+</mxGraphModel>
+</diagram>
+<diagram name="
+Identity and oversight / Company user (browser)
+" id="
+d94
+">
+<mxGraphModel dx="1422" dy="798" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="
+1100
+" pageHeight="
+860
+" math="0" shadow="0">
+<root>
+<mxCell id="0"/>
+<mxCell id="1" parent="0"/>
+<mxCell id="title" value="Identity and oversight — Company user (browser)" style="text;html=0;fontSize=22;" vertex="1" parent="1"><mxGeometry x="40" y="20" width="1000" height="50" as="geometry"/></mxCell>
+<mxCell id="boundary" value="TALOMS" style="rounded=0;html=0;verticalAlign=top;fillColor=none;fontSize=18;" vertex="1" parent="1"><mxGeometry x="350" y="100" width="560" height="540" as="geometry"/></mxCell>
+<mxCell id="actor" value="Company user (browser)" style="shape=umlActor;html=0;verticalLabelPosition=bottom;verticalAlign=top;fontSize=14;" vertex="1" parent="1"><mxGeometry x="110" y="160" width="60" height="100" as="geometry"/></mxCell>
+<mxCell id="UC-02" value="UC-02
+Log Out" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="160" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-02" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-02"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-03" value="UC-03
+Change Own Password" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="270" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-03" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-03"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-13" value="UC-13
+View Dashboard" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="380" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-13" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-13"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-46" value="UC-46
+Search TALOMS Records" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="490" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-46" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-46"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="note" value="Associations indicate participation, not permission for every sub-operation. See matching UC descriptions.
+Same UC ID across pages denotes the same use case. Time is an external trigger, not an internal system actor." style="text;html=0;whiteSpace=wrap;fontSize=13;" vertex="1" parent="1"><mxGeometry x="40" y="760" width="1000" height="70" as="geometry"/></mxCell>
+</root>
+</mxGraphModel>
+</diagram>
+<diagram name="
+Identity and oversight / Unauthenticated visitor
+" id="
+d95
+">
+<mxGraphModel dx="1422" dy="798" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="
+1100
+" pageHeight="
+750
+" math="0" shadow="0">
+<root>
+<mxCell id="0"/>
+<mxCell id="1" parent="0"/>
+<mxCell id="title" value="Identity and oversight — Unauthenticated visitor" style="text;html=0;fontSize=22;" vertex="1" parent="1"><mxGeometry x="40" y="20" width="1000" height="50" as="geometry"/></mxCell>
+<mxCell id="boundary" value="TALOMS" style="rounded=0;html=0;verticalAlign=top;fillColor=none;fontSize=18;" vertex="1" parent="1"><mxGeometry x="350" y="100" width="560" height="430" as="geometry"/></mxCell>
+<mxCell id="actor" value="Unauthenticated visitor" style="shape=umlActor;html=0;verticalLabelPosition=bottom;verticalAlign=top;fontSize=14;" vertex="1" parent="1"><mxGeometry x="110" y="160" width="60" height="100" as="geometry"/></mxCell>
+<mxCell id="UC-01" value="UC-01
+Log In" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="160" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-01" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-01"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-04" value="UC-04
+Reset Forgotten Password" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="270" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-04" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-04"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-45" value="UC-45
+Register Resident Account" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="380" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-45" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-45"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="note" value="Associations indicate participation, not permission for every sub-operation. See matching UC descriptions.
+Same UC ID across pages denotes the same use case. Time is an external trigger, not an internal system actor." style="text;html=0;whiteSpace=wrap;fontSize=13;" vertex="1" parent="1"><mxGeometry x="40" y="650" width="1000" height="70" as="geometry"/></mxCell>
+</root>
+</mxGraphModel>
+</diagram>
+<diagram name="
+Authorities and land / Admin
+" id="
+d96
+">
+<mxGraphModel dx="1422" dy="798" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="
+1100
+" pageHeight="
+860
+" math="0" shadow="0">
+<root>
+<mxCell id="0"/>
+<mxCell id="1" parent="0"/>
+<mxCell id="title" value="Authorities and land — Admin" style="text;html=0;fontSize=22;" vertex="1" parent="1"><mxGeometry x="40" y="20" width="1000" height="50" as="geometry"/></mxCell>
+<mxCell id="boundary" value="TALOMS" style="rounded=0;html=0;verticalAlign=top;fillColor=none;fontSize=18;" vertex="1" parent="1"><mxGeometry x="350" y="100" width="560" height="540" as="geometry"/></mxCell>
+<mxCell id="actor" value="Admin" style="shape=umlActor;html=0;verticalLabelPosition=bottom;verticalAlign=top;fontSize=14;" vertex="1" parent="1"><mxGeometry x="110" y="160" width="60" height="100" as="geometry"/></mxCell>
+<mxCell id="UC-06" value="UC-06
+Manage Traditional Authorities" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="160" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-06" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-06"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-15" value="UC-15
+Manage Parcels" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="270" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-15" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-15"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-25" value="UC-25
+View GIS Map" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="380" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-25" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-25"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-47" value="UC-47
+Synchronize Parcel and PTO Changes" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="490" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-47" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-47"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="note" value="Associations indicate participation, not permission for every sub-operation. See matching UC descriptions.
+Same UC ID across pages denotes the same use case. Time is an external trigger, not an internal system actor." style="text;html=0;whiteSpace=wrap;fontSize=13;" vertex="1" parent="1"><mxGeometry x="40" y="760" width="1000" height="70" as="geometry"/></mxCell>
+</root>
+</mxGraphModel>
+</diagram>
+<diagram name="
+Authorities and land / Chief
+" id="
+d97
+">
+<mxGraphModel dx="1422" dy="798" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="
+1100
+" pageHeight="
+970
+" math="0" shadow="0">
+<root>
+<mxCell id="0"/>
+<mxCell id="1" parent="0"/>
+<mxCell id="title" value="Authorities and land — Chief" style="text;html=0;fontSize=22;" vertex="1" parent="1"><mxGeometry x="40" y="20" width="1000" height="50" as="geometry"/></mxCell>
+<mxCell id="boundary" value="TALOMS" style="rounded=0;html=0;verticalAlign=top;fillColor=none;fontSize=18;" vertex="1" parent="1"><mxGeometry x="350" y="100" width="560" height="650" as="geometry"/></mxCell>
+<mxCell id="actor" value="Chief" style="shape=umlActor;html=0;verticalLabelPosition=bottom;verticalAlign=top;fontSize=14;" vertex="1" parent="1"><mxGeometry x="110" y="160" width="60" height="100" as="geometry"/></mxCell>
+<mxCell id="UC-06" value="UC-06
+Manage Traditional Authorities" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="160" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-06" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-06"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-14" value="UC-14
+Manage Villages" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="270" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-14" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-14"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-15" value="UC-15
+Manage Parcels" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="380" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-15" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-15"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-25" value="UC-25
+View GIS Map" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="490" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-25" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-25"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-47" value="UC-47
+Synchronize Parcel and PTO Changes" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="600" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-47" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-47"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="note" value="Associations indicate participation, not permission for every sub-operation. See matching UC descriptions.
+Same UC ID across pages denotes the same use case. Time is an external trigger, not an internal system actor." style="text;html=0;whiteSpace=wrap;fontSize=13;" vertex="1" parent="1"><mxGeometry x="40" y="870" width="1000" height="70" as="geometry"/></mxCell>
+</root>
+</mxGraphModel>
+</diagram>
+<diagram name="
+Authorities and land / Headsman
+" id="
+d98
+">
+<mxGraphModel dx="1422" dy="798" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="
+1100
+" pageHeight="
+750
+" math="0" shadow="0">
+<root>
+<mxCell id="0"/>
+<mxCell id="1" parent="0"/>
+<mxCell id="title" value="Authorities and land — Headsman" style="text;html=0;fontSize=22;" vertex="1" parent="1"><mxGeometry x="40" y="20" width="1000" height="50" as="geometry"/></mxCell>
+<mxCell id="boundary" value="TALOMS" style="rounded=0;html=0;verticalAlign=top;fillColor=none;fontSize=18;" vertex="1" parent="1"><mxGeometry x="350" y="100" width="560" height="430" as="geometry"/></mxCell>
+<mxCell id="actor" value="Headsman" style="shape=umlActor;html=0;verticalLabelPosition=bottom;verticalAlign=top;fontSize=14;" vertex="1" parent="1"><mxGeometry x="110" y="160" width="60" height="100" as="geometry"/></mxCell>
+<mxCell id="UC-15" value="UC-15
+Manage Parcels" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="160" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-15" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-15"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-25" value="UC-25
+View GIS Map" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="270" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-25" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-25"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-47" value="UC-47
+Synchronize Parcel and PTO Changes" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="380" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-47" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-47"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="note" value="Associations indicate participation, not permission for every sub-operation. See matching UC descriptions.
+Same UC ID across pages denotes the same use case. Time is an external trigger, not an internal system actor." style="text;html=0;whiteSpace=wrap;fontSize=13;" vertex="1" parent="1"><mxGeometry x="40" y="650" width="1000" height="70" as="geometry"/></mxCell>
+</root>
+</mxGraphModel>
+</diagram>
+<diagram name="
+PTO lifecycle / Admin
+" id="
+d99
+">
+<mxGraphModel dx="1422" dy="798" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="
+1100
+" pageHeight="
+1300
+" math="0" shadow="0">
+<root>
+<mxCell id="0"/>
+<mxCell id="1" parent="0"/>
+<mxCell id="title" value="PTO lifecycle — Admin" style="text;html=0;fontSize=22;" vertex="1" parent="1"><mxGeometry x="40" y="20" width="1000" height="50" as="geometry"/></mxCell>
+<mxCell id="boundary" value="TALOMS" style="rounded=0;html=0;verticalAlign=top;fillColor=none;fontSize=18;" vertex="1" parent="1"><mxGeometry x="350" y="100" width="560" height="980" as="geometry"/></mxCell>
+<mxCell id="actor" value="Admin" style="shape=umlActor;html=0;verticalLabelPosition=bottom;verticalAlign=top;fontSize=14;" vertex="1" parent="1"><mxGeometry x="110" y="160" width="60" height="100" as="geometry"/></mxCell>
+<mxCell id="UC-16" value="UC-16
+Manage PTOs" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="160" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-16" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-16"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-18" value="UC-18
+Suspend PTO" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="270" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-18" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-18"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-19" value="UC-19
+Reactivate PTO" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="380" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-19" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-19"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-20" value="UC-20
+Revoke PTO" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="490" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-20" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-20"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-21" value="UC-21
+Reinstate PTO" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="600" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-21" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-21"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-22" value="UC-22
+Delete PTO" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="710" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-22" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-22"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-23" value="UC-23
+Download PTO Certificate" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="820" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-23" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-23"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-24" value="UC-24
+Manage Documents" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="930" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-24" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-24"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="note" value="Associations indicate participation, not permission for every sub-operation. See matching UC descriptions.
+Same UC ID across pages denotes the same use case. Time is an external trigger, not an internal system actor." style="text;html=0;whiteSpace=wrap;fontSize=13;" vertex="1" parent="1"><mxGeometry x="40" y="1200" width="1000" height="70" as="geometry"/></mxCell>
+</root>
+</mxGraphModel>
+</diagram>
+<diagram name="
+PTO lifecycle / Chief
+" id="
+d100
+">
+<mxGraphModel dx="1422" dy="798" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="
+1100
+" pageHeight="
+1520
+" math="0" shadow="0">
+<root>
+<mxCell id="0"/>
+<mxCell id="1" parent="0"/>
+<mxCell id="title" value="PTO lifecycle — Chief" style="text;html=0;fontSize=22;" vertex="1" parent="1"><mxGeometry x="40" y="20" width="1000" height="50" as="geometry"/></mxCell>
+<mxCell id="boundary" value="TALOMS" style="rounded=0;html=0;verticalAlign=top;fillColor=none;fontSize=18;" vertex="1" parent="1"><mxGeometry x="350" y="100" width="560" height="1200" as="geometry"/></mxCell>
+<mxCell id="actor" value="Chief" style="shape=umlActor;html=0;verticalLabelPosition=bottom;verticalAlign=top;fontSize=14;" vertex="1" parent="1"><mxGeometry x="110" y="160" width="60" height="100" as="geometry"/></mxCell>
+<mxCell id="UC-16" value="UC-16
+Manage PTOs" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="160" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-16" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-16"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-17" value="UC-17
+Approve PTO" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="270" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-17" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-17"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-18" value="UC-18
+Suspend PTO" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="380" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-18" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-18"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-19" value="UC-19
+Reactivate PTO" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="490" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-19" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-19"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-20" value="UC-20
+Revoke PTO" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="600" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-20" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-20"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-21" value="UC-21
+Reinstate PTO" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="710" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-21" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-21"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-22" value="UC-22
+Delete PTO" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="820" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-22" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-22"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-23" value="UC-23
+Download PTO Certificate" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="930" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-23" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-23"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-24" value="UC-24
+Manage Documents" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="1040" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-24" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-24"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-37" value="UC-37
+Capture Electronic Signature" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="1150" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-37" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-37"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="note" value="Associations indicate participation, not permission for every sub-operation. See matching UC descriptions.
+Same UC ID across pages denotes the same use case. Time is an external trigger, not an internal system actor." style="text;html=0;whiteSpace=wrap;fontSize=13;" vertex="1" parent="1"><mxGeometry x="40" y="1420" width="1000" height="70" as="geometry"/></mxCell>
+<mxCell id="extend" value="«extend»
+[signature supplied]" style="endArrow=open;dashed=1;html=0;edgeStyle=orthogonalEdgeStyle;labelBackgroundColor=#ffffff;" edge="1" parent="1" source="UC-37" target="UC-17"><mxGeometry relative="1" as="geometry"/></mxCell>
+</root>
+</mxGraphModel>
+</diagram>
+<diagram name="
+PTO lifecycle / Headsman
+" id="
+d101
+">
+<mxGraphModel dx="1422" dy="798" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="
+1100
+" pageHeight="
+1300
+" math="0" shadow="0">
+<root>
+<mxCell id="0"/>
+<mxCell id="1" parent="0"/>
+<mxCell id="title" value="PTO lifecycle — Headsman" style="text;html=0;fontSize=22;" vertex="1" parent="1"><mxGeometry x="40" y="20" width="1000" height="50" as="geometry"/></mxCell>
+<mxCell id="boundary" value="TALOMS" style="rounded=0;html=0;verticalAlign=top;fillColor=none;fontSize=18;" vertex="1" parent="1"><mxGeometry x="350" y="100" width="560" height="980" as="geometry"/></mxCell>
+<mxCell id="actor" value="Headsman" style="shape=umlActor;html=0;verticalLabelPosition=bottom;verticalAlign=top;fontSize=14;" vertex="1" parent="1"><mxGeometry x="110" y="160" width="60" height="100" as="geometry"/></mxCell>
+<mxCell id="UC-16" value="UC-16
+Manage PTOs" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="160" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-16" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-16"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-18" value="UC-18
+Suspend PTO" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="270" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-18" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-18"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-19" value="UC-19
+Reactivate PTO" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="380" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-19" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-19"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-20" value="UC-20
+Revoke PTO" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="490" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-20" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-20"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-21" value="UC-21
+Reinstate PTO" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="600" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-21" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-21"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-22" value="UC-22
+Delete PTO" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="710" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-22" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-22"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-23" value="UC-23
+Download PTO Certificate" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="820" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-23" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-23"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-24" value="UC-24
+Manage Documents" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="930" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-24" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-24"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="note" value="Associations indicate participation, not permission for every sub-operation. See matching UC descriptions.
+Same UC ID across pages denotes the same use case. Time is an external trigger, not an internal system actor." style="text;html=0;whiteSpace=wrap;fontSize=13;" vertex="1" parent="1"><mxGeometry x="40" y="1200" width="1000" height="70" as="geometry"/></mxCell>
+</root>
+</mxGraphModel>
+</diagram>
+<diagram name="
+PTO lifecycle / Time (daily schedule)
+" id="
+d102
+">
+<mxGraphModel dx="1422" dy="798" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="
+1100
+" pageHeight="
+720
+" math="0" shadow="0">
+<root>
+<mxCell id="0"/>
+<mxCell id="1" parent="0"/>
+<mxCell id="title" value="PTO lifecycle — Time (daily schedule)" style="text;html=0;fontSize=22;" vertex="1" parent="1"><mxGeometry x="40" y="20" width="1000" height="50" as="geometry"/></mxCell>
+<mxCell id="boundary" value="TALOMS" style="rounded=0;html=0;verticalAlign=top;fillColor=none;fontSize=18;" vertex="1" parent="1"><mxGeometry x="350" y="100" width="560" height="400" as="geometry"/></mxCell>
+<mxCell id="actor" value="Time (daily schedule)" style="shape=umlActor;html=0;verticalLabelPosition=bottom;verticalAlign=top;fontSize=14;" vertex="1" parent="1"><mxGeometry x="110" y="160" width="60" height="100" as="geometry"/></mxCell>
+<mxCell id="UC-33" value="UC-33
+Expire Overdue PTOs" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="160" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-33" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-33"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="note" value="Associations indicate participation, not permission for every sub-operation. See matching UC descriptions.
+Same UC ID across pages denotes the same use case. Time is an external trigger, not an internal system actor." style="text;html=0;whiteSpace=wrap;fontSize=13;" vertex="1" parent="1"><mxGeometry x="40" y="620" width="1000" height="70" as="geometry"/></mxCell>
+</root>
+</mxGraphModel>
+</diagram>
+<diagram name="
+Resident portal / Admin
+" id="
+d103
+">
+<mxGraphModel dx="1422" dy="798" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="
+1100
+" pageHeight="
+750
+" math="0" shadow="0">
+<root>
+<mxCell id="0"/>
+<mxCell id="1" parent="0"/>
+<mxCell id="title" value="Resident portal — Admin" style="text;html=0;fontSize=22;" vertex="1" parent="1"><mxGeometry x="40" y="20" width="1000" height="50" as="geometry"/></mxCell>
+<mxCell id="boundary" value="TALOMS" style="rounded=0;html=0;verticalAlign=top;fillColor=none;fontSize=18;" vertex="1" parent="1"><mxGeometry x="350" y="100" width="560" height="430" as="geometry"/></mxCell>
+<mxCell id="actor" value="Admin" style="shape=umlActor;html=0;verticalLabelPosition=bottom;verticalAlign=top;fontSize=14;" vertex="1" parent="1"><mxGeometry x="110" y="160" width="60" height="100" as="geometry"/></mxCell>
+<mxCell id="UC-26" value="UC-26
+View My Proofs of Residence" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="160" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-26" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-26"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-27" value="UC-27
+Download Proof of Residence" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="270" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-27" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-27"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-28" value="UC-28
+Manage Proof of Residence Access" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="380" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-28" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-28"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="note" value="Associations indicate participation, not permission for every sub-operation. See matching UC descriptions.
+Same UC ID across pages denotes the same use case. Time is an external trigger, not an internal system actor." style="text;html=0;whiteSpace=wrap;fontSize=13;" vertex="1" parent="1"><mxGeometry x="40" y="650" width="1000" height="70" as="geometry"/></mxCell>
+</root>
+</mxGraphModel>
+</diagram>
+<diagram name="
+Resident portal / Resident user (ROLE_USER)
+" id="
+d104
+">
+<mxGraphModel dx="1422" dy="798" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="
+1100
+" pageHeight="
+750
+" math="0" shadow="0">
+<root>
+<mxCell id="0"/>
+<mxCell id="1" parent="0"/>
+<mxCell id="title" value="Resident portal — Resident user (ROLE_USER)" style="text;html=0;fontSize=22;" vertex="1" parent="1"><mxGeometry x="40" y="20" width="1000" height="50" as="geometry"/></mxCell>
+<mxCell id="boundary" value="TALOMS" style="rounded=0;html=0;verticalAlign=top;fillColor=none;fontSize=18;" vertex="1" parent="1"><mxGeometry x="350" y="100" width="560" height="430" as="geometry"/></mxCell>
+<mxCell id="actor" value="Resident user (ROLE_USER)" style="shape=umlActor;html=0;verticalLabelPosition=bottom;verticalAlign=top;fontSize=14;" vertex="1" parent="1"><mxGeometry x="110" y="160" width="60" height="100" as="geometry"/></mxCell>
+<mxCell id="UC-26" value="UC-26
+View My Proofs of Residence" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="160" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-26" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-26"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-27" value="UC-27
+Download Proof of Residence" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="270" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-27" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-27"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-28" value="UC-28
+Manage Proof of Residence Access" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="380" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-28" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-28"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="note" value="Associations indicate participation, not permission for every sub-operation. See matching UC descriptions.
+Same UC ID across pages denotes the same use case. Time is an external trigger, not an internal system actor." style="text;html=0;whiteSpace=wrap;fontSize=13;" vertex="1" parent="1"><mxGeometry x="40" y="650" width="1000" height="70" as="geometry"/></mxCell>
+</root>
+</mxGraphModel>
+</diagram>
+<diagram name="
+Company access / Admin
+" id="
+d105
+">
+<mxGraphModel dx="1422" dy="798" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="
+1100
+" pageHeight="
+860
+" math="0" shadow="0">
+<root>
+<mxCell id="0"/>
+<mxCell id="1" parent="0"/>
+<mxCell id="title" value="Company access — Admin" style="text;html=0;fontSize=22;" vertex="1" parent="1"><mxGeometry x="40" y="20" width="1000" height="50" as="geometry"/></mxCell>
+<mxCell id="boundary" value="TALOMS" style="rounded=0;html=0;verticalAlign=top;fillColor=none;fontSize=18;" vertex="1" parent="1"><mxGeometry x="350" y="100" width="560" height="540" as="geometry"/></mxCell>
+<mxCell id="actor" value="Admin" style="shape=umlActor;html=0;verticalLabelPosition=bottom;verticalAlign=top;fontSize=14;" vertex="1" parent="1"><mxGeometry x="110" y="160" width="60" height="100" as="geometry"/></mxCell>
+<mxCell id="UC-09" value="UC-09
+Manage Companies" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="160" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-09" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-09"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-10" value="UC-10
+Generate Company API Key" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="270" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-10" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-10"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-11" value="UC-11
+Revoke Company API Key" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="380" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-11" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-11"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-12" value="UC-12
+View Company API Usage" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="490" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-12" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-12"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="note" value="Associations indicate participation, not permission for every sub-operation. See matching UC descriptions.
+Same UC ID across pages denotes the same use case. Time is an external trigger, not an internal system actor." style="text;html=0;whiteSpace=wrap;fontSize=13;" vertex="1" parent="1"><mxGeometry x="40" y="760" width="1000" height="70" as="geometry"/></mxCell>
+</root>
+</mxGraphModel>
+</diagram>
+<diagram name="
+Company access / Company user (browser)
+" id="
+d106
+">
+<mxGraphModel dx="1422" dy="798" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="
+1100
+" pageHeight="
+720
+" math="0" shadow="0">
+<root>
+<mxCell id="0"/>
+<mxCell id="1" parent="0"/>
+<mxCell id="title" value="Company access — Company user (browser)" style="text;html=0;fontSize=22;" vertex="1" parent="1"><mxGeometry x="40" y="20" width="1000" height="50" as="geometry"/></mxCell>
+<mxCell id="boundary" value="TALOMS" style="rounded=0;html=0;verticalAlign=top;fillColor=none;fontSize=18;" vertex="1" parent="1"><mxGeometry x="350" y="100" width="560" height="400" as="geometry"/></mxCell>
+<mxCell id="actor" value="Company user (browser)" style="shape=umlActor;html=0;verticalLabelPosition=bottom;verticalAlign=top;fontSize=14;" vertex="1" parent="1"><mxGeometry x="110" y="160" width="60" height="100" as="geometry"/></mxCell>
+<mxCell id="UC-29" value="UC-29
+Manage Own API Keys" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="160" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-29" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-29"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-30" value="UC-30
+View Own API Usage" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="270" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-30" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-30"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="note" value="Associations indicate participation, not permission for every sub-operation. See matching UC descriptions.
+Same UC ID across pages denotes the same use case. Time is an external trigger, not an internal system actor." style="text;html=0;whiteSpace=wrap;fontSize=13;" vertex="1" parent="1"><mxGeometry x="40" y="620" width="1000" height="70" as="geometry"/></mxCell>
+</root>
+</mxGraphModel>
+</diagram>
+<diagram name="
+Company access / External company system (API key)
+" id="
+d107
+">
+<mxGraphModel dx="1422" dy="798" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="
+1100
+" pageHeight="
+720
+" math="0" shadow="0">
+<root>
+<mxCell id="0"/>
+<mxCell id="1" parent="0"/>
+<mxCell id="title" value="Company access — External company system (API key)" style="text;html=0;fontSize=22;" vertex="1" parent="1"><mxGeometry x="40" y="20" width="1000" height="50" as="geometry"/></mxCell>
+<mxCell id="boundary" value="TALOMS" style="rounded=0;html=0;verticalAlign=top;fillColor=none;fontSize=18;" vertex="1" parent="1"><mxGeometry x="350" y="100" width="560" height="400" as="geometry"/></mxCell>
+<mxCell id="actor" value="External company system (API key)" style="shape=umlActor;html=0;verticalLabelPosition=bottom;verticalAlign=top;fontSize=14;" vertex="1" parent="1"><mxGeometry x="110" y="160" width="60" height="100" as="geometry"/></mxCell>
+<mxCell id="UC-31" value="UC-31
+Verify Proof of Residence (API)" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="160" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-31" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-31"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="UC-32" value="UC-32
+Read Own Company Profile (API)" style="ellipse;whiteSpace=wrap;html=0;fontSize=14;fillColor=#dae8fc;" vertex="1" parent="1"><mxGeometry x="440" y="270" width="380" height="80" as="geometry"/></mxCell>
+<mxCell id="aUC-32" value="" style="endArrow=none;html=0;edgeStyle=orthogonalEdgeStyle;" edge="1" parent="1" source="actor" target="UC-32"><mxGeometry relative="1" as="geometry"/></mxCell>
+<mxCell id="note" value="Associations indicate participation, not permission for every sub-operation. See matching UC descriptions.
+Same UC ID across pages denotes the same use case. Time is an external trigger, not an internal system actor." style="text;html=0;whiteSpace=wrap;fontSize=13;" vertex="1" parent="1"><mxGeometry x="40" y="620" width="1000" height="70" as="geometry"/></mxCell>
+</root>
+</mxGraphModel>
+</diagram>
+</mxfile>

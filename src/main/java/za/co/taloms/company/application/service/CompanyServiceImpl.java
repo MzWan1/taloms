@@ -39,6 +39,20 @@ public class CompanyServiceImpl implements CompanyService {
             throw new DuplicateRecordException("A company with this registration number is already registered.");
         }
 
+        // Validate owner user
+        za.co.taloms.security.domain.entity.User ownerUser = userRepositoryPort.findById(request.getOwnerUserId())
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Company owner user not found with ID: " + request.getOwnerUserId()));
+
+        boolean hasCompanyRole = ownerUser.getRoles().stream().anyMatch(r -> "ROLE_COMPANY".equals(r.getName()));
+        if (!hasCompanyRole) {
+            throw new BusinessValidationException("The specified owner user does not have the COMPANY role.");
+        }
+
+        if (ownerUser.getCompany() != null) {
+            throw new BusinessValidationException("The specified owner user is already linked to a company.");
+        }
+
         Company company = Company.builder()
                 .name(name)
                 .registrationNumber(registrationNumber)
@@ -48,7 +62,12 @@ public class CompanyServiceImpl implements CompanyService {
                 .build();
 
         Company saved = companyRepository.save(company);
-        log.info("Company '{}' (id {}) registered by {}", saved.getName(), saved.getId(), actorUsername);
+
+        ownerUser.setCompany(saved);
+        userRepositoryPort.save(ownerUser);
+
+        log.info("Company '{}' (id {}) registered by {}. Linked to user '{}'", saved.getName(), saved.getId(),
+                actorUsername, ownerUser.getUsername());
         return toResponse(saved);
     }
 

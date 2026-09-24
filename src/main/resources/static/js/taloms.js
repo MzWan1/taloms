@@ -201,7 +201,7 @@
     async flushOutbox() {
       if (!this.isOnline) return;
       const items = await TalomsDB.getAllOutbox();
-      const pending = items.filter(i => i.status === CONFIG.OUTBOX_STATUS.PENDING || i.status === CONFIG.OUTBOX_STATUS.FAILED);
+      const pending = items.filter(i => i.status === CONFIG.OUTBOX_STATUS.PENDING);
       if (pending.length === 0) return;
 
       // Register background sync with service worker
@@ -361,22 +361,23 @@
           item.status = CONFIG.OUTBOX_STATUS.COMPLETED;
           await TalomsDB.enqueue(item);
           await TalomsDB.dequeue(item.id);
-        } else if (response.status === 409 || response.status === 412) {
-          // Conflict - mark as failed for user review
+        } else if (response.status === 409 || response.status === 412 || response.status === 400 || response.status === 422) {
+          // Conflict or Validation Error - mark as failed, do not retry
           item.status = CONFIG.OUTBOX_STATUS.FAILED;
-          item.retryCount = (item.retryCount || 0) + 1;
-          await TalomsDB.enqueue(item);
 
-          // Try to parse conflict details
           try {
             const errorData = await response.json();
-            if (errorData && errorData.data) {
+            item.error = errorData.message || ('Server error ' + response.status);
+            await TalomsDB.enqueue(item);
+
+            if (errorData && errorData.data && (response.status === 409 || response.status === 412)) {
               Conflict.localVersion = JSON.parse(item.body);
               Conflict.serverVersion = errorData.data;
               Conflict.show(Conflict.localVersion, Conflict.serverVersion);
             }
           } catch (e) {
-            // ignore
+            item.error = 'Server error ' + response.status;
+            await TalomsDB.enqueue(item);
           }
         } else {
           throw new Error('HTTP ' + response.status);
@@ -405,7 +406,7 @@
       this.lastSyncAt = await TalomsDB.getMetadata('lastSyncAt');
       this.lastPtoSyncAt = await TalomsDB.getMetadata('lastPtoSyncAt');
       if (window.TalomsDB) {
-        TalomsDB.checkQuota().then(function(result) {
+        TalomsDB.checkQuota().then(function (result) {
           if (result.percentUsed > 80) {
             console.warn('Storage quota critical:', result.percentUsed.toFixed(1) + '%');
           }
@@ -618,8 +619,8 @@
         var offIsForm = (typeof FormData !== 'undefined' && opts.body instanceof FormData)
           || (opts.headers && String(opts.headers['Content-Type'] || '').indexOf('multipart') !== -1);
         if (offUrl && (offUrl.indexOf('/api/ptos') !== -1
-            || offUrl.indexOf('/api/parcels') !== -1
-            || offUrl.indexOf('/api/documents') !== -1)) {
+          || offUrl.indexOf('/api/parcels') !== -1
+          || offUrl.indexOf('/api/documents') !== -1)) {
           if (offIsForm) {
             try {
               var names = [];

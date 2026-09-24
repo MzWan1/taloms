@@ -27,8 +27,30 @@ public class UserPageController {
     private final TraditionalAuthorityService authorityService;
 
     @GetMapping
-    public String listUsers(Model model) {
-        model.addAttribute("users",     userService.findAll());
+    public String listUsers(Model model,
+                            @RequestParam(required = false) String search,
+                            @RequestParam(required = false) String roleFilter,
+                            @RequestParam(required = false) String statusFilter,
+                            @RequestParam(required = false, defaultValue = "1") Integer page) {
+        var users = userService.findAll();
+        if (search != null && !search.isBlank()) {
+            String lower = search.toLowerCase();
+            users = users.stream().filter(u -> (u.getFullName() != null && u.getFullName().toLowerCase().contains(lower)) ||
+                                               (u.getUsername() != null && u.getUsername().toLowerCase().contains(lower)) ||
+                                               (u.getEmail() != null && u.getEmail().toLowerCase().contains(lower))).toList();
+        }
+        if (roleFilter != null && !roleFilter.isBlank()) {
+            String lower = roleFilter.toLowerCase();
+            users = users.stream().filter(u -> u.getRoles() != null && u.getRoles().stream().anyMatch(r -> r.toLowerCase().contains(lower))).toList();
+        }
+        if (statusFilter != null && !statusFilter.isBlank()) {
+            users = users.stream().filter(u -> (statusFilter.equalsIgnoreCase("active") && (u.getEnabled() != null && u.getEnabled()) && !(u.getAccountLocked() != null && u.getAccountLocked())) ||
+                                               (statusFilter.equalsIgnoreCase("locked") && (u.getAccountLocked() != null && u.getAccountLocked())) ||
+                                               (statusFilter.equalsIgnoreCase("inactive") && !(u.getEnabled() != null && u.getEnabled()))).toList();
+        }
+        var pageObj = za.co.taloms.common.pagination.PageRequestUtils.paginateList(users, page, 10);
+        model.addAttribute("page", pageObj);
+        model.addAttribute("users", pageObj.getContent());
         model.addAttribute("pageTitle", "User Management");
         model.addAttribute("currentPage","users");
         return "users/list";
@@ -67,6 +89,9 @@ public class UserPageController {
                 .email(user.getEmail())
                 .roleName(user.getRoles().iterator().next())
                 .traditionalAuthorityId(user.getTraditionalAuthorityId())
+                .authorityIds(user.getAuthorityIds() == null
+                        ? new java.util.ArrayList<>()
+                        : new java.util.ArrayList<>(user.getAuthorityIds()))
                 .idNumber(user.getIdNumber())
                 .build();
         model.addAttribute("userForm",  req);

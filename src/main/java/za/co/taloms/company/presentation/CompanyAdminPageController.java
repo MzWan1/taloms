@@ -8,7 +8,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import za.co.taloms.company.application.dto.ApiUsageLogResponse;
 import za.co.taloms.company.application.dto.CompanyApiKeyCreateRequest;
 import za.co.taloms.company.application.dto.CompanyApiKeyResponse;
 import za.co.taloms.company.application.dto.CompanyCreateRequest;
@@ -19,6 +18,8 @@ import za.co.taloms.company.domain.entity.ApiScope;
 
 import java.util.List;
 import java.util.Set;
+
+import za.co.taloms.security.application.service.UserService;
 
 /**
  * Administrator pages for managing externally approved companies.
@@ -36,10 +37,14 @@ public class CompanyAdminPageController {
     private final CompanyService companyService;
     private final CompanyApiKeyService apiKeyService;
     private final ApiUsageService usageService;
+    private final UserService userService;
 
     @GetMapping
-    public String list(Model model) {
-        model.addAttribute("companies", companyService.findAll());
+    public String list(Model model, @RequestParam(required = false, defaultValue = "1") Integer page) {
+        var companies = companyService.findAll();
+        var pageObj = za.co.taloms.common.pagination.PageRequestUtils.paginateList(companies, page, 10);
+        model.addAttribute("page", pageObj);
+        model.addAttribute("companies", pageObj.getContent());
         model.addAttribute("companyForm", new CompanyCreateRequest());
         model.addAttribute("pageTitle", "Companies");
         model.addAttribute("currentPage", "companies");
@@ -64,9 +69,10 @@ public class CompanyAdminPageController {
     public String detail(@PathVariable Long id, Model model) {
         model.addAttribute("company", companyService.findById(id));
         model.addAttribute("keys", apiKeyService.findByCompany(id));
-        List<ApiUsageLogResponse> usage = usageService.findByCompany(id);
-        model.addAttribute("usage", usage);
-        model.addAttribute("usageCount", usage.size());
+        // Recent usage for the detail view — bounded page, newest first.
+        var usage = usageService.findByCompany(id, 1, 10);
+        model.addAttribute("usage", usage.getContent());
+        model.addAttribute("usageCount", usage.getTotalElements());
         model.addAttribute("scopes", ApiScope.values());
         model.addAttribute("pageTitle", "Company Detail");
         model.addAttribute("currentPage", "companies");

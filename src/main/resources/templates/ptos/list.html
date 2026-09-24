@@ -162,11 +162,12 @@
                     </thead>
                     <tbody id="pendingPtoTableBody"></tbody>
                 </table>
+                        
             </div>
         </div>
     </div>
 
-    <!-- Table -->
+<!-- Table -->
     <!-- Table -->
     <div class="card border-0 shadow-sm">
         <div class="card-body p-0">
@@ -190,7 +191,7 @@
                         <td colspan="9" class="text-center py-5 text-muted">
                             <i class="bi bi-file-earmark-text display-5 d-block mb-2 opacity-25"></i>
                             <span class="fw-semibold">No PTO records found</span><br>
-                            <small>Click "New PTO" to create the first record</small>
+                            <a th:href="@{/ptos/create}" class="btn btn-outline-primary btn-sm mt-3">New PTO</a>
                         </td>
                     </tr>
                     <tr th:each="pto : ${ptos}"
@@ -250,6 +251,10 @@
                     </tr>
                     </tbody>
                 </table>
+                        
+            </div>
+            <div class="card-footer bg-white border-top-0 py-3">
+                <div th:replace="~{fragments/pagination :: pagination(page=${page}, baseUrl='/ptos')}"></div>
             </div>
         </div>
     </div>
@@ -413,7 +418,38 @@
       .catch(function (err) { console.error('SW registration failed:', err); });
   }
 </script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form[method="get"]');
+        if (!form) return;
+        
+        const inputs = form.querySelectorAll('select, input[type="radio"], input[type="checkbox"]');
+        inputs.forEach(input => {
+            input.addEventListener('change', () => {
+                form.submit();
+            });
+        });
+
+        const searchInput = form.querySelector('input[type="text"][name="search"]');
+        if (searchInput) {
+            let timer;
+            searchInput.addEventListener('input', () => {
+                clearTimeout(timer);
+                timer = setTimeout(() => {
+                    form.submit();
+                }, 500);
+            });
+            // Move cursor to end of input to maintain focus nicely on reload
+            const val = searchInput.value;
+            searchInput.value = '';
+            searchInput.value = val;
+            searchInput.focus();
+        }
+    });
+</script>
 </body>
+
 </html>
 
 

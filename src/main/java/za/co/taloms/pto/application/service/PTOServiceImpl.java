@@ -27,7 +27,11 @@ import za.co.taloms.traditionalauthority.domain.repository.VillageRepositoryPort
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.PageImpl;
 
 @Slf4j
 @Service
@@ -367,6 +371,45 @@ public class PTOServiceImpl implements PTOService {
 
     @Override
     @Transactional(readOnly = true)
+    public Page<PTOResponse> findAll(Pageable pageable) {
+        return ptoRepository.findAll(pageable).map(this::toResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<PTOResponse> search(PTOSearchCriteria criteria, Pageable pageable) {
+        return ptoRepository.search(
+                criteria.getHolderName(),
+                criteria.getIdNumber(),
+                criteria.getPtoNumber(),
+                criteria.getStatus(),
+                criteria.getPurpose(),
+                criteria.getVillageIds(),
+                criteria.getAuthorityId(),
+                pageable
+        ).map(this::toResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<PTOResponse> findByAuthority(Long authorityId, Pageable pageable) {
+        return ptoRepository.findByTraditionalAuthorityId(authorityId, pageable).map(this::toResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<PTOResponse> findDeleted(Pageable pageable) {
+        return ptoRepository.findDeleted(pageable).map(this::toResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<PTOResponse> findDeletedScoped(Set<Long> villageIds, Pageable pageable) {
+        return ptoRepository.findDeletedScoped(villageIds, pageable).map(this::toResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<PTOResponse> findAll() {
         return ptoRepository.findAll().stream()
                 .map(this::toResponse)
@@ -384,7 +427,7 @@ public class PTOServiceImpl implements PTOService {
     @Override
     @Transactional(readOnly = true)
     public List<PTOResponse> findByAuthority(Long authorityId) {
-        return ptoRepository.findByTraditionalAuthorityId(authorityId).stream()
+        return ptoRepository.findByTraditionalAuthorityId(authorityId, org.springframework.data.domain.Pageable.unpaged()).getContent().stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
@@ -414,9 +457,10 @@ public class PTOServiceImpl implements PTOService {
                 criteria.getPtoNumber(),
                 criteria.getStatus(),
                 criteria.getPurpose(),
-                criteria.getVillageId(),
-                criteria.getAuthorityId()
-        ).stream()
+                criteria.getVillageIds(),
+                criteria.getAuthorityId(),
+                org.springframework.data.domain.Pageable.unpaged()
+        ).getContent().stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
@@ -568,7 +612,7 @@ public class PTOServiceImpl implements PTOService {
     @Override
     @Transactional(readOnly = true)
     public List<PTOResponse> findDeleted() {
-        return ptoRepository.findDeleted().stream()
+        return ptoRepository.findDeleted(org.springframework.data.domain.Pageable.unpaged()).getContent().stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
@@ -770,9 +814,11 @@ public class PTOServiceImpl implements PTOService {
     public void saveAll(List<PTOSyncDto> dtos, String savedBy) {
         for (PTOSyncDto dto : dtos) {
             if (Boolean.TRUE.equals(dto.getDeleted())) {
-                if (dto.getId() != null && ptoRepository.findById(dto.getId()).isPresent()
-                        && !ptoRepository.findById(dto.getId()).get().isDeleted()) {
-                    ptoRepository.softDeleteById(dto.getId(), savedBy);
+                // One fetch instead of two (exists + get) per deleted item.
+                if (dto.getId() != null) {
+                    ptoRepository.findById(dto.getId())
+                            .filter(existing -> !existing.isDeleted())
+                            .ifPresent(p -> ptoRepository.softDeleteById(dto.getId(), savedBy));
                 }
                 continue;
             }
@@ -789,10 +835,10 @@ public class PTOServiceImpl implements PTOService {
         if (since != null) {
             sinceDateTime = LocalDateTime.ofInstant(since, java.time.ZoneId.systemDefault());
         }
-        List<PTO> ptos = ptoRepository.findChangedSince(sinceDateTime);
-        if (pageSize > 0 && ptos.size() > pageSize) {
-            ptos = ptos.subList(0, pageSize);
-        }
+        // The LIMIT is enforced in the database query (findChangedSince), so the
+        // application never materialises more rows than the caller may receive.
+        int limit = pageSize > 0 && pageSize <= 100 ? pageSize : 100;
+        List<PTO> ptos = ptoRepository.findChangedSince(sinceDateTime, limit);
         return ptos.stream().map(this::toSyncDto).collect(Collectors.toList());
     }
 

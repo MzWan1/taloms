@@ -20,17 +20,18 @@ public class VillageRestController {
     private final VillageService villageService;
     private final AuthorityScopeService scopeService;
 
-    /** Chiefs/headsmen only see villages of their linked authority. */
+    /** Chiefs/headsmen only see villages of their linked authorities. */
     private List<VillageResponse> scoped(List<VillageResponse> all) {
         if (!scopeService.isCurrentUserChiefOrHeadsman()) {
             return all;
         }
-        Long linkedAuthorityId = scopeService.getCurrentUserAuthorityId();
-        if (linkedAuthorityId == null) {
+        java.util.Set<Long> allowed = scopeService.getCurrentUserAuthorityIds();
+        if (allowed == null || allowed.isEmpty()) {
             return List.of();
         }
         return all.stream()
-                .filter(v -> linkedAuthorityId.equals(v.getTraditionalAuthorityId()))
+                .filter(v -> v.getTraditionalAuthorityId() != null
+                        && allowed.contains(v.getTraditionalAuthorityId()))
                 .toList();
     }
 

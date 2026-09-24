@@ -8,6 +8,9 @@ import za.co.taloms.parcel.domain.repository.ParcelRepositoryPort;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import java.util.Set;
 import java.util.Set;
 
 @Repository
@@ -40,6 +43,21 @@ public class ParcelRepositoryAdapter implements ParcelRepositoryPort {
     public List<Parcel> findAll() {
         return jpaRepository.findAllOrderByCreatedAtDesc();
     }
+
+    @Override
+    public Page<Parcel> searchParcels(String q, ParcelStatus status, Long villageId, java.util.Set<Long> allowedVillageIds, Pageable pageable) {
+        boolean filterByQ = (q != null && !q.trim().isEmpty());
+        boolean filterByStatus = (status != null);
+        boolean filterByVillage = (villageId != null);
+        boolean filterByAllowedVillages = (allowedVillageIds != null && !allowedVillageIds.isEmpty());
+        
+        // Provide dummy values for null collections to avoid Hibernate errors on empty collections in some dialects
+        java.util.Set<Long> safeVillageIds = filterByAllowedVillages ? allowedVillageIds : java.util.Set.of(-1L);
+        String safeQ = filterByQ ? q : "";
+        
+        return jpaRepository.searchParcels(safeQ, filterByQ, status, filterByStatus, villageId, filterByVillage, safeVillageIds, filterByAllowedVillages, pageable);
+    }
+
 
     @Override
     public List<Parcel> findByVillageId(Long villageId) {
@@ -107,7 +125,8 @@ public class ParcelRepositoryAdapter implements ParcelRepositoryPort {
     }
 
     @Override
-    public List<Parcel> findOverlappingParcels(Long parcelId, Double minLat, Double minLng, Double maxLat, Double maxLng) {
+    public List<Parcel> findOverlappingParcels(Long parcelId, Double minLat, Double minLng, Double maxLat,
+            Double maxLng) {
         return jpaRepository.findOverlappingParcels(parcelId, minLat, minLng, maxLat, maxLng);
     }
 
@@ -119,6 +138,11 @@ public class ParcelRepositoryAdapter implements ParcelRepositoryPort {
     @Override
     public boolean hasSelfIntersection(Long parcelId) {
         return jpaRepository.hasSelfIntersection(parcelId);
+    }
+
+    @Override
+    public String findOverlappingActiveParcelNumber(String wkt, Long excludeId) {
+        return jpaRepository.findOverlappingActiveParcelNumber(wkt, excludeId);
     }
 
     @Override
@@ -152,4 +176,3 @@ public class ParcelRepositoryAdapter implements ParcelRepositoryPort {
         jpaRepository.deleteAllByIdInBatch(ids);
     }
 }
-

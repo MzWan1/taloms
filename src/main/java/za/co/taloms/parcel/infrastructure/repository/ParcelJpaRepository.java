@@ -8,189 +8,223 @@ import za.co.taloms.parcel.domain.entity.ParcelStatus;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import java.util.Set;
 
 public interface ParcelJpaRepository extends JpaRepository<Parcel, Long> {
 
-    @Query("""
-           SELECT DISTINCT p FROM Parcel p
-           LEFT JOIN FETCH p.boundaries b
-           LEFT JOIN FETCH p.village v
-           LEFT JOIN FETCH v.traditionalAuthority ta
-           LEFT JOIN FETCH p.pto
-           ORDER BY p.createdAt DESC
-           """)
-    List<Parcel> findAllOrderByCreatedAtDesc();
+       @Query("""
+                     SELECT DISTINCT p FROM Parcel p
+                     LEFT JOIN FETCH p.boundaries b
+                     LEFT JOIN FETCH p.village v
+                     LEFT JOIN FETCH v.traditionalAuthority ta
+                     LEFT JOIN FETCH p.pto
+                     ORDER BY p.createdAt DESC
+                     """)
+       List<Parcel> findAllOrderByCreatedAtDesc();
+
+       @Query("""
+                     SELECT DISTINCT p FROM Parcel p
+                     LEFT JOIN FETCH p.boundaries b
+                     LEFT JOIN FETCH p.village v
+                     LEFT JOIN FETCH v.traditionalAuthority ta
+                     LEFT JOIN FETCH p.pto
+                     WHERE p.parcelNumber = :parcelNumber
+                     """)
+       Optional<Parcel> findByParcelNumber(@Param("parcelNumber") String parcelNumber);
 
     @Query("""
-           SELECT DISTINCT p FROM Parcel p
-           LEFT JOIN FETCH p.boundaries b
-           LEFT JOIN FETCH p.village v
-           LEFT JOIN FETCH v.traditionalAuthority ta
-           LEFT JOIN FETCH p.pto
-           WHERE p.parcelNumber = :parcelNumber
-           """)
-    Optional<Parcel> findByParcelNumber(@Param("parcelNumber") String parcelNumber);
+        SELECT DISTINCT p FROM Parcel p
+        LEFT JOIN p.village v
+        WHERE (:filterByQ = false OR LOWER(p.parcelNumber) LIKE LOWER(CONCAT('%', :q, '%')) OR LOWER(p.standNumber) LIKE LOWER(CONCAT('%', :q, '%')))
+          AND (:filterByStatus = false OR p.status = :status)
+          AND (:filterByVillage = false OR p.village.id = :villageId)
+          AND (:filterByAllowedVillages = false OR p.village.id IN :allowedVillageIds)
+        """)
+    Page<Parcel> searchParcels(
+            @Param("q") String q,
+            @Param("filterByQ") boolean filterByQ,
+            @Param("status") ParcelStatus status,
+            @Param("filterByStatus") boolean filterByStatus,
+            @Param("villageId") Long villageId,
+            @Param("filterByVillage") boolean filterByVillage,
+            @Param("allowedVillageIds") java.util.Set<Long> allowedVillageIds,
+            @Param("filterByAllowedVillages") boolean filterByAllowedVillages,
+            Pageable pageable
+    );
 
-    @Query("""
-           SELECT DISTINCT p FROM Parcel p
-           LEFT JOIN FETCH p.boundaries b
-           LEFT JOIN FETCH p.village v
-           LEFT JOIN FETCH v.traditionalAuthority ta
-           LEFT JOIN FETCH p.pto
-           WHERE p.village.id = :villageId
-           """)
-    List<Parcel> findByVillageId(@Param("villageId") Long villageId);
 
-    @Query("""
-           SELECT DISTINCT p FROM Parcel p
-           LEFT JOIN FETCH p.boundaries b
-           LEFT JOIN FETCH p.village v
-           LEFT JOIN FETCH v.traditionalAuthority ta
-           LEFT JOIN FETCH p.pto
-           WHERE p.status = :status
-           """)
-    List<Parcel> findByStatus(@Param("status") ParcelStatus status);
+       @Query("""
+                     SELECT DISTINCT p FROM Parcel p
+                     LEFT JOIN FETCH p.boundaries b
+                     LEFT JOIN FETCH p.village v
+                     LEFT JOIN FETCH v.traditionalAuthority ta
+                     LEFT JOIN FETCH p.pto
+                     WHERE p.village.id = :villageId
+                     """)
+       List<Parcel> findByVillageId(@Param("villageId") Long villageId);
 
-    @Query("""
-           SELECT DISTINCT p FROM Parcel p
-           LEFT JOIN FETCH p.boundaries b
-           LEFT JOIN FETCH p.village v
-           LEFT JOIN FETCH v.traditionalAuthority ta
-           LEFT JOIN FETCH p.pto
-           WHERE p.status = :status AND p.village.id = :villageId
-           """)
-    List<Parcel> findByStatusAndVillageId(@Param("status") ParcelStatus status,
-                                          @Param("villageId") Long villageId);
+       @Query("""
+                     SELECT DISTINCT p FROM Parcel p
+                     LEFT JOIN FETCH p.boundaries b
+                     LEFT JOIN FETCH p.village v
+                     LEFT JOIN FETCH v.traditionalAuthority ta
+                     LEFT JOIN FETCH p.pto
+                     WHERE p.status = :status
+                     """)
+       List<Parcel> findByStatus(@Param("status") ParcelStatus status);
 
-    @Query("""
-           SELECT DISTINCT p FROM Parcel p
-           LEFT JOIN FETCH p.boundaries b
-           LEFT JOIN FETCH p.village v
-           LEFT JOIN FETCH v.traditionalAuthority ta
-           LEFT JOIN FETCH p.pto
-           WHERE p.status = 'AVAILABLE' AND p.village.id = :villageId
-           """)
-    List<Parcel> findAvailableByVillageId(@Param("villageId") Long villageId);
+       @Query("""
+                     SELECT DISTINCT p FROM Parcel p
+                     LEFT JOIN FETCH p.boundaries b
+                     LEFT JOIN FETCH p.village v
+                     LEFT JOIN FETCH v.traditionalAuthority ta
+                     LEFT JOIN FETCH p.pto
+                     WHERE p.status = :status AND p.village.id = :villageId
+                     """)
+       List<Parcel> findByStatusAndVillageId(@Param("status") ParcelStatus status,
+                     @Param("villageId") Long villageId);
 
-    @Query("""
-           SELECT DISTINCT p FROM Parcel p
-           LEFT JOIN FETCH p.boundaries b
-           LEFT JOIN FETCH p.village v
-           LEFT JOIN FETCH v.traditionalAuthority ta
-           LEFT JOIN FETCH p.pto
-           WHERE p.id = :id
-           """)
-    Optional<Parcel> findByIdWithRelations(@Param("id") Long id);
+       @Query("""
+                     SELECT DISTINCT p FROM Parcel p
+                     LEFT JOIN FETCH p.boundaries b
+                     LEFT JOIN FETCH p.village v
+                     LEFT JOIN FETCH v.traditionalAuthority ta
+                     LEFT JOIN FETCH p.pto
+                     WHERE p.status = 'AVAILABLE' AND p.village.id = :villageId
+                     """)
+       List<Parcel> findAvailableByVillageId(@Param("villageId") Long villageId);
 
-    Optional<Parcel> findByStandNumberAndVillageId(String standNumber, Long villageId);
+       @Query("""
+                     SELECT DISTINCT p FROM Parcel p
+                     LEFT JOIN FETCH p.boundaries b
+                     LEFT JOIN FETCH p.village v
+                     LEFT JOIN FETCH v.traditionalAuthority ta
+                     LEFT JOIN FETCH p.pto
+                     WHERE p.id = :id
+                     """)
+       Optional<Parcel> findByIdWithRelations(@Param("id") Long id);
 
-    boolean existsByStandNumberAndVillageId(String standNumber, Long villageId);
+       Optional<Parcel> findByStandNumberAndVillageId(String standNumber, Long villageId);
 
-    boolean existsByParcelNumber(String parcelNumber);
+       boolean existsByStandNumberAndVillageId(String standNumber, Long villageId);
 
-    long countByStatus(ParcelStatus status);
+       boolean existsByParcelNumber(String parcelNumber);
 
-    long countByVillageId(Long villageId);
+       long countByStatus(ParcelStatus status);
 
-    long countByStatusAndVillageId(ParcelStatus status, Long villageId);
+       long countByVillageId(Long villageId);
 
-    @Query(value = """
-            SELECT p.* FROM parcels p
-            WHERE p.id != :parcelId
-              AND p.geometry IS NOT NULL
-              AND ST_Intersects(
-                  p.geometry,
-                  ST_MakeEnvelope(:minLng, :minLat, :maxLng, :maxLat, 4326)
-              )
-            """, nativeQuery = true)
-    List<Parcel> findOverlappingParcels(@Param("parcelId") Long parcelId,
-                                        @Param("minLat") Double minLat,
-                                        @Param("minLng") Double minLng,
-                                        @Param("maxLat") Double maxLat,
-                                        @Param("maxLng") Double maxLng);
+       long countByStatusAndVillageId(ParcelStatus status, Long villageId);
 
-    @Query(value = """
-            SELECT p.id, p.parcel_number, p.stand_number, p.village_id,
-                   ST_AsText(p.geometry) as geom_wkt
-            FROM parcels p
-            WHERE p.id != :parcelId
-              AND p.geometry IS NOT NULL
-              AND ST_Intersects(
-                  p.geometry,
-                  (SELECT geometry FROM parcels WHERE id = :parcelId)
-              )
-            """, nativeQuery = true)
-    List<Object[]> findOverlappingParcelsWithGeometry(@Param("parcelId") Long parcelId);
+       @Query(value = """
+                     SELECT p.* FROM parcels p
+                     WHERE p.id != :parcelId
+                       AND p.geometry IS NOT NULL
+                       AND ST_Intersects(
+                           p.geometry,
+                           ST_MakeEnvelope(:minLng, :minLat, :maxLng, :maxLat, 4326)
+                       )
+                     """, nativeQuery = true)
+       List<Parcel> findOverlappingParcels(@Param("parcelId") Long parcelId,
+                     @Param("minLat") Double minLat,
+                     @Param("minLng") Double minLng,
+                     @Param("maxLat") Double maxLat,
+                     @Param("maxLng") Double maxLng);
 
-    @Query(value = """
-            SELECT NOT ST_IsValid(p.geometry)
-            FROM parcels p
-            WHERE p.id = :parcelId
-              AND p.geometry IS NOT NULL
-            """, nativeQuery = true)
-    boolean hasSelfIntersection(@Param("parcelId") Long parcelId);
+       @Query(value = """
+                     SELECT p.id, p.parcel_number, p.stand_number, p.village_id,
+                            ST_AsText(p.geometry) as geom_wkt
+                     FROM parcels p
+                     WHERE p.id != :parcelId
+                       AND p.geometry IS NOT NULL
+                       AND ST_Intersects(
+                           p.geometry,
+                           (SELECT geometry FROM parcels WHERE id = :parcelId)
+                       )
+                     """, nativeQuery = true)
+       List<Object[]> findOverlappingParcelsWithGeometry(@Param("parcelId") Long parcelId);
 
-    @Query("""
-           SELECT DISTINCT p FROM Parcel p
-           LEFT JOIN FETCH p.boundaries b
-           LEFT JOIN FETCH p.village v
-           LEFT JOIN FETCH v.traditionalAuthority ta
-           LEFT JOIN FETCH p.pto
-           WHERE p.village.traditionalAuthority.id = :authorityId
-           """)
-    List<Parcel> findByAuthorityId(@Param("authorityId") Long authorityId);
+       @Query(value = """
+                     SELECT NOT ST_IsValid(p.geometry)
+                     FROM parcels p
+                     WHERE p.id = :parcelId
+                       AND p.geometry IS NOT NULL
+                     """, nativeQuery = true)
+       boolean hasSelfIntersection(@Param("parcelId") Long parcelId);
 
-    @Query(value = """
-            SELECT p.id, p.parcel_number, p.stand_number,
-                   ST_ClusterDBSCAN(ST_Centroid(p.geometry), eps := :epsMeters, minpoints := :minPts)
-                       OVER () AS cluster_id
-            FROM parcels p
-            WHERE p.village_id = :villageId
-              AND p.geometry IS NOT NULL
-              AND ST_IsValid(p.geometry)
-            GROUP BY p.id, p.parcel_number, p.stand_number,
-                     ST_ClusterDBSCAN(ST_Centroid(p.geometry), eps := :epsMeters, minpoints := :minPts)
-            ORDER BY cluster_id
-            """, nativeQuery = true)
-    List<Object[]> findParcelClusters(@Param("villageId") Long villageId,
-                                       @Param("epsMeters") double epsMeters,
-                                       @Param("minPts") int minPts);
+       @Query(value = """
+                     SELECT p.parcel_number
+                     FROM parcels p
+                     WHERE p.status != 'INACTIVE'
+                       AND (:excludeId IS NULL OR p.id != :excludeId)
+                       AND p.geometry IS NOT NULL
+                       AND ST_Intersects(p.geometry, ST_MakeValid(ST_GeomFromText(:wkt, 4326)))
+                       AND NOT ST_Touches(p.geometry, ST_MakeValid(ST_GeomFromText(:wkt, 4326)))
+                     LIMIT 1
+                     """, nativeQuery = true)
+       String findOverlappingActiveParcelNumber(@Param("wkt") String wkt, @Param("excludeId") Long excludeId);
 
-    @Query(value = """
-            SELECT ST_VoronoiPolygons(
-                ST_Collect(ST_Centroid(p.geometry)),
-                0.0001
-            ).geom as voronoi_geom
-            FROM parcels p
-            WHERE p.village_id = :villageId
-              AND p.geometry IS NOT NULL
-              AND ST_IsValid(p.geometry)
-            """, nativeQuery = true)
-    List<Object[]> findVoronoiCells(@Param("villageId") Long villageId);
+       @Query("""
+                     SELECT DISTINCT p FROM Parcel p
+                     LEFT JOIN FETCH p.boundaries b
+                     LEFT JOIN FETCH p.village v
+                     LEFT JOIN FETCH v.traditionalAuthority ta
+                     LEFT JOIN FETCH p.pto
+                     WHERE p.village.traditionalAuthority.id = :authorityId
+                     """)
+       List<Parcel> findByAuthorityId(@Param("authorityId") Long authorityId);
 
-    // Sync & Batch operations
-    @Query("""
-           SELECT DISTINCT p FROM Parcel p
-           LEFT JOIN FETCH p.boundaries b
-           LEFT JOIN FETCH p.village v
-           LEFT JOIN FETCH v.traditionalAuthority ta
-           LEFT JOIN FETCH p.pto
-           WHERE p.updatedAt >= :since
-           ORDER BY p.updatedAt ASC
-           """)
-    List<Parcel> findChangedSince(@Param("since") Instant since, @Param("pageSize") int pageSize);
+       @Query(value = """
+                     SELECT p.id, p.parcel_number, p.stand_number,
+                            ST_ClusterDBSCAN(ST_Centroid(p.geometry), eps := :epsMeters, minpoints := :minPts)
+                                OVER () AS cluster_id
+                     FROM parcels p
+                     WHERE p.village_id = :villageId
+                       AND p.geometry IS NOT NULL
+                       AND ST_IsValid(p.geometry)
+                     GROUP BY p.id, p.parcel_number, p.stand_number,
+                              ST_ClusterDBSCAN(ST_Centroid(p.geometry), eps := :epsMeters, minpoints := :minPts)
+                     ORDER BY cluster_id
+                     """, nativeQuery = true)
+       List<Object[]> findParcelClusters(@Param("villageId") Long villageId,
+                     @Param("epsMeters") double epsMeters,
+                     @Param("minPts") int minPts);
 
-    @Query("""
-           SELECT DISTINCT p FROM Parcel p
-           LEFT JOIN FETCH p.boundaries b
-           LEFT JOIN FETCH p.village v
-           LEFT JOIN FETCH v.traditionalAuthority ta
-           LEFT JOIN FETCH p.pto
-           WHERE p.id IN :ids
-           """)
-    List<Parcel> findByIds(@Param("ids") Set<Long> ids);
+       @Query(value = """
+                     SELECT ST_VoronoiPolygons(
+                         ST_Collect(ST_Centroid(p.geometry)),
+                         0.0001
+                     ).geom as voronoi_geom
+                     FROM parcels p
+                     WHERE p.village_id = :villageId
+                       AND p.geometry IS NOT NULL
+                       AND ST_IsValid(p.geometry)
+                     """, nativeQuery = true)
+       List<Object[]> findVoronoiCells(@Param("villageId") Long villageId);
 
-    void deleteAllByIdInBatch(Iterable<Long> ids);
+       // Sync & Batch operations
+       @Query("""
+                     SELECT DISTINCT p FROM Parcel p
+                     LEFT JOIN FETCH p.boundaries b
+                     LEFT JOIN FETCH p.village v
+                     LEFT JOIN FETCH v.traditionalAuthority ta
+                     LEFT JOIN FETCH p.pto
+                     WHERE p.updatedAt >= :since
+                     ORDER BY p.updatedAt ASC
+                     """)
+       List<Parcel> findChangedSince(@Param("since") Instant since, @Param("pageSize") int pageSize);
+
+       @Query("""
+                     SELECT DISTINCT p FROM Parcel p
+                     LEFT JOIN FETCH p.boundaries b
+                     LEFT JOIN FETCH p.village v
+                     LEFT JOIN FETCH v.traditionalAuthority ta
+                     LEFT JOIN FETCH p.pto
+                     WHERE p.id IN :ids
+                     """)
+       List<Parcel> findByIds(@Param("ids") Set<Long> ids);
+
+       void deleteAllByIdInBatch(Iterable<Long> ids);
 }
-

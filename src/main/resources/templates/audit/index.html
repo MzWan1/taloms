@@ -152,6 +152,9 @@
                     </tbody>
                 </table>
             </div>
+            <div class="card-footer bg-white border-top-0 py-3">
+                <div th:replace="~{fragments/pagination :: pagination(page=${page}, baseUrl=${'/audit'})}"></div>
+            </div>
         </div>
     </div>
 </div>

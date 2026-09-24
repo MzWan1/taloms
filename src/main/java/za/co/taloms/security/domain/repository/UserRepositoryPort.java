@@ -36,5 +36,18 @@ public interface UserRepositoryPort {
      * serving under a different authority do not appear.
      */
     List<User> searchByNameOrEmailAndAuthorityScope(String query, Long authorityId);
+
+    /**
+     * IDs of the authorities a user belongs to through the chief_authorities
+     * join table (many-to-many chief ↔ authority links).
+     */
+    List<Long> findAuthorityIdsByUserId(Long userId);
+
+    /** Users linked to the given authority through the chief_authorities join table. */
+    List<User> findByAuthorityId(Long authorityId);
+
+    List<User> searchAvailableCompanyOwnersByNameOrEmail(String query);
+
+    List<User> searchAvailableCompanyOwnerByIdNumber(String idNumber);
 }
 

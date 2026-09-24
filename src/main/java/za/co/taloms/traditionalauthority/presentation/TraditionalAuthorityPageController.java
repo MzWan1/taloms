@@ -26,21 +26,33 @@ public class TraditionalAuthorityPageController {
     private final AuthorityScopeService       scopeService;
 
     @GetMapping
-    public String list(Model model) {
+    public String list(Model model, 
+                       @RequestParam(required = false) String search,
+                       @RequestParam(required = false) String statusFilter,
+                       @RequestParam(required = false, defaultValue = "1") Integer page) {
         List<TraditionalAuthorityResponse> authorities;
         if (scopeService.isCurrentUserChiefOrHeadsman()) {
-            // Chiefs/headsmen may only see authorities that belong to them
-            Long linkedAuthorityId = scopeService.getCurrentUserAuthorityId();
-            authorities = linkedAuthorityId != null
-                    ? authorityService.findAll().stream()
-                        .filter(a -> linkedAuthorityId.equals(a.getId()))
-                        .toList()
-                    : java.util.Collections.emptyList();
+            // Chiefs/headsmen see every authority that belongs to them
+            java.util.Set<Long> linkedIds = scopeService.getCurrentUserAuthorityIds();
+            authorities = linkedIds.isEmpty()
+                    ? java.util.Collections.emptyList()
+                    : authorityService.findAll().stream()
+                        .filter(a -> linkedIds.contains(a.getId()))
+                        .toList();
         } else {
             authorities = authorityService.findAll();
         }
         log.info("AuthoritiesPageController: model 'authorities' size = {}", authorities.size());
-        model.addAttribute("authorities", authorities);
+        if (search != null && !search.isBlank()) {
+            String lower = search.toLowerCase();
+            authorities = authorities.stream().filter(a -> (a.getAuthorityName() != null && a.getAuthorityName().toLowerCase().contains(lower))).toList();
+        }
+        if (statusFilter != null && !statusFilter.isBlank()) {
+            authorities = authorities.stream().filter(a -> (statusFilter.equalsIgnoreCase("active") && (a.getActive() != null && a.getActive())) || (statusFilter.equalsIgnoreCase("inactive") && !(a.getActive() != null && a.getActive()))).toList();
+        }
+        var pageObj = za.co.taloms.common.pagination.PageRequestUtils.paginateList(authorities, page, 10);
+        model.addAttribute("page", pageObj);
+        model.addAttribute("authorities", pageObj.getContent());
         model.addAttribute("pageTitle",   "Traditional Authorities");
         model.addAttribute("currentPage", "authorities");
         return "authorities/list";
@@ -141,11 +153,15 @@ public class TraditionalAuthorityPageController {
         model.addAttribute("currentPage", "authorities");
 
         // Villages are CHIEF-only. Only show the villages block to a CHIEF
-        // who is linked to this authority (either side of the link).
+        // who is linked to this authority (many-to-many).
         boolean canManageVillages =
                 scopeService.canAccessAuthority(id)
-                        && isChiefLinkedToAuthority(id, authority.getChiefId());
+                        && isChiefLinkedToAuthority(id);
         model.addAttribute("canAddVillages", canManageVillages);
+
+        // Chiefs linked to this authority (admin can manage the relationship)
+        model.addAttribute("chiefs", authorityService.findChiefs(id));
+        model.addAttribute("canManageChiefs", scopeService.isCurrentUserAdmin());
 
         if (canManageVillages) {
             var villages = villageService.findByAuthority(id);
@@ -227,6 +243,7 @@ public class TraditionalAuthorityPageController {
                         .build());
         model.addAttribute("authority",
                 authorityService.findById(authorityId));
+        model.addAttribute("myAuthorities", currentUserAuthorities());
         model.addAttribute("pageTitle",   "Add Village");
         model.addAttribute("currentPage", "authorities");
         return "authorities/village-form";
@@ -252,6 +269,7 @@ public class TraditionalAuthorityPageController {
             model.addAttribute("form", request);
             model.addAttribute("authority",
                     authorityService.findById(authorityId));
+            model.addAttribute("myAuthorities", currentUserAuthorities());
             model.addAttribute("pageTitle",   "Add Village");
             model.addAttribute("currentPage", "authorities");
             return "authorities/village-form";
@@ -287,6 +305,54 @@ public class TraditionalAuthorityPageController {
                 + village.getTraditionalAuthorityId();
     }
 
+    // ── Chief ↔ Authority management (ADMIN) ──────────────────────────
+
+    @PostMapping("/{id}/chiefs/add")
+    @PreAuthorize("hasRole('ADMIN')")
+    public String addChiefToAuthority(
+            @PathVariable Long id,
+            @RequestParam("chiefId") Long chiefId,
+            RedirectAttributes ra) {
+        try {
+            authorityService.addChiefToAuthority(id, chiefId);
+            ra.addFlashAttribute("successMessage",
+                    "Chief linked to this authority successfully.");
+        } catch (Exception e) {
+            ra.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/authorities/" + id;
+    }
+
+    @PostMapping("/{id}/chiefs/{chiefId}/remove")
+    @PreAuthorize("hasRole('ADMIN')")
+    public String removeChiefFromAuthority(
+            @PathVariable Long id,
+            @PathVariable Long chiefId,
+            RedirectAttributes ra) {
+        try {
+            authorityService.removeChiefFromAuthority(id, chiefId);
+            ra.addFlashAttribute("successMessage",
+                    "Chief removed from this authority successfully.");
+        } catch (Exception e) {
+            ra.addFlashAttribute("errorMessage", e.getMessage());
+        }
+        return "redirect:/authorities/" + id;
+    }
+
+    /**
+     * The authorities the current user may add villages to, in a stable order.
+     * Used by the Add Village form so the authority context is always explicit.
+     */
+    private List<TraditionalAuthorityResponse> currentUserAuthorities() {
+        java.util.Set<Long> ids = scopeService.getCurrentUserAuthorityIds();
+        if (ids.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+        return authorityService.findAllActive().stream()
+                .filter(a -> ids.contains(a.getId()))
+                .toList();
+    }
+
     /**
      * Validates that the current user (CHIEF) is linked to the given authority.
      * Throws SecurityException if not authorized.
@@ -296,14 +362,11 @@ public class TraditionalAuthorityPageController {
     }
 
     /**
-     * Returns true only for a CHIEF user linked to the given authority.
+     * Returns true only for a CHIEF user linked to the given authority through
+     * the many-to-many chief_authorities relationship.
      * Administrators are deliberately NOT allowed here (villages are chief-only).
-     * The link is honoured in BOTH directions:
-     *   - user.traditionalAuthorityId == authorityId, OR
-     *   - authority.chiefId == current user's id
-     * so a stale/missing user-side link cannot lock the chief out.
      */
-    private boolean isChiefLinkedToAuthority(Long authorityId, Long authorityChiefId) {
+    private boolean isChiefLinkedToAuthority(Long authorityId) {
         var user = scopeService.getCurrentUser();
         if (user == null) {
             return false;
@@ -313,11 +376,7 @@ public class TraditionalAuthorityPageController {
         if (!isChief) {
             return false;
         }
-        boolean userSideLink = user.getTraditionalAuthorityId() != null
-                && user.getTraditionalAuthorityId().equals(authorityId);
-        boolean authoritySideLink = authorityChiefId != null
-                && authorityChiefId.equals(user.getId());
-        return userSideLink || authoritySideLink;
+        return scopeService.getCurrentUserAuthorityIds().contains(authorityId);
     }
 }
 

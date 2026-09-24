@@ -26,31 +26,43 @@ public class GisPageController {
     @GetMapping
     public String index(Model model) {
         try {
-            var currentUserAuthorityId = scopeService.getCurrentUserAuthorityId();
+            java.util.Set<Long> currentUserAuthorityIds =
+                    scopeService.getCurrentUserAuthorityIds();
             var scopedUser = scopeService.isCurrentUserChiefOrHeadsman();
             var isAdmin = scopeService.isCurrentUserAdmin();
 
-            var authorityList = scopedUser && currentUserAuthorityId != null
-                    ? java.util.List.of(authorityService.findById(currentUserAuthorityId))
+            var authorityList = scopedUser
+                    ? authorityService.findAllActive().stream()
+                        .filter(a -> currentUserAuthorityIds.contains(a.getId()))
+                        .toList()
                     : authorityService.findAllActive();
 
+            var villages = scopedUser
+                    ? currentUserAuthorityIds.stream()
+                        .flatMap(id -> villageService.findByAuthority(id).stream())
+                        .toList()
+                    : villageService.findAll();
+
             model.addAttribute("authorities", authorityList);
-            model.addAttribute("villages", scopedUser && currentUserAuthorityId != null
-                    ? villageService.findByAuthority(currentUserAuthorityId)
-                    : villageService.findAll());
+            model.addAttribute("villages", villages);
 
             // Show parcel count based on authority scope
             long totalParcels;
             if (isAdmin) {
                 totalParcels = parcelService.countAll();
-            } else if (currentUserAuthorityId != null) {
-                totalParcels = parcelService.findByAuthorityId(currentUserAuthorityId).size();
+            } else if (!currentUserAuthorityIds.isEmpty()) {
+                totalParcels = currentUserAuthorityIds.stream()
+                        .mapToLong(id -> parcelService.findByAuthorityId(id).size())
+                        .sum();
             } else {
                 totalParcels = 0L;
             }
             model.addAttribute("totalParcels", totalParcels);
 
-            model.addAttribute("scopedAuthorityId", currentUserAuthorityId);
+            model.addAttribute("scopedAuthorityId",
+                    currentUserAuthorityIds.size() == 1
+                            ? currentUserAuthorityIds.iterator().next()
+                            : null);
             model.addAttribute("pageTitle", "GIS Map");
             model.addAttribute("currentPage", "gis");
             return "gis/index";

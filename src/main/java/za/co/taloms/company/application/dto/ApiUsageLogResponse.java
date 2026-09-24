@@ -33,6 +33,8 @@ public class ApiUsageLogResponse {
     private Integer responseStatus;
     private ApiFailureReason failureReason;
     private String failureReasonDisplay;
+    private String searchType;
+    private String maskedSearchValue;
     private String idNumberHash;
     private String clientIp;
     private String userAgent;

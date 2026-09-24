@@ -2,6 +2,7 @@ package za.co.taloms.common;
 
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -11,6 +12,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.ui.Model;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
@@ -28,6 +30,12 @@ public class GlobalExceptionHandler {
     private boolean isApiRequest(HttpServletRequest request) {
         String path = request.getServletPath();
         return path.startsWith(API_PREFIX);
+    }
+
+    /** Correlation ID attached by ApiProtectionFilter (company API sets its own). */
+    private String requestId(HttpServletRequest request) {
+        Object id = request.getAttribute(za.co.taloms.common.resiliency.ApiProtectionFilter.REQUEST_ID_ATTRIBUTE);
+        return id != null ? id.toString() : "-";
     }
 
     private String getErrorView(int statusCode) {
@@ -86,11 +94,46 @@ public class GlobalExceptionHandler {
     public Object handleDuplicate(DuplicateRecordException ex,
                                   HttpServletRequest request, Model model) {
         if (isApiRequest(request)) {
-            log.warn("Duplicate record: {}", ex.getMessage());
+            log.warn("Duplicate record: {} [requestId={}]", ex.getMessage(), requestId(request));
             return jsonError(HttpStatus.CONFLICT, ex.getMessage());
         }
         setMvcErrorAttributes(model, request, HttpStatus.CONFLICT, ex);
         return getErrorView(HttpStatus.CONFLICT.value());
+    }
+
+    /**
+     * Race-safe duplicate protection: when two identical submissions pass a
+     * check-then-insert guard simultaneously, the database's unique/partial
+     * unique constraint fails the loser here. The client gets the same 409 as
+     * an expected duplicate — never a raw constraint or SQL error message.
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public Object handleDataIntegrity(DataIntegrityViolationException ex,
+                                      HttpServletRequest request, Model model) {
+        log.warn("Data integrity violation on {} [requestId={}]: {}",
+                request.getRequestURI(), requestId(request), ex.getMostSpecificCause().getClass().getSimpleName());
+        if (isApiRequest(request)) {
+            return jsonError(HttpStatus.CONFLICT,
+                    "This record already exists or was modified by another user. Please refresh and try again.");
+        }
+        setMvcErrorAttributes(model, request, HttpStatus.CONFLICT,
+                new DuplicateRecordException("Record"));
+        return getErrorView(HttpStatus.CONFLICT.value());
+    }
+
+    /** Multipart body exceeded the configured maximum (before any storage). */
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public Object handleMaxUpload(MaxUploadSizeExceededException ex,
+                                  HttpServletRequest request, Model model) {
+        log.warn("Upload rejected: body exceeds maximum size [requestId={}]",
+                requestId(request));
+        if (isApiRequest(request)) {
+            return jsonError(HttpStatus.PAYLOAD_TOO_LARGE,
+                    "File exceeds the maximum allowed size. The limit is "
+                            + (za.co.taloms.common.ApplicationConstants.MAX_FILE_SIZE_BYTES / (1024 * 1024)) + "MB.");
+        }
+        setMvcErrorAttributes(model, request, HttpStatus.PAYLOAD_TOO_LARGE, ex);
+        return getErrorView(HttpStatus.PAYLOAD_TOO_LARGE.value());
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

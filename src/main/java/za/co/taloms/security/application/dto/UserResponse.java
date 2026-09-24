@@ -22,6 +22,8 @@ public class UserResponse {
     private LocalDateTime createdAt;
     @JsonSerialize(using = MaskedLongSerializer.class)
     private Long          traditionalAuthorityId;
+    /** Authorities a CHIEF user belongs to (many-to-many chief ↔ authority). */
+    private Set<Long>     authorityIds;
     @JsonSerialize(using = MaskedIdNumberSerializer.class)
     private String        idNumber;
     private Set<String>   roles;

@@ -3,6 +3,7 @@ package za.co.taloms;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.core.env.Environment;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
@@ -12,6 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 @SpringBootApplication
+@ConfigurationPropertiesScan("za.co.taloms.common.resiliency")
 @EnableScheduling
 @Slf4j
 public class TalomsApplication {

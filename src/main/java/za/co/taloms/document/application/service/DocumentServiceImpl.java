@@ -36,6 +36,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 @Slf4j
 @Service
@@ -151,10 +153,22 @@ public class DocumentServiceImpl implements DocumentService {
 
     @Override
     @Transactional(readOnly = true)
+    public Page<DocumentResponse> findAll(Pageable pageable) {
+        return documentRepository.findAll(pageable).map(this::toResponse);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
     public List<DocumentResponse> findByRelatedEntity(EntityType entityType, Long entityId) {
         return documentRepository.findByRelatedEntity(entityType, entityId).stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<DocumentResponse> findByRelatedEntity(EntityType entityType, Long entityId, Pageable pageable) {
+        return documentRepository.findByRelatedEntity(entityType, entityId, pageable).map(this::toResponse);
     }
 
     @Override

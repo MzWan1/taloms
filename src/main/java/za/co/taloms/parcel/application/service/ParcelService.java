@@ -7,6 +7,9 @@ import za.co.taloms.parcel.application.dto.ParcelSyncDto;
 import za.co.taloms.parcel.domain.entity.ParcelStatus;
 import java.time.Instant;
 import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import java.util.Set;
 import java.util.Set;
 
 public interface ParcelService {
@@ -21,6 +24,7 @@ public interface ParcelService {
     List<ParcelResponse> findAllAvailable();
     List<ParcelResponse> findByAuthorityId(Long authorityId);
     List<ParcelResponse> search(String query);
+    Page<ParcelResponse> searchParcels(String q, ParcelStatus status, Long villageId, Set<Long> allowedVillageIds, Pageable pageable);
     ParcelResponse updateStatus(Long id, ParcelStatus status, String updatedBy);
     ParcelResponse allocateParcel(Long id, Long ptoId, String allocatedBy);
     void deleteParcel(Long id, String deletedBy);

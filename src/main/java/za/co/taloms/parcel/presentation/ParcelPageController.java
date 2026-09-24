@@ -10,6 +10,9 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import za.co.taloms.common.pagination.PageRequestUtils;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import za.co.taloms.parcel.application.dto.BoundaryPointDto;
 import za.co.taloms.parcel.application.dto.ParcelRequest;
@@ -67,45 +70,43 @@ public class ParcelPageController {
             @RequestParam(value = "q", required = false) String q,
             @RequestParam(value = "status", required = false) ParcelStatus status,
             @RequestParam(value = "villageId", required = false) Long villageId,
+            @RequestParam(value = "page", required = false, defaultValue = "1") Integer page,
             Model model) {
         try {
+
             Set<Long> allowedVillageIds = scopedVillageIds();
+            Pageable pageable = PageRequestUtils.toPageable(page, 10);
+            
+            Page<za.co.taloms.parcel.application.dto.ParcelResponse> pageObj = parcelService.searchParcels(
+                    q != null ? q.trim() : null,
+                    status,
+                    villageId,
+                    allowedVillageIds,
+                    pageable
+            );
 
-            List<ParcelResponse> parcels = parcelService.findAll();
-            if (q != null && !q.trim().isEmpty()) {
-                parcels = parcelService.search(q.trim());
-            }
-            if (status != null) {
-                parcels = parcels.stream()
-                        .filter(p -> status.equals(p.getStatus()))
-                        .toList();
-            }
-            if (villageId != null) {
-                parcels = parcels.stream()
-                        .filter(p -> villageId.equals(p.getVillageId()))
-                        .toList();
-            }
-            if (allowedVillageIds != null) {
-                // Chiefs/headsmen only see parcels in their authority's villages
-                parcels = parcels.stream()
-                        .filter(p -> p.getVillageId() != null
-                                && allowedVillageIds.contains(p.getVillageId()))
-                        .toList();
+            long availableCount = parcelService.countByStatus(ParcelStatus.AVAILABLE);
+            long allocatedCount = parcelService.countByStatus(ParcelStatus.ALLOCATED);
+            long disputedCount = parcelService.countByStatus(ParcelStatus.DISPUTED);
+
+            if (allowedVillageIds != null && !allowedVillageIds.isEmpty()) {
+                availableCount = allowedVillageIds.stream().mapToLong(vid -> parcelService.countByStatusAndVillage(ParcelStatus.AVAILABLE, vid)).sum();
+                allocatedCount = allowedVillageIds.stream().mapToLong(vid -> parcelService.countByStatusAndVillage(ParcelStatus.ALLOCATED, vid)).sum();
+                disputedCount = allowedVillageIds.stream().mapToLong(vid -> parcelService.countByStatusAndVillage(ParcelStatus.DISPUTED, vid)).sum();
+            } else if (allowedVillageIds != null && allowedVillageIds.isEmpty()) {
+                availableCount = 0;
+                allocatedCount = 0;
+                disputedCount = 0;
             }
 
-            long availableCount = parcels.stream()
-                    .filter(p -> p.getStatus() == ParcelStatus.AVAILABLE).count();
-            long allocatedCount = parcels.stream()
-                    .filter(p -> p.getStatus() == ParcelStatus.ALLOCATED).count();
-            long disputedCount = parcels.stream()
-                    .filter(p -> p.getStatus() == ParcelStatus.DISPUTED).count();
+            model.addAttribute("page", pageObj);
+            model.addAttribute("parcels", pageObj.getContent());
 
-            model.addAttribute("parcels", parcels);
             model.addAttribute("q", q);
             model.addAttribute("selectedStatus", status);
             model.addAttribute("selectedVillageId", villageId);
             model.addAttribute("statuses", ParcelStatus.values());
-            model.addAttribute("totalCount", (long) parcels.size());
+            model.addAttribute("totalCount", pageObj.getTotalElements());
             model.addAttribute("availableCount", availableCount);
             model.addAttribute("allocatedCount", allocatedCount);
             model.addAttribute("disputedCount", disputedCount);
@@ -272,25 +273,25 @@ public class ParcelPageController {
 
             List<TraditionalAuthorityResponse> authorities;
             if (scopeService.isCurrentUserChiefOrHeadsman()) {
-                // Determine the authorities the user may see/edit against.
-                // Prefer the user's linked authority; but if the user is only
-                // linked to a village (not an authority), fall back to the
-                // parcel's own village authority so the form can still load.
+                // Every authority the user may see/edit against; fall back to
+                // the parcel's village authority for a village-scoped headsman.
                 var parcelVillageAuth = parcelVillage != null
                         ? parcelVillage.getTraditionalAuthorityId() : null;
 
-                Long linkedAuthorityId = scopeService.getCurrentUserAuthorityId();
-                Long relevantAuthorityId = linkedAuthorityId != null
-                        ? linkedAuthorityId : parcelVillageAuth;
+                java.util.Set<Long> allowed = new java.util.HashSet<>(
+                        scopeService.getCurrentUserAuthorityIds());
+                if (allowed.isEmpty() && parcelVillageAuth != null) {
+                    allowed.add(parcelVillageAuth);
+                }
 
                 // Only allow editing if the parcel's village is within the user's scope.
                 if (scopeService.isCurrentUserAdmin()
                         || scopeService.canAccessVillage(parcel.getVillageId())) {
-                    authorities = relevantAuthorityId != null
-                            ? authorityService.findAllActive().stream()
-                                .filter(a -> relevantAuthorityId.equals(a.getId()))
-                                .toList()
-                            : Collections.emptyList();
+                    authorities = allowed.isEmpty()
+                            ? Collections.emptyList()
+                            : authorityService.findAllActive().stream()
+                                .filter(a -> allowed.contains(a.getId()))
+                                .toList();
                 } else {
                     authorities = Collections.emptyList();
                 }

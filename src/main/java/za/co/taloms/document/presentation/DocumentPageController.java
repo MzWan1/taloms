@@ -15,6 +15,10 @@ import za.co.taloms.document.domain.entity.DocumentType;
 import za.co.taloms.document.domain.entity.EntityType;
 
 import java.util.Collections;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.web.bind.annotation.RequestParam;
+import za.co.taloms.common.pagination.PageRequestUtils;
 
 @Slf4j
 @Controller
@@ -25,11 +29,15 @@ public class DocumentPageController {
     private final DocumentService documentService;
 
     @GetMapping
-    public String list(Model model) {
+    public String list(Model model, @RequestParam(required = false, defaultValue = "1") Integer page) {
         try {
-            var documents = documentService.findAll();
-            model.addAttribute("documents", documents);
-            model.addAttribute("totalCount", documentService.countAll());
+
+            Pageable pageable = PageRequestUtils.toPageable(page, 10);
+            Page<za.co.taloms.document.application.dto.DocumentResponse> pageObj = documentService.findAll(pageable);
+            model.addAttribute("page", pageObj);
+            model.addAttribute("documents", pageObj.getContent());
+            model.addAttribute("totalCount", pageObj.getTotalElements());
+
             model.addAttribute("documentTypes", DocumentType.values());
             model.addAttribute("entityTypes", EntityType.values());
             model.addAttribute("pageTitle", "Document Management");
@@ -74,14 +82,18 @@ public class DocumentPageController {
     @GetMapping("/entity/{entityType}/{entityId}")
     public String listByEntity(@PathVariable String entityType,
                                @PathVariable Long entityId,
-                               Model model) {
+                               Model model, @RequestParam(required = false, defaultValue = "1") Integer page) {
         try {
+
             var entityTypeEnum = EntityType.valueOf(entityType);
-            var documents = documentService.findByRelatedEntity(entityTypeEnum, entityId);
-            model.addAttribute("documents", documents);
+            Pageable pageable = PageRequestUtils.toPageable(page, 10);
+            Page<za.co.taloms.document.application.dto.DocumentResponse> pageObj = documentService.findByRelatedEntity(entityTypeEnum, entityId, pageable);
+            model.addAttribute("page", pageObj);
+            model.addAttribute("documents", pageObj.getContent());
             model.addAttribute("entityType", entityType);
             model.addAttribute("entityId", entityId);
-            model.addAttribute("totalCount", documents.size());
+            model.addAttribute("totalCount", pageObj.getTotalElements());
+
             model.addAttribute("documentTypes", DocumentType.values());
             model.addAttribute("entityTypes", EntityType.values());
             model.addAttribute("pageTitle", "Documents - " + entityType + " #" + entityId);

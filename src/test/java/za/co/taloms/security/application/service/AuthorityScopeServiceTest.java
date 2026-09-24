@@ -12,9 +12,9 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import za.co.taloms.security.domain.entity.Role;
 import za.co.taloms.security.domain.entity.User;
 import za.co.taloms.security.domain.repository.UserRepositoryPort;
-import za.co.taloms.traditionalauthority.application.dto.TraditionalAuthorityResponse;
-import za.co.taloms.traditionalauthority.application.service.TraditionalAuthorityService;
+import za.co.taloms.traditionalauthority.domain.repository.TraditionalAuthorityRepositoryPort;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -28,7 +28,7 @@ class AuthorityScopeServiceTest {
     private UserRepositoryPort userRepository;
 
     @Mock
-    private TraditionalAuthorityService authorityService;
+    private TraditionalAuthorityRepositoryPort authorityRepository;
 
     @InjectMocks
     private AuthorityScopeService scopeService;
@@ -65,69 +65,80 @@ class AuthorityScopeServiceTest {
                 .build();
     }
 
-    private TraditionalAuthorityResponse authority(Long id, Long chiefId, Long headmanId) {
-        return TraditionalAuthorityResponse.builder()
-                .id(id)
-                .chiefId(chiefId)
-                .headmanId(headmanId)
-                .build();
-    }
-
+    /** ADMIN: unrestricted access. */
     @Test
     void adminCanAccessAnyAuthority() {
         var admin = userWith(1L, "admin", adminRole);
         authenticate(admin);
-
         assertTrue(scopeService.isCurrentUserAdmin());
         assertFalse(scopeService.isCurrentUserChiefOrHeadsman());
         assertTrue(scopeService.canAccessAuthority(99L));
         assertNull(scopeService.getCurrentUserAuthorityId());
     }
 
+    /** Chief with a single authority via the join table. */
     @Test
-    void chiefWithUserSideLinkIsScopedToTheirAuthority() {
+    void chiefWithJoinTableLinkIsScopedToTheirAuthority() {
         var chief = userWith(10L, "chief", chiefRole);
-        chief.setTraditionalAuthorityId(5L);
         authenticate(chief);
-
+        when(userRepository.findAuthorityIdsByUserId(10L))
+                .thenReturn(List.of(5L));
+        assertEquals(Set.of(5L), scopeService.getCurrentUserAuthorityIds());
         assertEquals(5L, scopeService.getCurrentUserAuthorityId());
         assertTrue(scopeService.canAccessAuthority(5L));
         assertFalse(scopeService.canAccessAuthority(6L));
     }
 
+    /** Chief with multiple authorities via the join table. */
+    @Test
+    void chiefWithMultipleAuthoritiesViaJoinTable() {
+        var chief = userWith(10L, "chief", chiefRole);
+        authenticate(chief);
+        when(userRepository.findAuthorityIdsByUserId(10L))
+                .thenReturn(List.of(5L, 6L));
+        Set<Long> ids = scopeService.getCurrentUserAuthorityIds();
+        assertEquals(Set.of(5L, 6L), ids);
+        assertTrue(scopeService.canAccessAuthority(5L));
+        assertTrue(scopeService.canAccessAuthority(6L));
+        assertFalse(scopeService.canAccessAuthority(7L));
+        assertTrue(Set.of(5L, 6L).contains(scopeService.getCurrentUserAuthorityId()));
+    }
+
+    /** Legacy authority-side link (chief_id on authority) still resolves scope. */
     @Test
     void chiefWithAuthoritySideLinkIsScopedToTheirAuthority() {
         var chief = userWith(10L, "chief", chiefRole);
         authenticate(chief);
-        when(authorityService.findAll()).thenReturn(java.util.List.of(
-                authority(5L, 10L, null),
-                authority(6L, 20L, null)));
-
+        when(authorityRepository.findIdsByChiefIdOrHeadmanId(10L))
+                .thenReturn(List.of(5L));
+        assertEquals(Set.of(5L), scopeService.getCurrentUserAuthorityIds());
         assertEquals(5L, scopeService.getCurrentUserAuthorityId());
         assertTrue(scopeService.canAccessAuthority(5L));
         assertFalse(scopeService.canAccessAuthority(6L));
     }
 
+    /** Headsman with authority-side link. */
     @Test
     void headmanWithAuthoritySideLinkIsScopedToTheirAuthority() {
         var headsman = userWith(30L, "headsman", headsmanRole);
         authenticate(headsman);
-        when(authorityService.findAll()).thenReturn(java.util.List.of(
-                authority(7L, 99L, 30L)));
-
+        when(authorityRepository.findIdsByChiefIdOrHeadmanId(30L))
+                .thenReturn(List.of(7L));
+        assertEquals(Set.of(7L), scopeService.getCurrentUserAuthorityIds());
         assertEquals(7L, scopeService.getCurrentUserAuthorityId());
         assertTrue(scopeService.canAccessAuthority(7L));
         assertFalse(scopeService.canAccessAuthority(8L));
     }
 
+    /** Chief with no authorities at all. */
     @Test
     void unlinkedChiefSeesNothing() {
         var chief = userWith(10L, "chief", chiefRole);
         authenticate(chief);
-        when(authorityService.findAll()).thenReturn(java.util.List.of(
-                authority(5L, 20L, 21L)));
-
+        when(userRepository.findAuthorityIdsByUserId(10L))
+                .thenReturn(List.of());
         assertTrue(scopeService.isCurrentUserChiefOrHeadsman());
+        assertTrue(scopeService.getCurrentUserAuthorityIds().isEmpty());
         assertNull(scopeService.getCurrentUserAuthorityId());
         assertFalse(scopeService.canAccessAuthority(5L));
         assertThrows(SecurityException.class,
@@ -137,9 +148,9 @@ class AuthorityScopeServiceTest {
     @Test
     void requireAuthorityAccessThrowsForForeignAuthority() {
         var chief = userWith(10L, "chief", chiefRole);
-        chief.setTraditionalAuthorityId(5L);
         authenticate(chief);
-
+        when(userRepository.findAuthorityIdsByUserId(10L))
+                .thenReturn(List.of(5L));
         assertThrows(SecurityException.class,
                 () -> scopeService.requireAuthorityAccess(6L));
         assertDoesNotThrow(() -> scopeService.requireAuthorityAccess(5L));
@@ -149,7 +160,8 @@ class AuthorityScopeServiceTest {
     void requireAdminThrowsForNonAdmin() {
         var chief = userWith(10L, "chief", chiefRole);
         authenticate(chief);
-
         assertThrows(SecurityException.class, () -> scopeService.requireAdmin());
     }
 }
+
+
