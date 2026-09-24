@@ -22,15 +22,22 @@ const OFFLINE_PAGE = '/offline.html';
 // Only precache static assets that don't require auth
 const PRECACHE_URLS = [
   '/',
+  '/login',
+  '/offline.html',
+  '/css/bootstrap.min.css',
+  '/css/bootstrap-icons.css',
   '/css/taloms.css',
+  '/css/leaflet.min.css',
+  '/css/error.css',
+  '/js/bootstrap.bundle.min.js',
   '/js/taloms.js',
   '/js/offline-db.js',
   '/js/boundary-map.js',
   '/js/form-draft.js',
+  '/js/leaflet.min.js',
   '/favicon.ico',
   '/manifest.webmanifest',
   '/icons/icon.svg',
-  OFFLINE_PAGE
 ];
 
 // Pages to cache after login (require authentication)
